@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deepfake Forensic Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+        * { font-family: 'Inter', sans-serif; }
+        body { background: #0f172a; color: #e2e8f0; }
+
+        .glass { background: rgba(30, 41, 59, 0.8); backdrop-filter: blur(16px); border: 1px solid rgba(71, 85, 105, 0.4); }
+        .glass-light { background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(71, 85, 105, 0.3); }
+
+        .drop-zone { border: 2px dashed #475569; transition: all 0.3s ease; }
+        .drop-zone:hover, .drop-zone.dragover { border-color: #6366f1; background: rgba(99,102,241,0.08); }
+
+        /* Animated ring gauge */
+        .ring-gauge { position: relative; width: 200px; height: 200px; }
+        .ring-gauge svg { transform: rotate(-90deg); }
+        .ring-gauge .track { stroke: #1e293b; fill: none; stroke-width: 12; }
+        .ring-gauge .fill { fill: none; stroke-width: 12; stroke-linecap: round; transition: stroke-dashoffset 1.5s ease, stroke 0.5s ease; }
+        .ring-gauge .label { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+
+        /* Animated score bars */
+        .score-bar-fill { transition: width 1.2s cubic-bezier(.22,1,.36,1); }
+
+        /* Face overlay canvas */
+        .face-canvas-wrap { position: relative; display: inline-block; }
+        .face-canvas-wrap canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+
+        /* Glow effects */
+        .glow-red { box-shadow: 0 0 30px rgba(239,68,68,0.15); }
+        .glow-green { box-shadow: 0 0 30px rgba(16,185,129,0.15); }
+        .glow-indigo { box-shadow: 0 0 20px rgba(99,102,241,0.1); }
+
+        .fade-in { animation: fadeIn 0.6s ease forwards; opacity: 0; }
+        @keyframes fadeIn { to { opacity: 1; } }
+
+        .slide-up { animation: slideUp 0.5s ease forwards; opacity: 0; transform: translateY(20px); }
+        @keyframes slideUp { to { opacity: 1; transform: translateY(0); } }
+
+        /* Preview thumbnail */
+        #previewThumb { max-height: 120px; border-radius: 8px; object-fit: cover; }
+
+        /* Hide scrollbar on forensic images */
+        .forensic-img { border-radius: 8px; width: 100%; height: auto; image-rendering: auto; }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    </style>
+</head>
+<body class="h-screen w-full flex bg-slate-950 overflow-hidden text-slate-200">
+    <!-- Sidebar Menu (Veritas AI) -->
+    <aside class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col transition-all duration-300 z-20 shrink-0">
+        <div class="h-16 flex items-center px-6 border-b border-slate-800">
+            <i class="fa-solid fa-shield-halved text-indigo-500 text-xl mr-3"></i>
+            <span class="text-xl font-bold tracking-wide text-slate-100">Veritas<span class="text-indigo-400">AI</span></span>
+        </div>
+        
+        <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+            <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-3 mt-2">Analysis Tools</div>
+            <a href="#" onclick="switchTab('view-home', this)" class="nav-item active flex items-center px-3 py-2.5 rounded-lg text-sm font-medium bg-indigo-500/10 text-indigo-400 relative group transition-colors">
+                <div class="absolute left-0 top-1.5 bottom-1.5 w-1 bg-indigo-500 rounded-r-md"></div>
+                <i class="fa-solid fa-crosshairs w-6 text-center mr-2"></i>Deepfake Analyzer
+            </a>
+            <a href="#" onclick="switchTab('view-batch', this)" class="nav-item flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 relative group transition-colors">
+                <div class="absolute left-0 top-1.5 bottom-1.5 w-1 bg-indigo-500 rounded-r-md opacity-0 transition-opacity"></div>
+                <i class="fa-solid fa-layer-group w-6 text-center mr-2"></i>Batch Scan
+            </a>
+            <a href="#" onclick="switchTab('view-history', this)" class="nav-item flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 relative group transition-colors">
+                <div class="absolute left-0 top-1.5 bottom-1.5 w-1 bg-indigo-500 rounded-r-md opacity-0 transition-opacity"></div>
+                <i class="fa-solid fa-clock-rotate-left w-6 text-center mr-2"></i>Scan History
+            </a>
+            <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-3 mt-6">Global Intelligence</div>
+            <a href="#" onclick="switchTab('view-intel', this)" class="nav-item flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 relative group transition-colors">
+                <div class="absolute left-0 top-1.5 bottom-1.5 w-1 bg-indigo-500 rounded-r-md opacity-0 transition-opacity"></div>
+                <i class="fa-solid fa-globe w-6 text-center mr-2"></i>Threat Intel
+            </a>
+        </nav>
+        <div class="p-3 border-t border-slate-800">
+            <a href="#" onclick="switchTab('view-settings', this)" class="nav-item flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 relative group transition-colors">
+                <div class="absolute left-0 top-1.5 bottom-1.5 w-1 bg-indigo-500 rounded-r-md opacity-0 transition-opacity"></div>
+                <i class="fa-solid fa-gear w-6 text-center mr-2"></i>Settings
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 flex flex-col h-screen overflow-hidden relative bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-slate-950">
+        
+        <header class="h-16 flex items-center justify-between px-8 border-b border-slate-800/50 bg-slate-900/30 backdrop-blur-sm z-10 shrink-0">
+            <div>
+                <h2 id="pageTitle" class="text-lg font-bold text-slate-100">Deepfake Analyzer</h2>
+                <p id="pageSubtitle" class="text-xs text-slate-400">Upload media for multi-modal AI forensic analysis</p>
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-6 md:p-8 custom-scrollbar relative">
+            
+            <!-- HOME / ANALYZER VIEW -->
+            <section id="view-home" class="view-section w-full max-w-4xl mx-auto space-y-8 fade-in pb-10">
+                
+                <!-- Upload Zone -->
+                <div class="glass rounded-2xl overflow-hidden shadow-2xl shadow-indigo-500/5 border border-slate-700/50">
+                    <div id="dropZone" class="drop-zone p-12 text-center cursor-pointer m-6 rounded-xl bg-slate-800/20 hover:bg-slate-800/40 transition-all duration-300 group">
+                        <input type="file" id="fileInput" class="hidden" accept="image/*,video/*,audio/*">
+                        
+                        <div id="uploadPrompt" class="flex flex-col items-center">
+                            <div class="w-20 h-20 rounded-full bg-indigo-500/10 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-indigo-500/20 transition-all duration-500">
+                                <i class="fa-solid fa-cloud-arrow-up text-4xl text-indigo-400"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-slate-200 mb-2">Drag & drop media here</h3>
+                            <p class="text-slate-400 text-sm mb-6 max-w-sm">Deep scan images, video, and audio for synthetic manipulation and AI generation artifacts.</p>
+                            
+                            <div class="flex items-center gap-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                <span class="flex items-center bg-slate-800/50 px-3 py-1.5 rounded-md"><i class="fa-solid fa-image mr-2 text-blue-400"></i> JPG, PNG, WEBP</span>
+                                <span class="flex items-center bg-slate-800/50 px-3 py-1.5 rounded-md"><i class="fa-solid fa-video mr-2 text-emerald-400"></i> MP4, MOV</span>
+                                <span class="flex items-center bg-slate-800/50 px-3 py-1.5 rounded-md"><i class="fa-solid fa-music mr-2 text-purple-400"></i> MP3, WAV</span>
+                            </div>
+                        </div>
+
+                        <div id="uploadPreview" class="hidden items-center gap-6 justify-center">
+                            <div class="relative">
+                                <img id="previewThumb" src="" alt="preview" class="hidden w-24 h-24 rounded-lg object-cover shadow-lg border border-slate-700">
+                                <div class="absolute inset-0 ring-1 ring-inset ring-white/10 rounded-lg pointer-events-none"></div>
+                            </div>
+                            <div class="text-left">
+                                <div id="previewName" class="text-base font-bold text-slate-200 mb-1 max-w-[200px] truncate"></div>
+                                <div id="previewSize" class="text-sm text-indigo-400 font-medium bg-indigo-500/10 inline-block px-2 py-0.5 rounded"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Loading State -->
+        <div id="loadingContainer" class="hidden glass rounded-xl p-8 text-center slide-up">
+            <div class="inline-block mb-4">
+                <div class="w-12 h-12 border-4 border-indigo-400 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+            <h3 id="loadingText" class="text-lg font-bold text-slate-200 mb-2">Uploading media...</h3>
+            <div class="w-full max-w-md mx-auto bg-slate-700/50 rounded-full h-2 mb-2 overflow-hidden">
+                <div id="progressBar" class="bg-gradient-to-r from-indigo-500 to-purple-500 h-2 rounded-full score-bar-fill" style="width: 10%"></div>
+            </div>
+            <p id="loadingSubtext" class="text-slate-400 text-xs">Connecting to backend</p>
+        </div>
+
+        <!-- ==================== RESULTS DASHBOARD ==================== -->
+        <div id="resultsDashboard" class="hidden space-y-6">
+
+            <!-- Row 1: Verdict Ring + Score Bars -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                <!-- Verdict Ring -->
+                <div id="verdictCard" class="glass rounded-xl p-6 flex flex-col items-center justify-center slide-up">
+                    <div class="text-xs uppercase tracking-widest font-bold text-slate-500 mb-4">Overall Verdict</div>
+                    <div class="ring-gauge mb-4">
+                        <svg viewBox="0 0 200 200" width="200" height="200">
+                            <circle class="track" cx="100" cy="100" r="85"/>
+                            <circle id="ringFill" class="fill" cx="100" cy="100" r="85"
+                                stroke-dasharray="534" stroke-dashoffset="534" stroke="#6366f1"/>
+                        </svg>
+                        <div class="label">
+                            <div id="verdictPercent" class="text-4xl font-black">--%</div>
+                            <div id="verdictTag" class="text-sm font-bold uppercase tracking-wider mt-1">Analyzing</div>
+                        </div>
+                    </div>
+                    <div id="verdictLabel" class="text-sm text-slate-400 font-medium text-center"></div>
+                </div>
+
+                <!-- Score Breakdown Bars -->
+                <div class="glass rounded-xl p-6 flex flex-col justify-center slide-up" style="animation-delay:0.1s">
+                    <div class="text-xs uppercase tracking-widest font-bold text-slate-500 mb-5">Forensic Breakdown</div>
+
+                    <!-- Visual -->
+                    <div class="mb-4">
+                        <div class="flex justify-between mb-1.5">
+                            <span class="text-sm font-semibold text-slate-300"><i class="fa-solid fa-eye text-indigo-400 mr-1.5"></i>Visual Manipulation</span>
+                            <span id="barVisualLabel" class="text-sm font-bold text-indigo-400">--</span>
+                        </div>
+                        <div class="w-full bg-slate-700/50 rounded-full h-2.5 overflow-hidden">
+                            <div id="barVisual" class="h-2.5 rounded-full score-bar-fill bg-gradient-to-r from-indigo-500 to-purple-500" style="width:0%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Audio -->
+                    <div class="mb-4">
+                        <div class="flex justify-between mb-1.5">
+                            <span class="text-sm font-semibold text-slate-300"><i class="fa-solid fa-waveform text-cyan-400 mr-1.5"></i>Audio Forgery</span>
+                            <span id="barAudioLabel" class="text-sm font-bold text-cyan-400">--</span>
+                        </div>
+                        <div class="w-full bg-slate-700/50 rounded-full h-2.5 overflow-hidden">
+                            <div id="barAudio" class="h-2.5 rounded-full score-bar-fill bg-gradient-to-r from-cyan-500 to-blue-500" style="width:0%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Lip Sync -->
+                    <div class="mb-4">
+                        <div class="flex justify-between mb-1.5">
+                            <span class="text-sm font-semibold text-slate-300"><i class="fa-solid fa-lips text-amber-400 mr-1.5"></i>Lip-Sync Coherence</span>
+                            <span id="barLipLabel" class="text-sm font-bold text-amber-400">--</span>
+                        </div>
+                        <div class="w-full bg-slate-700/50 rounded-full h-2.5 overflow-hidden">
+                            <div id="barLip" class="h-2.5 rounded-full score-bar-fill bg-gradient-to-r from-amber-500 to-orange-500" style="width:0%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Audio Biomarkers -->
+                    <div class="grid grid-cols-2 gap-3 mt-2">
+                        <div class="bg-slate-800/50 rounded-lg p-3 text-center group relative cursor-help">
+                            <div class="text-xs text-slate-500 mb-1 border-b border-slate-700/50 inline-block border-dotted pb-0.5">Spectral Flatness</div>
+                            <div id="valFlatness" class="text-lg font-bold text-slate-200">--</div>
+                            <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-slate-900 text-xs text-slate-300 rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">High spectral flatness often indicates synthetic or vocoder-generated voice patterns.</div>
+                        </div>
+                        <div class="bg-slate-800/50 rounded-lg p-3 text-center group relative cursor-help">
+                            <div class="text-xs text-slate-500 mb-1 border-b border-slate-700/50 inline-block border-dotted pb-0.5">Phase Consistency</div>
+                            <div id="valPhase" class="text-lg font-bold text-slate-200">--</div>
+                            <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-slate-900 text-xs text-slate-300 rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">Low phase consistency suggests spliced, edited, or AI-cloned speech artifacts.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 2: Uploaded Image with Face Boxes + ELA Heatmap -->
+            <div id="visionRow" class="hidden grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Uploaded Image with Face Annotations -->
+                <div class="glass rounded-xl p-4 slide-up flex flex-col" style="animation-delay:0.2s">
+                    <div class="text-xs uppercase tracking-widest font-bold text-slate-500 mb-3">
+                        <i class="fa-solid fa-crosshairs text-indigo-400 mr-1"></i> Face Detection
+                    </div>
+                    <div class="relative w-full overflow-hidden rounded-lg group grow flex items-center justify-center bg-slate-900/50">
+                        <img id="uploadedImg" src="" alt="uploaded" class="w-full h-auto max-h-[300px] object-contain hidden">
+                        <div id="faceBoxesContainer" class="absolute inset-0 w-full h-full pointer-events-none"></div>
+                    </div>
+                    <div id="faceList" class="mt-3 space-y-1"></div>
+                </div>
+
+                <!-- ELA Heatmap Comparator -->
+                <div class="glass rounded-xl p-4 slide-up flex flex-col" style="animation-delay:0.25s">
+                    <div class="text-xs uppercase tracking-widest font-bold text-slate-500 mb-3 flex justify-between">
+                        <span><i class="fa-solid fa-fire text-red-400 mr-1"></i> ELA Heatmap</span>
+                        <span class="text-slate-500 font-normal ml-1 lowercase bg-slate-800 px-2 rounded">hover to compare</span>
+                    </div>
+                    <div class="relative w-full overflow-hidden rounded-lg cursor-crosshair group grow flex items-center justify-center bg-slate-900/50">
+                        <!-- Original Image (Bottom Layer) -->
+                        <img id="heatmapOrigImg" src="" alt="original" class="absolute w-full h-auto max-h-[300px] object-contain hidden">
+                        <!-- Heatmap Image (Top Layer - fades on hover) -->
+                        <img id="heatmapImg" src="" alt="heatmap" class="relative w-full h-auto max-h-[300px] object-contain hidden transition-opacity duration-300 group-hover:opacity-10">
+                    </div>
+                    <p class="text-xs text-slate-500 mt-2"><i class="fa-solid fa-circle-info mr-1"></i>Bright regions indicate areas with different compression levels — a sign of editing.</p>
+                </div>
+            </div>
+
+            <!-- Row 3: FFT + Spectrogram -->
+            <div id="analysisRow" class="hidden grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- FFT -->
+                <div class="glass rounded-xl p-4 slide-up" style="animation-delay:0.3s">
+                    <div class="text-xs uppercase tracking-widest font-bold text-slate-500 mb-3">
+                        <i class="fa-solid fa-wave-square text-purple-400 mr-1"></i> FFT Frequency Spectrum
+                    </div>
+                    <img id="fftImg" src="" alt="fft" class="forensic-img hidden">
+                    <p class="text-xs text-slate-500 mt-2"><i class="fa-solid fa-circle-info mr-1"></i>Frequency artifacts reveal GAN-generated image patterns invisible to the eye.</p>
+                </div>
+
+                <!-- Audio Spectrogram -->
+                <div class="glass rounded-xl p-4 slide-up" style="animation-delay:0.35s">
+                    <div class="text-xs uppercase tracking-widest font-bold text-slate-500 mb-3">
+                        <i class="fa-solid fa-signal text-cyan-400 mr-1"></i> Audio Spectrogram
+                    </div>
+                    <img id="spectrogramImg" src="" alt="spectrogram" class="forensic-img hidden">
+                    <p id="spectrogramPlaceholder" class="text-sm text-slate-500 text-center py-8 hidden">
+                        <i class="fa-solid fa-volume-xmark text-2xl mb-2 block text-slate-600"></i>
+                        No audio track detected
+                    </p>
+                    <p class="text-xs text-slate-500 mt-2"><i class="fa-solid fa-circle-info mr-1"></i>Mel-scaled spectrogram reveals unnatural vocal patterns in cloned speech.</p>
+                </div>
+            </div>
+
+            <!-- Row 4: Video Timeline (only for videos) -->
+            <div id="timelineRow" class="hidden glass rounded-xl p-4 slide-up" style="animation-delay:0.4s">
+                <div class="text-xs uppercase tracking-widest font-bold text-slate-500 mb-3">
+                    <i class="fa-solid fa-timeline text-emerald-400 mr-1"></i> Frame-by-Frame Analysis
+                </div>
+                <canvas id="timelineChart" height="100"></canvas>
+                <p class="text-xs text-slate-500 mt-2"><i class="fa-solid fa-circle-info mr-1"></i>Per-second fake probability across the video. Spikes indicate manipulated segments.</p>
+            </div>
+
+            <!-- Reset Button -->
+            <div class="text-center pt-2 pb-8">
+                <button onclick="resetUI()" class="px-6 py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg text-sm font-semibold transition">
+                    <i class="fa-solid fa-rotate-left mr-1.5"></i> Analyze Another File
+                </button>
+            </div>
+        </div>
+            </section> <!-- end view-home -->
+
+            <!-- BATCH SCAN VIEW -->
+            <section id="view-batch" class="view-section hidden w-full h-full flex flex-col items-center justify-center fade-in text-center mt-20">
+                <i class="fa-solid fa-layer-group text-6xl text-slate-700 mb-4"></i>
+                <h3 class="text-xl font-bold text-slate-300">Batch Scan Coming Soon</h3>
+                <p class="text-slate-500 max-w-md mx-auto mt-2">Analyze entire directories of media simultaneously. Feature currently in development.</p>
+            </section>
+
+            <!-- HISTORY VIEW -->
+            <section id="view-history" class="view-section hidden w-full h-full flex flex-col items-center justify-center fade-in text-center mt-20">
+                <i class="fa-solid fa-clock-rotate-left text-6xl text-slate-700 mb-4"></i>
+                <h3 class="text-xl font-bold text-slate-300">Scan History</h3>
+                <p class="text-slate-500 max-w-md mx-auto mt-2">Your past analyses will appear here. Backend persistence is required.</p>
+            </section>
+
+            <!-- THREAT INTEL VIEW -->
+            <section id="view-intel" class="view-section hidden w-full h-full flex flex-col items-center justify-center fade-in text-center mt-20">
+                <i class="fa-solid fa-globe text-6xl text-slate-700 mb-4"></i>
+                <h3 class="text-xl font-bold text-slate-300">Threat Intelligence</h3>
+                <p class="text-slate-500 max-w-md mx-auto mt-2">Global deepfake trends, known malicious signatures, and network alerts.</p>
+            </section>
+
+            <!-- SETTINGS VIEW -->
+            <section id="view-settings" class="view-section hidden w-full max-w-2xl mx-auto space-y-6 fade-in mt-10">
+                <div class="glass rounded-xl p-6">
+                    <h3 class="text-lg font-bold text-slate-200 mb-4 border-b border-slate-700 pb-2">Connection Settings</h3>
+                    <label for="apiUrl" class="block text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wider">Backend API URL</label>
+                    <div class="flex gap-2">
+                        <span class="inline-flex items-center px-4 text-sm text-slate-400 bg-slate-800/80 border border-slate-600 rounded-l-lg">
+                            <i class="fa-solid fa-link"></i>
+                        </span>
+                        <input type="url" id="apiUrl" value="https://upside-shower-handling.ngrok-free.dev"
+                            class="rounded-r-lg bg-slate-800/80 border border-slate-600 text-slate-200 block flex-1 min-w-0 w-full text-sm p-3 focus:ring-indigo-500 focus:border-indigo-500 outline-none placeholder-slate-500 shadow-inner"
+                            placeholder="https://your-ngrok-url.ngrok-free.dev">
+                    </div>
+                    <p class="text-xs text-slate-500 mt-3"><i class="fa-solid fa-circle-info mr-1"></i>Ensure your backend (Colab/Local) is running and this URL is accurate.</p>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <script>
+        // --- Veritas AI Routing ---
+        const pageTitles = {
+            'view-home': { title: 'Deepfake Analyzer', sub: 'Upload media for multi-modal AI forensic analysis' },
+            'view-batch': { title: 'Batch Scan', sub: 'Analyze multiple files simultaneously' },
+            'view-history': { title: 'Scan History', sub: 'Review previous forensic reports' },
+            'view-intel': { title: 'Threat Intelligence', sub: 'Global deepfake signatures and trends' },
+            'view-settings': { title: 'Settings', sub: 'Configure API and application preferences' }
+        };
+
+        function switchTab(viewId, navElement) {
+            // Update active nav styling
+            document.querySelectorAll('.nav-item').forEach(el => {
+                el.classList.remove('active', 'bg-indigo-500/10', 'text-indigo-400');
+                el.classList.add('text-slate-400');
+                const bar = el.querySelector('.w-1');
+                if(bar) { bar.classList.remove('opacity-100'); bar.classList.add('opacity-0'); }
+            });
+            
+            navElement.classList.add('active', 'bg-indigo-500/10', 'text-indigo-400');
+            navElement.classList.remove('text-slate-400');
+            const activeBar = navElement.querySelector('.w-1');
+            if(activeBar) { activeBar.classList.remove('opacity-0'); activeBar.classList.add('opacity-100'); }
+
+            // Hide all views, show target
+            document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+            document.getElementById(viewId).classList.remove('hidden');
+
+            // Update Header
+            if (pageTitles[viewId]) {
+                document.getElementById('pageTitle').textContent = pageTitles[viewId].title;
+                document.getElementById('pageSubtitle').textContent = pageTitles[viewId].sub;
+            }
+        }
+
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const apiUrlInput = document.getElementById('apiUrl');
+        let uploadedFileObjectURL = null;
+
+        // Drag & Drop
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+        dropZone.addEventListener('dragleave', (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length) { fileInput.files = e.dataTransfer.files; processFile(fileInput.files[0]); }
+        });
+        fileInput.addEventListener('change', (e) => { if (e.target.files.length) processFile(e.target.files[0]); });
+
+        async function processFile(file) {
+            let apiUrl = apiUrlInput.value.trim();
+            if (!apiUrl.startsWith('http')) apiUrl = 'https://' + apiUrl;
+            if (apiUrl.endsWith('/')) apiUrl = apiUrl.slice(0, -1);
+
+            // Show preview
+            uploadedFileObjectURL = URL.createObjectURL(file);
+            const isImage = file.type.startsWith('image/');
+            if (isImage) {
+                document.getElementById('previewThumb').src = uploadedFileObjectURL;
+                document.getElementById('previewThumb').classList.remove('hidden');
+            } else {
+                document.getElementById('previewThumb').classList.add('hidden');
+            }
+            document.getElementById('previewName').textContent = file.name;
+            document.getElementById('previewSize').textContent = (file.size / 1024 / 1024).toFixed(2) + ' MB';
+            document.getElementById('uploadPrompt').classList.add('hidden');
+            document.getElementById('uploadPreview').classList.remove('hidden');
+            document.getElementById('uploadPreview').classList.add('flex');
+
+            // Show loading
+            document.getElementById('loadingContainer').classList.remove('hidden');
+            document.getElementById('resultsDashboard').classList.add('hidden');
+            document.getElementById('progressBar').style.width = '10%';
+            document.getElementById('loadingText').textContent = 'Uploading media...';
+            document.getElementById('loadingSubtext').textContent = file.name;
+
+            const fd = new FormData();
+            fd.append('file', file);
+
+            try {
+                document.getElementById('progressBar').style.width = '30%';
+                document.getElementById('loadingText').textContent = 'Running AI inference...';
+                document.getElementById('loadingSubtext').textContent = 'This may take 30-60 seconds on free Colab';
+
+                const response = await fetch(apiUrl + '/detect', {
+                    method: 'POST',
+                    headers: { 'ngrok-skip-browser-warning': 'true' },
+                    body: fd
+                });
+
+                document.getElementById('progressBar').style.width = '90%';
+                const data = await response.json();
+                document.getElementById('progressBar').style.width = '100%';
+
+                if (data.task_id) {
+                    pollTask(apiUrl, data.task_id);
+                } else {
+                    setTimeout(() => showResult(data, file), 300);
+                }
+            } catch (err) {
+                showError("Connection Failed. Check your Ngrok URL or ensure the Colab cell is running.");
+            }
+        }
+
+        function pollTask(apiUrl, taskId) {
+            let interval = setInterval(async () => {
+                try {
+                    const res = await fetch(apiUrl + '/status/' + taskId, { headers: { 'ngrok-skip-browser-warning': 'true' } });
+                    const data = await res.json();
+                    if (data.state === 'SUCCESS' || data.result) { clearInterval(interval); showResult(data.result, null); }
+                    else if (data.state === 'FAILURE') { clearInterval(interval); showError("Backend analysis failed."); }
+                    else if (data.state === 'PROGRESS' && data.status) {
+                        document.getElementById('progressBar').style.width = data.status.progress + '%';
+                        document.getElementById('loadingSubtext').textContent = data.status.step || 'Processing...';
+                    }
+                } catch (err) { console.error(err); }
+            }, 2000);
+        }
+
+        function showResult(result, file) {
+            document.getElementById('loadingContainer').classList.add('hidden');
+            document.getElementById('resultsDashboard').classList.remove('hidden');
+
+            const score = result.confidence !== undefined ? result.confidence : 0;
+            const isFake = score > 0.5;
+            const percent = (score * 100).toFixed(1);
+            const color = isFake ? '#ef4444' : '#10b981';
+            const colorName = isFake ? 'red' : 'green';
+
+            // --- Verdict Ring ---
+            const ring = document.getElementById('ringFill');
+            const circumference = 2 * Math.PI * 85; // ~534
+            ring.style.stroke = color;
+            ring.setAttribute('stroke-dashoffset', circumference - (circumference * score));
+
+            document.getElementById('verdictPercent').textContent = percent + '%';
+            document.getElementById('verdictPercent').style.color = color;
+            document.getElementById('verdictTag').textContent = isFake ? 'FAKE' : 'REAL';
+            document.getElementById('verdictTag').style.color = color;
+            document.getElementById('verdictLabel').textContent = isFake ? 'Synthetic media detected — likely AI-generated or manipulated' : 'No signs of manipulation — media appears authentic';
+
+            const card = document.getElementById('verdictCard');
+            card.classList.remove('glow-red', 'glow-green');
+            card.classList.add(isFake ? 'glow-red' : 'glow-green');
+
+            // --- Score Bars ---
+            const vScore = result.breakdown?.visual_score ?? 0;
+            const aScore = result.breakdown?.audio_score;
+            const lScore = result.breakdown?.lip_sync_score;
+
+            animateBar('barVisual', 'barVisualLabel', vScore, 'indigo');
+            
+            // Fix 13: Show "No Audio" cleanly when audio_score is null
+            if (aScore != null && aScore > 0) {
+                animateBar('barAudio', 'barAudioLabel', aScore, 'cyan');
+            } else {
+                document.getElementById('barAudioLabel').textContent = 'No Audio';
+                document.getElementById('barAudioLabel').style.color = '#64748b';
+                document.getElementById('barAudio').style.width = '0%';
+            }
+            
+            // Fix 12: Hide lip-sync bar entirely when null (not computed)
+            const lipSyncContainer = document.getElementById('barLip').parentElement.parentElement;
+            if (lScore != null) {
+                animateBar('barLip', 'barLipLabel', lScore, 'amber');
+            } else {
+                lipSyncContainer.style.display = 'none';
+            }
+
+            // --- Audio Biomarkers ---
+            document.getElementById('valFlatness').textContent = (aScore != null && result.audio_flatness != null) ? result.audio_flatness.toFixed(4) : 'N/A';
+            document.getElementById('valPhase').textContent = (aScore != null && result.audio_phase != null) ? result.audio_phase.toFixed(2) : 'N/A';
+
+            // --- ELA Heatmap ---
+            const hasHeatmap = result.heatmap && result.heatmap.length > 100;
+            const hasFft = result.fft && result.fft.length > 100;
+            const hasSpec = result.spectrogram && result.spectrogram.length > 100;
+            const hasFaces = result.faces && result.faces.length > 0;
+
+            if (hasHeatmap || hasFft || hasFaces) {
+                document.getElementById('visionRow').classList.remove('hidden');
+                document.getElementById('visionRow').classList.add('grid');
+            }
+
+            if (hasHeatmap) {
+                const heatImg = document.getElementById('heatmapImg');
+                heatImg.src = 'data:image/png;base64,' + result.heatmap;
+                heatImg.classList.remove('hidden');
+
+                if (uploadedFileObjectURL) {
+                    const heatOrig = document.getElementById('heatmapOrigImg');
+                    heatOrig.src = uploadedFileObjectURL;
+                    heatOrig.classList.remove('hidden');
+                }
+            }
+
+            // --- FFT ---
+            if (hasFft || hasSpec) {
+                document.getElementById('analysisRow').classList.remove('hidden');
+                document.getElementById('analysisRow').classList.add('grid');
+            }
+
+            if (hasFft) {
+                const fftImg = document.getElementById('fftImg');
+                fftImg.src = 'data:image/png;base64,' + result.fft;
+                fftImg.classList.remove('hidden');
+            }
+
+            // --- Spectrogram ---
+            if (hasSpec) {
+                const specImg = document.getElementById('spectrogramImg');
+                specImg.src = 'data:image/png;base64,' + result.spectrogram;
+                specImg.classList.remove('hidden');
+            } else {
+                document.getElementById('spectrogramPlaceholder').classList.remove('hidden');
+            }
+
+            // --- Face Detection Overlay ---
+            if (file && file.type.startsWith('image/') && uploadedFileObjectURL) {
+                const upImg = document.getElementById('uploadedImg');
+                upImg.src = uploadedFileObjectURL;
+                upImg.classList.remove('hidden');
+                upImg.onload = () => drawFacesDOM(upImg, result.faces || []);
+            } else if (hasHeatmap) {
+                // If video, just show heatmap in both slots
+                const upImg = document.getElementById('uploadedImg');
+                upImg.src = 'data:image/png;base64,' + result.heatmap;
+                upImg.classList.remove('hidden');
+            }
+
+            // --- Face List ---
+            const faceList = document.getElementById('faceList');
+            faceList.innerHTML = '';
+            if (hasFaces) {
+                result.faces.forEach((f, i) => {
+                    const fakeProb = (f.score * 100).toFixed(1);
+                    const isFake = f.score > 0.5;
+                    const fColor = isFake ? 'text-red-400' : 'text-emerald-400';
+                    const fBg = isFake ? 'bg-red-500/10 border-red-500/20 hover:bg-red-500/20' : 'bg-emerald-500/10 border-emerald-500/20 hover:bg-emerald-500/20';
+                    
+                    const el = document.createElement('div');
+                    el.className = `flex items-center justify-between ${fBg} border rounded-lg px-3 py-2 cursor-pointer transition-colors duration-200`;
+                    el.innerHTML = `
+                        <span class="text-xs font-semibold text-slate-300"><i class="fa-solid fa-face-viewfinder ${fColor} mr-1.5"></i>Face ${i + 1}</span>
+                        <span class="text-xs font-bold ${fColor}">${fakeProb}% ${isFake ? 'FAKE' : 'REAL'}</span>
+                    `;
+                    
+                    // Hover interaction with face box
+                    el.addEventListener('mouseenter', () => {
+                        const box = document.getElementById(`face-box-${i}`);
+                        if (box) box.classList.add('ring-4', 'ring-white', 'scale-[1.02]');
+                    });
+                    el.addEventListener('mouseleave', () => {
+                        const box = document.getElementById(`face-box-${i}`);
+                        if (box) box.classList.remove('ring-4', 'ring-white', 'scale-[1.02]');
+                    });
+
+                    faceList.appendChild(el);
+                });
+            }
+
+            // --- Timeline Chart (videos) ---
+            if (result.timeline && result.timeline.length > 1) {
+                document.getElementById('timelineRow').classList.remove('hidden');
+                drawTimeline(result.timeline);
+            }
+        }
+
+        function animateBar(barId, labelId, score, colorName) {
+            const pct = (score * 100).toFixed(1);
+            setTimeout(() => {
+                document.getElementById(barId).style.width = pct + '%';
+                document.getElementById(labelId).textContent = pct + '%';
+                document.getElementById(labelId).style.color = score > 0.5 ? '#ef4444' : '#10b981';
+            }, 200);
+        }
+
+        function drawFacesDOM(img, faces) {
+            const container = document.getElementById('faceBoxesContainer');
+            container.innerHTML = '';
+            
+            // Calculate scale based on natural vs rendered size (object-fit: contain logic)
+            const natW = img.naturalWidth;
+            const natH = img.naturalHeight;
+            const visW = img.clientWidth;
+            const visH = img.clientHeight;
+
+            const scale = Math.min(visW / natW, visH / natH);
+            const actW = natW * scale;
+            const actH = natH * scale;
+            const offX = (visW - actW) / 2;
+            const offY = (visH - actH) / 2;
+
+            faces.forEach((f, i) => {
+                const [x, y, w, h] = f.bounding_box;
+                const isFakeFace = f.score > 0.5;
+                const colorHex = isFakeFace ? '#ef4444' : '#10b981';
+                
+                const boxX = offX + (x * scale);
+                const boxY = offY + (y * scale);
+                const boxW = w * scale;
+                const boxH = h * scale;
+
+                const box = document.createElement('div');
+                box.id = `face-box-${i}`;
+                box.className = 'absolute border-2 pointer-events-auto cursor-pointer transition-all duration-200';
+                box.style.left = `${boxX}px`;
+                box.style.top = `${boxY}px`;
+                box.style.width = `${boxW}px`;
+                box.style.height = `${boxH}px`;
+                box.style.borderColor = colorHex;
+                if (isFakeFace) {
+                    box.classList.add('shadow-[0_0_15px_rgba(239,68,68,0.5)]');
+                }
+
+                // Label
+                const label = document.createElement('div');
+                label.className = 'absolute -top-6 left-[-2px] px-2 py-0.5 text-[10px] font-bold text-white whitespace-nowrap rounded-t-md';
+                label.style.backgroundColor = colorHex;
+                label.textContent = `Face ${i+1}: ${(f.score*100).toFixed(0)}%`;
+                
+                box.appendChild(label);
+                container.appendChild(box);
+            });
+        }
+
+        let timelineChartInstance = null;
+        function drawTimeline(data) {
+            const ctx = document.getElementById('timelineChart').getContext('2d');
+            if (timelineChartInstance) timelineChartInstance.destroy();
+            timelineChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map((_, i) => i + 's'),
+                    datasets: [{
+                        label: 'Fake Probability',
+                        data: data.map(v => (v * 100).toFixed(1)),
+                        borderColor: '#6366f1',
+                        backgroundColor: 'rgba(99,102,241,0.1)',
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 3,
+                        pointBackgroundColor: data.map(v => v > 0.5 ? '#ef4444' : '#10b981'),
+                    }, {
+                        label: 'Threshold (50%)',
+                        data: data.map(() => 50),
+                        borderColor: 'rgba(239,68,68,0.4)',
+                        borderDash: [5, 5],
+                        pointRadius: 0,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { labels: { color: '#94a3b8', font: { size: 11 } } } },
+                    scales: {
+                        x: { ticks: { color: '#64748b' }, grid: { color: 'rgba(71,85,105,0.2)' } },
+                        y: { min: 0, max: 100, ticks: { color: '#64748b', callback: v => v + '%' }, grid: { color: 'rgba(71,85,105,0.2)' } }
+                    }
+                }
+            });
+        }
+
+        function showError(msg) {
+            document.getElementById('loadingContainer').classList.add('hidden');
+            document.getElementById('resultsDashboard').classList.remove('hidden');
+            const ring = document.getElementById('ringFill');
+            ring.setAttribute('stroke-dashoffset', '534');
+            ring.style.stroke = '#64748b';
+            document.getElementById('verdictPercent').textContent = 'ERROR';
+            document.getElementById('verdictPercent').style.color = '#64748b';
+            document.getElementById('verdictTag').textContent = '';
+            document.getElementById('verdictLabel').textContent = msg;
+        }
+
+        function resetUI() {
+            document.getElementById('resultsDashboard').classList.add('hidden');
+            document.getElementById('loadingContainer').classList.add('hidden');
+            document.getElementById('visionRow').classList.add('hidden');
+            document.getElementById('analysisRow').classList.add('hidden');
+            document.getElementById('timelineRow').classList.add('hidden');
+            document.getElementById('uploadPrompt').classList.remove('hidden');
+            document.getElementById('uploadPreview').classList.add('hidden');
+            document.getElementById('heatmapImg').classList.add('hidden');
+            if (document.getElementById('heatmapOrigImg')) {
+                document.getElementById('heatmapOrigImg').classList.add('hidden');
+            }
+            document.getElementById('fftImg').classList.add('hidden');
+            document.getElementById('spectrogramImg').classList.add('hidden');
+            document.getElementById('spectrogramPlaceholder').classList.add('hidden');
+            document.getElementById('uploadedImg').classList.add('hidden');
+            document.getElementById('faceList').innerHTML = '';
+            document.getElementById('barVisual').style.width = '0%';
+            document.getElementById('barAudio').style.width = '0%';
+            document.getElementById('barLip').style.width = '0%';
+            if (uploadedFileObjectURL) { URL.revokeObjectURL(uploadedFileObjectURL); uploadedFileObjectURL = null; }
+            fileInput.value = '';
+        }
+    </script>
+</body>
+</html>

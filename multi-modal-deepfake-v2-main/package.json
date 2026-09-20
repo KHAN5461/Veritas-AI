@@ -1,0 +1,22 @@
+{
+  "name": "multi-modal-deepfake-v2-main",
+  "version": "1.0.0",
+  "description": "This project provides a robust, production-ready AI pipeline for detecting deepfakes across multiple media modalities: **Video, Audio, and Image**.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "tailwindcss": "^4.3.3",
+    "turbo": "^2.10.13"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "packageManager": "npm@10.8.2"
+}

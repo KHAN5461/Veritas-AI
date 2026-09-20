@@ -1,0 +1,722 @@
+<header class="fixed top-0 left-0 right-0 z-50 bg-surface/90 backdrop-blur-xl border-b border-outline-variant/30 shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 w-full px-gutter flex items-center justify-between gap-md"><div class="flex items-center gap-md"><div class="flex items-center gap-sm"><div class="w-9 h-9 rounded-lg bg-primary flex items-center justify-center text-on-primary shadow-sm"><span class="material-symbols-outlined text-[20px]">verified_user</span></div><div class="flex flex-col"><span class="font-title-lg text-title-lg text-primary leading-tight tracking-tight">TruthScan</span><span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Veritas AI Forensics</span></div></div><div class="hidden xl:flex items-center gap-xs px-sm py-xs rounded-full bg-surface-container border border-outline-variant/40"><span class="w-2 h-2 rounded-full bg-tertiary-fixed-dim animate-pulse"></span><span class="font-mono-sm text-mono-sm text-on-surface font-medium">HF-Ensemble v4.2 • CUDA Active</span><span class="font-mono-sm text-mono-sm text-on-surface-variant">(42ms)</span></div></div><nav class="hidden lg:flex items-center gap-xs p-xs rounded-lg bg-surface-container-low" data-active-classes="bg-primary-container text-on-primary font-semibold shadow-sm"><a class="px-md py-xs rounded text-on-surface-variant font-label-md text-label-md transition-colors hover:text-on-surface hover:bg-surface-container-high" data-path="deepfake-analyzer" href="#">Deepfake Analyzer</a><a class="px-md py-xs rounded text-on-surface-variant font-label-md text-label-md transition-colors hover:text-on-surface hover:bg-surface-container-high" data-path="batch-queue-&amp;-ingestion" href="#">Batch Queue &amp; Ingestion</a><a class="px-md py-xs rounded text-on-surface-variant font-label-md text-label-md transition-colors hover:text-on-surface hover:bg-surface-container-high" data-path="scan-history-&amp;-audit" href="#">Scan History &amp; Audit</a><a aria-current="page" class="px-md py-xs rounded transition-colors bg-primary-container text-on-primary font-semibold shadow-sm" data-path="threat-intelligence" href="#">Threat Intelligence</a><a class="px-md py-xs rounded text-on-surface-variant font-label-md text-label-md transition-colors hover:text-on-surface hover:bg-surface-container-high" data-path="enterprise-api-&amp;-model-hub" href="#">Enterprise API &amp; Model Hub</a><a class="px-md py-xs rounded text-on-surface-variant font-label-md text-label-md transition-colors hover:text-on-surface hover:bg-surface-container-high" data-path="settings" href="#">Settings</a></nav><div class="flex items-center gap-sm"><button class="flex items-center gap-xs px-md py-xs rounded bg-surface-container-high text-on-surface hover:bg-surface-container-highest transition-colors font-label-md text-label-md" type="button"><span class="material-symbols-outlined text-[16px]">file_download</span><span class="hidden 2xl:inline">Export Forensic Report (PDF)</span></button><button class="flex items-center gap-xs px-md py-xs rounded bg-primary text-on-primary hover:bg-primary-container transition-colors font-label-md text-label-md shadow-sm" type="button"><span class="material-symbols-outlined text-[16px]">cloud_upload</span><span>Upload Media</span></button><div class="flex items-center gap-xs px-sm py-xs rounded bg-surface-container text-on-surface-variant" title="Telemetry / Core Cluster 99.98% Operational"><span class="material-symbols-outlined text-tertiary text-[18px]">shield_with_heart</span><span class="hidden sm:inline font-mono-sm text-mono-sm">HEALTHY</span></div><div class="flex items-center gap-sm pl-xs"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div><div class="hidden md:flex flex-col text-left"><span class="font-label-md text-label-md text-on-surface font-semibold leading-tight">Dr. A. Thorne</span><span class="font-label-md text-label-md text-on-surface-variant leading-tight">Sr. Forensic Lead</span></div></div></div></div></header><aside class="fixed left-0 top-16 bottom-0 w-64 bg-surface-container-lowest border-r border-outline-variant/30 flex flex-col justify-between py-md z-40"><div class="flex flex-col gap-md"><div class="px-md"><div class="flex items-center justify-between text-on-surface-variant font-label-md text-label-md uppercase tracking-wider mb-sm"><span>Forensic Operations</span><span class="material-symbols-outlined text-[16px]">security</span></div></div><nav class="flex flex-col gap-xs px-sm" data-active-classes="bg-surface-container-high text-primary font-semibold border-l-2 border-primary"><a class="flex items-center gap-sm px-md py-sm rounded text-on-surface-variant font-body-md text-body-md hover:bg-surface-container-low hover:text-on-surface transition-all" data-path="deepfake-analyzer" href="#"><span class="material-symbols-outlined text-[18px]">csv</span><span>Analyzer Console</span></a><a class="flex items-center gap-sm px-md py-sm rounded text-on-surface-variant font-body-md text-body-md hover:bg-surface-container-low hover:text-on-surface transition-all" data-path="batch-queue-&amp;-ingestion" href="#"><span class="material-symbols-outlined text-[18px]">view_list</span><span>Batch Pipeline</span></a><a class="flex items-center gap-sm px-md py-sm rounded text-on-surface-variant font-body-md text-body-md hover:bg-surface-container-low hover:text-on-surface transition-all" data-path="scan-history-&amp;-audit" href="#"><span class="material-symbols-outlined text-[18px]">history_toggle_off</span><span>Chain of Custody</span></a><a aria-current="page" class="flex items-center gap-sm px-md py-sm rounded transition-all bg-surface-container-high text-primary font-semibold border-l-2 border-primary" data-path="threat-intelligence" href="#"><span class="material-symbols-outlined text-[18px]">radar</span><span>Threat Feeds</span></a><a class="flex items-center gap-sm px-md py-sm rounded text-on-surface-variant font-body-md text-body-md hover:bg-surface-container-low hover:text-on-surface transition-all" data-path="enterprise-api-&amp;-model-hub" href="#"><span class="material-symbols-outlined text-[18px]">hub</span><span>Model Hub &amp; SDK</span></a><a class="flex items-center gap-sm px-md py-sm rounded text-on-surface-variant font-body-md text-body-md hover:bg-surface-container-low hover:text-on-surface transition-all" data-path="settings" href="#"><span class="material-symbols-outlined text-[18px]">tune</span><span>Engine Config</span></a></nav></div><div class="px-md flex flex-col gap-sm"><div class="p-sm rounded bg-surface-container-low border border-outline-variant/30"><div class="flex items-center justify-between text-on-surface-variant font-mono-sm text-mono-sm mb-xs"><span>CUDA VRAM</span><span>7.8 / 24 GB</span></div><div class="w-full h-1.5 bg-surface-container rounded-full overflow-hidden"><div class="bg-secondary h-full rounded-full w-1/3"></div></div></div><div class="flex items-center justify-between text-on-surface-variant font-mono-sm text-mono-sm pt-xs border-t border-outline-variant/20"><span>Cluster node-04</span><span class="flex items-center gap-xs"><span class="w-1.5 h-1.5 rounded-full bg-tertiary-fixed-dim"></span>Synced</span></div></div></aside><div class="pl-64"><main class="relative w-full pt-16 min-h-screen bg-background"><div class="flex flex-col w-full">
+<!-- Forensics Tactical Subheader Bar -->
+<section class="w-full px-gutter py-md bg-surface border-b-0">
+<div class="max-w-[1520px] mx-auto flex flex-col xl:flex-row items-start xl:items-center justify-between gap-md">
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 rounded-xl bg-error/10 text-error flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-[28px]">warning</span>
+</div>
+<div>
+<div class="flex items-center gap-xs">
+<span class="font-label-md text-label-md uppercase tracking-wider text-error font-semibold">DEFCON-AI • Active Intercept</span>
+<span class="px-xs py-0.5 rounded text-[10px] font-mono-sm uppercase bg-error text-on-error font-bold">Priority 1</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-primary tracking-tight">Global Synthetic Threat Intelligence &amp; Signatures</h1>
+</div>
+</div>
+<!-- Quick Status Badges -->
+<div class="flex flex-wrap items-center gap-sm">
+<div class="px-md py-sm rounded-lg bg-surface-container-lowest shadow-sm flex items-center gap-sm">
+<span class="w-2.5 h-2.5 rounded-full bg-error animate-ping"></span>
+<div class="flex flex-col">
+<span class="font-mono-sm text-mono-sm text-on-surface-variant leading-none">THREAT LEVEL</span>
+<span class="font-title-lg text-title-lg text-error font-bold leading-tight">ELEVATED (LEVEL 4)</span>
+</div>
+</div>
+<div class="px-md py-sm rounded-lg bg-surface-container-lowest shadow-sm flex items-center gap-sm">
+<span class="material-symbols-outlined text-secondary text-[22px]">memory</span>
+<div class="flex flex-col">
+<span class="font-mono-sm text-mono-sm text-on-surface-variant leading-none">ZERO-DAY GENERATORS</span>
+<span class="font-title-lg text-title-lg text-primary font-bold leading-tight">34 Active Tracked</span>
+</div>
+</div>
+<div class="px-md py-sm rounded-lg bg-surface-container-lowest shadow-sm flex items-center gap-sm">
+<span class="material-symbols-outlined text-on-tertiary-container text-[22px]">hub</span>
+<div class="flex flex-col">
+<span class="font-mono-sm text-mono-sm text-on-surface-variant leading-none">SIGNATURE ACCURACY</span>
+<span class="font-title-lg text-title-lg text-on-tertiary-fixed-variant font-bold leading-tight">99.4% F1-Ensemble</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Threat Ticker & Monitored Generators Strip -->
+<section class="w-full bg-surface-container-high py-xs px-gutter overflow-x-auto">
+<div class="max-w-[1520px] mx-auto flex items-center justify-between gap-md min-w-[1000px]">
+<div class="flex items-center gap-xs font-mono-sm text-mono-sm text-primary font-semibold shrink-0">
+<span class="material-symbols-outlined text-[16px] text-secondary">radar</span>
+<span>RADAR CLUSTER FEED:</span>
+</div>
+<div class="flex items-center gap-xs text-on-surface-variant font-mono-sm text-mono-sm truncate">
+<span class="px-sm py-0.5 rounded bg-surface-container-lowest text-primary font-medium">Sora 2 (OpenAI)</span>
+<span class="text-outline-variant">•</span>
+<span class="px-sm py-0.5 rounded bg-surface-container-lowest text-primary font-medium">Kling 1.5</span>
+<span class="text-outline-variant">•</span>
+<span class="px-sm py-0.5 rounded bg-surface-container-lowest text-primary font-medium">Wan 2.5</span>
+<span class="text-outline-variant">•</span>
+<span class="px-sm py-0.5 rounded bg-surface-container-lowest text-primary font-medium">MiniMax Hailuo</span>
+<span class="text-outline-variant">•</span>
+<span class="px-sm py-0.5 rounded bg-surface-container-lowest text-primary font-medium">LivePortrait</span>
+<span class="text-outline-variant">•</span>
+<span class="px-sm py-0.5 rounded bg-surface-container-lowest text-primary font-medium">ElevenLabs v2</span>
+<span class="text-outline-variant">•</span>
+<span class="px-sm py-0.5 rounded bg-surface-container-lowest text-primary font-medium">Hunyuan Video</span>
+<span class="text-outline-variant">•</span>
+<span class="px-sm py-0.5 rounded bg-surface-container-lowest text-primary font-medium">Grok Imagine</span>
+</div>
+<div class="flex items-center gap-xs shrink-0 font-mono-sm text-mono-sm text-on-surface">
+<span class="w-2 h-2 rounded-full bg-tertiary-fixed-dim"></span>
+<span>IOC Sync: 14s ago</span>
+</div>
+</div>
+</section>
+<!-- Interactive Global Heatmap & Modality Surge Visualizer -->
+<section class="w-full px-gutter py-lg">
+<div class="max-w-[1520px] mx-auto flex flex-col gap-lg">
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-lg">
+<!-- Global Heatmap & Attack Intercept Vector Map (xl:col-span-8) -->
+<div class="xl:col-span-8 rounded-xl bg-surface-container-lowest p-lg shadow-sm flex flex-col justify-between">
+<div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-md mb-md">
+<div>
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-secondary text-[20px]">public</span>
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Geographic Telemetry</span>
+</div>
+<h2 class="font-title-lg text-title-lg text-primary">Targeted Synthetic Infiltration &amp; Geo Vectors</h2>
+</div>
+<div class="flex items-center gap-xs bg-surface-container px-xs py-0.5 rounded-lg">
+<button class="px-sm py-xs rounded bg-surface-container-lowest text-primary font-label-md text-label-md font-semibold shadow-sm" type="button">Live Hotspots</button>
+<button class="px-sm py-xs rounded text-on-surface-variant hover:text-on-surface font-label-md text-label-md" type="button">24h Trace</button>
+<button class="px-sm py-xs rounded text-on-surface-variant hover:text-on-surface font-label-md text-label-md" type="button">7D Trend</button>
+</div>
+</div>
+<!-- Interactive Vector Canvas / SVG Heatmap -->
+<div class="relative w-full h-[360px] bg-surface-container-low rounded-lg overflow-hidden flex items-center justify-center p-md">
+<svg class="w-full h-full text-outline-variant/40" fill="none" viewbox="0 0 960 480" xmlns="http://www.w3.org/2000/svg">
+<!-- World Continent Grids -->
+<path d="M120,90 Q180,60 260,80 T340,140 T280,240 T190,260 T130,170 Z" fill="currentColor" fill-opacity="0.25"></path>
+<path d="M220,290 Q270,300 300,360 T270,440 T220,420 T190,340 Z" fill="currentColor" fill-opacity="0.25"></path>
+<path d="M430,90 Q510,70 560,110 T520,220 T460,200 T420,130 Z" fill="currentColor" fill-opacity="0.25"></path>
+<path d="M450,230 Q530,220 570,290 T540,410 T460,390 T430,280 Z" fill="currentColor" fill-opacity="0.25"></path>
+<path d="M570,80 Q720,60 840,110 T890,240 T780,260 T620,180 Z" fill="currentColor" fill-opacity="0.25"></path>
+<path d="M720,320 Q800,310 830,360 T790,430 T710,400 Z" fill="currentColor" fill-opacity="0.25"></path>
+<!-- Lat/Long Tactical Grid -->
+<line stroke="currentColor" stroke-dasharray="4 6" stroke-opacity="0.2" x1="0" x2="960" y1="120" y2="120"></line>
+<line stroke="currentColor" stroke-dasharray="4 6" stroke-opacity="0.3" x1="0" x2="960" y1="240" y2="240"></line>
+<line stroke="currentColor" stroke-dasharray="4 6" stroke-opacity="0.2" x1="0" x2="960" y1="360" y2="360"></line>
+<line stroke="currentColor" stroke-dasharray="4 6" stroke-opacity="0.2" x1="240" x2="240" y1="0" y2="480"></line>
+<line stroke="currentColor" stroke-dasharray="4 6" stroke-opacity="0.3" x1="480" x2="480" y1="0" y2="480"></line>
+<line stroke="currentColor" stroke-dasharray="4 6" stroke-opacity="0.2" x1="720" x2="720" y1="0" y2="480"></line>
+<!-- Intercept Vector Beams -->
+<!-- Cluster 1: APAC -> US Wall St Financial Hub -->
+<path class="animate-pulse" d="M760,180 C580,80 340,90 220,150" stroke="#ba1a1a" stroke-dasharray="6 4" stroke-width="2.5"></path>
+<circle cx="220" cy="150" fill="#ba1a1a" fill-opacity="0.15" r="16"></circle>
+<circle cx="220" cy="150" fill="#ba1a1a" fill-opacity="0.4" r="8"></circle>
+<circle cx="220" cy="150" fill="#ba1a1a" r="4"></circle>
+<!-- Cluster 2: Eastern Europe -> Central EU Defense Ops -->
+<path d="M620,130 C560,120 520,130 490,145" stroke="#4b41e1" stroke-dasharray="4 3" stroke-width="2"></path>
+<circle cx="490" cy="145" fill="#4b41e1" fill-opacity="0.2" r="12"></circle>
+<circle cx="490" cy="145" fill="#4b41e1" r="4"></circle>
+<!-- Cluster 3: Latin America Fintech KYC Bypass Wave -->
+<path d="M260,330 C250,280 240,220 230,190" stroke="#004a32" stroke-width="2"></path>
+<circle cx="260" cy="330" fill="#004a32" fill-opacity="0.2" r="10"></circle>
+<circle cx="260" cy="330" fill="#004a32" r="4"></circle>
+<!-- Origin Points -->
+<circle cx="760" cy="180" fill="#ba1a1a" r="6"></circle>
+<circle cx="620" cy="130" fill="#4b41e1" r="5"></circle>
+</svg>
+<!-- Floating Geo Pins with Real-time Tooltip Cards -->
+<div class="absolute top-12 left-1/4 bg-surface/95 backdrop-blur-md px-sm py-xs rounded shadow-md border-0 pointer-events-none">
+<span class="font-mono-sm text-mono-sm text-error font-bold flex items-center gap-xs">
+<span class="w-2 h-2 rounded-full bg-error animate-ping"></span>
+                NYC Financial Core • 82 attacks/min
+              </span>
+<p class="font-label-md text-label-md text-on-surface-variant">Primary: LivePortrait + CosyVoice Audio Reenactment</p>
+</div>
+<div class="absolute bottom-10 right-1/4 bg-surface/95 backdrop-blur-md px-sm py-xs rounded shadow-md border-0 pointer-events-none">
+<span class="font-mono-sm text-mono-sm text-secondary font-bold flex items-center gap-xs">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+                APAC Cloud Nodes • High Cluster Density
+              </span>
+<p class="font-label-md text-label-md text-on-surface-variant">Originating: Sora 2 / Kling 1.5 Video Fabrications</p>
+</div>
+</div>
+<!-- Bottom Micro-Metrics within Heatmap Card -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-sm pt-md mt-md bg-surface-container-low rounded-lg p-sm">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface-variant">Live Ingestion Rate</span>
+<span class="font-title-lg text-title-lg text-primary font-bold">14,280 fps</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface-variant">Mean Intercept Lag</span>
+<span class="font-title-lg text-title-lg text-tertiary-container font-bold">42 ms</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface-variant">Zero-Day Hits (24h)</span>
+<span class="font-title-lg text-title-lg text-error font-bold">1,894</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface-variant">Signature Quarantine</span>
+<span class="font-title-lg text-title-lg text-secondary font-bold">100% Locked</span>
+</div>
+</div>
+</div>
+<!-- Targeted Sectors & Modality Surge Breakdown (xl:col-span-4) -->
+<div class="xl:col-span-4 flex flex-col gap-md">
+<!-- Sector Breakdown -->
+<div class="rounded-xl bg-surface-container-lowest p-lg shadow-sm">
+<div class="flex items-center justify-between mb-sm">
+<h3 class="font-title-lg text-title-lg text-primary">Targeted Sectors</h3>
+<span class="material-symbols-outlined text-outline">pie_chart</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-md">Relative synthetic attack volume distributed by institutional vertical.</p>
+<div class="flex flex-col gap-sm">
+<!-- Sector Item 1 -->
+<div>
+<div class="flex justify-between items-center mb-xs">
+<span class="font-label-md text-label-md text-on-surface font-semibold flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px] text-error">account_balance</span>
+                    Financial Institutions
+                  </span>
+<span class="font-mono-sm text-mono-sm text-error font-bold">42%</span>
+</div>
+<div class="w-full h-2 rounded-full bg-surface-container overflow-hidden">
+<div class="h-full bg-error rounded-full" style="width: 42%;"></div>
+</div>
+</div>
+<!-- Sector Item 2 -->
+<div>
+<div class="flex justify-between items-center mb-xs">
+<span class="font-label-md text-label-md text-on-surface font-semibold flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px] text-secondary">newspaper</span>
+                    Media &amp; Journalism
+                  </span>
+<span class="font-mono-sm text-mono-sm text-secondary font-bold">28%</span>
+</div>
+<div class="w-full h-2 rounded-full bg-surface-container overflow-hidden">
+<div class="h-full bg-secondary rounded-full" style="width: 28%;"></div>
+</div>
+</div>
+<!-- Sector Item 3 -->
+<div>
+<div class="flex justify-between items-center mb-xs">
+<span class="font-label-md text-label-md text-on-surface font-semibold flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px] text-primary">shield</span>
+                    Government &amp; Defense
+                  </span>
+<span class="font-mono-sm text-mono-sm text-primary font-bold">18%</span>
+</div>
+<div class="w-full h-2 rounded-full bg-surface-container overflow-hidden">
+<div class="h-full bg-primary rounded-full" style="width: 18%;"></div>
+</div>
+</div>
+<!-- Sector Item 4 -->
+<div>
+<div class="flex justify-between items-center mb-xs">
+<span class="font-label-md text-label-md text-on-surface font-semibold flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px] text-outline">badge</span>
+                    Enterprise KYC &amp; Onboarding
+                  </span>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant font-bold">12%</span>
+</div>
+<div class="w-full h-2 rounded-full bg-surface-container overflow-hidden">
+<div class="h-full bg-outline rounded-full" style="width: 12%;"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Modality Surge Breakdown -->
+<div class="rounded-xl bg-surface-container-lowest p-lg shadow-sm flex flex-col justify-between flex-1">
+<div class="flex items-center justify-between mb-xs">
+<h3 class="font-title-lg text-title-lg text-primary">Attack Modality Surge</h3>
+<span class="font-mono-sm text-mono-sm text-tertiary-container bg-surface-container-high px-xs py-0.5 rounded font-bold">MoM Delta</span>
+</div>
+<div class="grid grid-cols-1 gap-sm">
+<div class="p-sm rounded-lg bg-surface-container-low flex items-center justify-between">
+<div class="flex items-center gap-sm">
+<div class="w-8 h-8 rounded bg-primary-container text-on-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">graphic_eq</span>
+</div>
+<div>
+<span class="font-body-md text-body-md font-semibold text-primary block">Audio Voice Cloning</span>
+<span class="font-label-md text-label-md text-on-surface-variant">Zero-shot cross-lingual spoofing</span>
+</div>
+</div>
+<span class="font-mono-sm text-mono-sm text-error font-bold flex items-center">
+<span class="material-symbols-outlined text-[16px]">arrow_upward</span>+142%
+                </span>
+</div>
+<div class="p-sm rounded-lg bg-surface-container-low flex items-center justify-between">
+<div class="flex items-center gap-sm">
+<div class="w-8 h-8 rounded bg-secondary-container text-on-secondary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">videocam</span>
+</div>
+<div>
+<span class="font-body-md text-body-md font-semibold text-primary block">Webcam Real-time Face Swap</span>
+<span class="font-label-md text-label-md text-on-surface-variant">Direct virtual camera injection</span>
+</div>
+</div>
+<span class="font-mono-sm text-mono-sm text-error font-bold flex items-center">
+<span class="material-symbols-outlined text-[16px]">arrow_upward</span>+89%
+                </span>
+</div>
+<div class="p-sm rounded-lg bg-surface-container-low flex items-center justify-between">
+<div class="flex items-center gap-sm">
+<div class="w-8 h-8 rounded bg-surface-container-highest text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">motion_photos_on</span>
+</div>
+<div>
+<span class="font-body-md text-body-md font-semibold text-primary block">Diffusion Temporal Blending</span>
+<span class="font-label-md text-label-md text-on-surface-variant">Frame-interpolated multi-gen clips</span>
+</div>
+</div>
+<span class="font-mono-sm text-mono-sm text-error font-bold flex items-center">
+<span class="material-symbols-outlined text-[16px]">arrow_upward</span>+64%
+                </span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Emerging Generative Architecture Signature Feed (Model Cards) -->
+<section class="w-full px-gutter py-md">
+<div class="max-w-[1520px] mx-auto flex flex-col gap-md">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-sm">
+<div>
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-secondary text-[20px]">fingerprint</span>
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Model Cards &amp; Artifact Forensics</span>
+</div>
+<h2 class="font-headline-lg text-headline-lg text-primary">Emerging Architecture Signatures</h2>
+</div>
+<div class="flex items-center gap-sm">
+<button class="px-md py-xs rounded bg-surface-container text-primary hover:bg-surface-container-high font-label-md text-label-md flex items-center gap-xs" type="button">
+<span class="material-symbols-outlined text-[16px]">tune</span>
+<span>Filter Generator Families</span>
+</button>
+<button class="px-md py-xs rounded bg-primary text-on-primary hover:bg-primary-container font-label-md text-label-md flex items-center gap-xs shadow-sm" type="button">
+<span class="material-symbols-outlined text-[16px]">download</span>
+<span>Export YARA/Suricata Rules</span>
+</button>
+</div>
+</div>
+<!-- Bento Cards for Model Signatures -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-lg">
+<!-- Model Card 1: Sora 2 / Kling 1.5 -->
+<div class="rounded-xl bg-surface-container-lowest p-lg shadow-sm flex flex-col justify-between">
+<div>
+<div class="flex items-start justify-between gap-sm mb-sm">
+<span class="px-sm py-xs rounded font-mono-sm text-mono-sm font-bold bg-primary text-on-primary">SIG-VID-0941</span>
+<span class="flex items-center gap-xs text-error font-mono-sm text-mono-sm font-semibold">
+<span class="w-2 h-2 rounded-full bg-error"></span> CRITICAL
+              </span>
+</div>
+<h3 class="font-title-lg text-title-lg text-primary mb-xs">OpenAI Sora 2 / Kling 1.5 Video Artifacts</h3>
+<p class="font-label-md text-label-md text-on-surface-variant mb-md">Generative World Models • Multi-frame diffusion latent drift</p>
+<!-- Forensic Visual Specimen -->
+<div class="relative w-full h-44 rounded-lg bg-surface-container overflow-hidden mb-md flex items-center justify-center">
+<img class="w-full h-full object-cover" data-alt="Microscopic forensic heatmap showing high-frequency sub-pixel temporal flickering artifacts and chromatic phase displacement in water and fluid dynamics generated by video AI, dark navy technical visualization" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA2aDAiK6ojhfQOZpV5I2PjRS4fnKU6FsrI3nKCOsLsIDENloY0I-Eif9xFHBgamCipOJL2dPHrqfxWHkPjufsnkwdCBG61jgohvRJyepJtQvQ1cYajm-AcR1wRwlmiYIDi6AbUvpAazDPMmkyAFcoUnFTe_kwQmxtTPhxz03JCvTCgQnEeN0-j1DUJXtlcmBjBeYDZogrq4sEFy364lJrENtezsRF-N7GCP3J22jl8fNEG1KkyclMO"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-transparent to-transparent"></div>
+<div class="absolute bottom-2 left-2 right-2 flex items-center justify-between px-xs py-0.5 rounded bg-surface/90 backdrop-blur-sm">
+<span class="font-mono-sm text-mono-sm text-primary font-medium">Spectral FFT Analysis: Spatial Dipole</span>
+<span class="font-mono-sm text-mono-sm text-error font-bold">99.4% F1</span>
+</div>
+</div>
+<!-- Fingerprint Signature Spec -->
+<div class="bg-surface-container-low p-sm rounded-lg mb-md flex flex-col gap-xs font-mono-sm text-mono-sm">
+<div class="flex justify-between text-on-surface-variant">
+<span>PRIMARY FINGERPRINT:</span>
+<span class="text-primary font-semibold">Sub-Pixel Temporal Flicker</span>
+</div>
+<div class="text-on-surface leading-tight">
+                High-frequency temporal flickering in non-rigid fluid dynamics; latent attention discontinuity every 12.4 frames.
+              </div>
+<div class="flex justify-between pt-xs text-on-surface-variant border-t border-outline-variant/20">
+<span>SPECTRAL DECAY:</span>
+<span class="text-error font-semibold">&gt; 1.48 kHz anomaly</span>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between pt-xs">
+<span class="font-label-md text-label-md text-on-surface-variant">Detector: <strong class="text-on-surface font-mono-sm">HF-Ensemble-v4.2</strong></span>
+<button class="text-primary hover:text-secondary font-label-md text-label-md font-semibold flex items-center gap-xs" type="button">
+              Inspect Tensor <span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</button>
+</div>
+</div>
+<!-- Model Card 2: Zero-Shot Voice Cloner -->
+<div class="rounded-xl bg-surface-container-lowest p-lg shadow-sm flex flex-col justify-between">
+<div>
+<div class="flex items-start justify-between gap-sm mb-sm">
+<span class="px-sm py-xs rounded font-mono-sm text-mono-sm font-bold bg-primary-container text-on-primary">SIG-AUD-0418</span>
+<span class="flex items-center gap-xs text-error font-mono-sm text-mono-sm font-semibold">
+<span class="w-2 h-2 rounded-full bg-error"></span> CRITICAL
+              </span>
+</div>
+<h3 class="font-title-lg text-title-lg text-primary mb-xs">Zero-Shot Voice Cloner (VITS / CosyVoice)</h3>
+<p class="font-label-md text-label-md text-on-surface-variant mb-md">Neural Acoustic Model • Few-second prompt injection</p>
+<!-- Forensic Visual Specimen -->
+<div class="relative w-full h-44 rounded-lg bg-surface-container overflow-hidden mb-md flex items-center justify-center">
+<img class="w-full h-full object-cover" data-alt="Digital audio forensic spectrogram displaying phase discontinuity at phoneme transitions, flat high-frequency spectral entropy in deepfake synthetic voice cloning, blue and emerald analytical visualization" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBOZs3-3o456jpgcywenOw4_8ow_zUfmXc41nBvaaeHP_CciKX0EDvOhtNlkCgYsQTwAyWbsVl4RddP7tlMh9gy8hlj-_5RevmETBtrIBfxhhaDQA9zIy0KwdjgYsA7N_sbVZx5GicBqod-83Jh8_n2XeZ2w9U7qTrnnFK-seW3KAmu6rGuai22B4rlUxamTJCYKFgrXzJuAvYNTjLfwuZ2AoCSR6HpZSJiQQzr0P7j3rSaG2fM4p4e"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-transparent to-transparent"></div>
+<div class="absolute bottom-2 left-2 right-2 flex items-center justify-between px-xs py-0.5 rounded bg-surface/90 backdrop-blur-sm">
+<span class="font-mono-sm text-mono-sm text-primary font-medium">Bicoherence Mel-Band Analysis</span>
+<span class="font-mono-sm text-mono-sm text-on-tertiary-fixed-variant font-bold">98.9% F1</span>
+</div>
+</div>
+<!-- Fingerprint Signature Spec -->
+<div class="bg-surface-container-low p-sm rounded-lg mb-md flex flex-col gap-xs font-mono-sm text-mono-sm">
+<div class="flex justify-between text-on-surface-variant">
+<span>PRIMARY FINGERPRINT:</span>
+<span class="text-primary font-semibold">Phoneme Phase Discontinuity</span>
+</div>
+<div class="text-on-surface leading-tight">
+                Sharp phase shift during fricative consonants /s/, /t/, /k/; flat spectral entropy &gt; 0.82 in upper harmonic envelope.
+              </div>
+<div class="flex justify-between pt-xs text-on-surface-variant border-t border-outline-variant/20">
+<span>SPECTRAL ENTROPY:</span>
+<span class="text-error font-semibold">&gt; 0.82 (Std &lt; 0.45)</span>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between pt-xs">
+<span class="font-label-md text-label-md text-on-surface-variant">Detector: <strong class="text-on-surface font-mono-sm">AcousticNet-Lite-v3</strong></span>
+<button class="text-primary hover:text-secondary font-label-md text-label-md font-semibold flex items-center gap-xs" type="button">
+              Inspect Spectrogram <span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</button>
+</div>
+</div>
+<!-- Model Card 3: LivePortrait / SimSwap v2 Reenactment -->
+<div class="rounded-xl bg-surface-container-lowest p-lg shadow-sm flex flex-col justify-between">
+<div>
+<div class="flex items-start justify-between gap-sm mb-sm">
+<span class="px-sm py-xs rounded font-mono-sm text-mono-sm font-bold bg-secondary text-on-secondary">SIG-FAC-1102</span>
+<span class="flex items-center gap-xs text-secondary-container font-mono-sm text-mono-sm font-semibold">
+<span class="w-2 h-2 rounded-full bg-secondary"></span> HIGH THREAT
+              </span>
+</div>
+<h3 class="font-title-lg text-title-lg text-primary mb-xs">LivePortrait / SimSwap v2 Reenactment</h3>
+<p class="font-label-md text-label-md text-on-surface-variant mb-md">Implicit Keypoint Driving • Real-time Video Stream Swap</p>
+<!-- Forensic Visual Specimen -->
+<div class="relative w-full h-44 rounded-lg bg-surface-container overflow-hidden mb-md flex items-center justify-center">
+<img class="w-full h-full object-cover" data-alt="Forensic facial landmark mesh tracking showing unnatural eye-gaze saccadic freeze and warping artifacts at mouth boundary during deepfake video call spoofing, high-contrast digital wireframe" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDNEBqAZT5SryPFSc6jusuGfULs5DGj_yNQuWmDQbAKMKwl6OHw-Iccg62BdZo8da_hByPANF3y5dfQM-07KEqub8e0gy3zTngPWJ4G-Epy6-u58dYJZFr8SSty-j0-Hvgk3lLN0CNn-T0RseZqBrVv6dciwhZgeW-f_gcikeU-S8U4SOd8pyJSSxt08sOLv4T7vcYeoe2c1GI2_3QqqPo4OP_4-7UdSi4UZSRAsfosUqdvwAL-uZ8K"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-transparent to-transparent"></div>
+<div class="absolute bottom-2 left-2 right-2 flex items-center justify-between px-xs py-0.5 rounded bg-surface/90 backdrop-blur-sm">
+<span class="font-mono-sm text-mono-sm text-primary font-medium">Oculomotor Saccade Analysis</span>
+<span class="font-mono-sm text-mono-sm text-secondary font-bold">99.1% F1</span>
+</div>
+</div>
+<!-- Fingerprint Signature Spec -->
+<div class="bg-surface-container-low p-sm rounded-lg mb-md flex flex-col gap-xs font-mono-sm text-mono-sm">
+<div class="flex justify-between text-on-surface-variant">
+<span>PRIMARY FINGERPRINT:</span>
+<span class="text-primary font-semibold">Saccadic Gaze Freeze &amp; Warping</span>
+</div>
+<div class="text-on-surface leading-tight">
+                Suppressed involuntary micro-saccades (&lt;0.15Hz blink rate) and perioral mask boundary warping under pitch angles &gt; 15°.
+              </div>
+<div class="flex justify-between pt-xs text-on-surface-variant border-t border-outline-variant/20">
+<span>BLINK FREQUENCY:</span>
+<span class="text-error font-semibold">0.12 Hz (Abnormal)</span>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between pt-xs">
+<span class="font-label-md text-label-md text-on-surface-variant">Detector: <strong class="text-on-surface font-mono-sm">LiveGaze-Guard-v2</strong></span>
+<button class="text-primary hover:text-secondary font-label-md text-label-md font-semibold flex items-center gap-xs" type="button">
+              Inspect Mesh <span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Recent Malicious Campaigns & Indicators of Compromise (IOC Table) -->
+<section class="w-full px-gutter py-lg">
+<div class="max-w-[1520px] mx-auto flex flex-col gap-md">
+<div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-md">
+<div>
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-error text-[20px]">security</span>
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Tactical Intercept Ledger</span>
+</div>
+<h2 class="font-headline-lg text-headline-lg text-primary">Recent Active Campaigns &amp; IOC Feed</h2>
+</div>
+<div class="flex items-center gap-sm">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-outline text-[18px]">search</span>
+<input class="pl-xl pr-md py-xs rounded-lg bg-surface-container-low text-on-surface font-body-md text-body-md focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary shadow-sm w-64" placeholder="Search IOC hashes, vectors..." type="text"/>
+</div>
+<button class="px-md py-xs rounded bg-surface-container-high text-on-surface hover:bg-surface-container-highest font-label-md text-label-md flex items-center gap-xs" type="button">
+<span class="material-symbols-outlined text-[16px]">filter_list</span>
+<span>All Sectors</span>
+</button>
+</div>
+</div>
+<!-- Ledger Table -->
+<div class="w-full rounded-xl bg-surface-container-lowest shadow-sm overflow-hidden">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low text-on-surface-variant font-label-md text-label-md uppercase tracking-wider">
+<th class="py-sm px-md">Campaign Name / IOC Hash</th>
+<th class="py-sm px-md">Target Sector</th>
+<th class="py-sm px-md">Synthetic Generator Identified</th>
+<th class="py-sm px-md">Timestamp (UTC)</th>
+<th class="py-sm px-md">Severity</th>
+<th class="py-sm px-md">Mitigation Rule Status</th>
+<th class="py-sm px-md text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container font-body-md text-body-md">
+<!-- Campaign Row 1 -->
+<tr class="hover:bg-surface-container-low/60 transition-colors">
+<td class="py-md px-md">
+<div class="flex flex-col">
+<span class="font-semibold text-primary">Operation DeepWire / WireBypass</span>
+<span class="font-mono-sm text-mono-sm text-outline">sha256:7f92e3a10...c482</span>
+</div>
+</td>
+<td class="py-md px-md">
+<span class="px-sm py-xs rounded bg-error/10 text-error font-mono-sm text-mono-sm font-semibold inline-flex items-center gap-xs">
+<span class="material-symbols-outlined text-[14px]">account_balance</span>
+                    Fintech Wire Desk
+                  </span>
+</td>
+<td class="py-md px-md">
+<div class="flex items-center gap-xs font-medium text-on-surface">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span>ElevenLabs v2 + SimSwap</span>
+</div>
+</td>
+<td class="py-md px-md font-mono-sm text-mono-sm text-on-surface-variant">
+                  2026-03-31 08:42:19
+                </td>
+<td class="py-md px-md">
+<span class="px-sm py-0.5 rounded font-mono-sm text-mono-sm font-bold bg-error text-on-error">9.8 / 10</span>
+</td>
+<td class="py-md px-md">
+<span class="inline-flex items-center gap-xs text-on-tertiary-fixed-variant font-label-md text-label-md font-semibold">
+<span class="material-symbols-outlined text-[16px]">verified</span>
+                    Rule Deployed (Global Gate)
+                  </span>
+</td>
+<td class="py-md px-md text-right">
+<button class="p-xs rounded hover:bg-surface-container text-primary" type="button">
+<span class="material-symbols-outlined text-[18px]">terminal</span>
+</button>
+</td>
+</tr>
+<!-- Campaign Row 2 -->
+<tr class="hover:bg-surface-container-low/60 transition-colors">
+<td class="py-md px-md">
+<div class="flex flex-col">
+<span class="font-semibold text-primary">GhostAnchor News Broadcast Injection</span>
+<span class="font-mono-sm text-mono-sm text-outline">sha256:bb012498...19e8</span>
+</div>
+</td>
+<td class="py-md px-md">
+<span class="px-sm py-xs rounded bg-surface-container-high text-primary font-mono-sm text-mono-sm font-semibold inline-flex items-center gap-xs">
+<span class="material-symbols-outlined text-[14px]">broadcast_on_home</span>
+                    Media &amp; News Syndicate
+                  </span>
+</td>
+<td class="py-md px-md">
+<div class="flex items-center gap-xs font-medium text-on-surface">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span>Wan 2.5 + LivePortrait</span>
+</div>
+</td>
+<td class="py-md px-md font-mono-sm text-mono-sm text-on-surface-variant">
+                  2026-03-31 07:14:02
+                </td>
+<td class="py-md px-md">
+<span class="px-sm py-0.5 rounded font-mono-sm text-mono-sm font-bold bg-error/80 text-on-error">8.9 / 10</span>
+</td>
+<td class="py-md px-md">
+<span class="inline-flex items-center gap-xs text-on-tertiary-fixed-variant font-label-md text-label-md font-semibold">
+<span class="material-symbols-outlined text-[16px]">verified</span>
+                    Rule Deployed (CDN Edge)
+                  </span>
+</td>
+<td class="py-md px-md text-right">
+<button class="p-xs rounded hover:bg-surface-container text-primary" type="button">
+<span class="material-symbols-outlined text-[18px]">terminal</span>
+</button>
+</td>
+</tr>
+<!-- Campaign Row 3 -->
+<tr class="hover:bg-surface-container-low/60 transition-colors">
+<td class="py-md px-md">
+<div class="flex flex-col">
+<span class="font-semibold text-primary">AeroDef Tender Document Spoofing</span>
+<span class="font-mono-sm text-mono-sm text-outline">sha256:d8429ab...ef41</span>
+</div>
+</td>
+<td class="py-md px-md">
+<span class="px-sm py-xs rounded bg-surface-container text-on-surface font-mono-sm text-mono-sm font-semibold inline-flex items-center gap-xs">
+<span class="material-symbols-outlined text-[14px]">shield</span>
+                    Defense Procurement
+                  </span>
+</td>
+<td class="py-md px-md">
+<div class="flex items-center gap-xs font-medium text-on-surface">
+<span class="w-2 h-2 rounded-full bg-tertiary-container"></span>
+<span>Sora 2 Latent Insertion</span>
+</div>
+</td>
+<td class="py-md px-md font-mono-sm text-mono-sm text-on-surface-variant">
+                  2026-03-31 05:51:30
+                </td>
+<td class="py-md px-md">
+<span class="px-sm py-0.5 rounded font-mono-sm text-mono-sm font-bold bg-secondary text-on-secondary">8.2 / 10</span>
+</td>
+<td class="py-md px-md">
+<span class="inline-flex items-center gap-xs text-secondary font-label-md text-label-md font-semibold">
+<span class="material-symbols-outlined text-[16px]">hourglass_top</span>
+                    Canary Stage Validation
+                  </span>
+</td>
+<td class="py-md px-md text-right">
+<button class="p-xs rounded hover:bg-surface-container text-primary" type="button">
+<span class="material-symbols-outlined text-[18px]">terminal</span>
+</button>
+</td>
+</tr>
+<!-- Campaign Row 4 -->
+<tr class="hover:bg-surface-container-low/60 transition-colors">
+<td class="py-md px-md">
+<div class="flex flex-col">
+<span class="font-semibold text-primary">PassportForge v4 Automated ID Cluster</span>
+<span class="font-mono-sm text-mono-sm text-outline">sha256:1193ea...984c</span>
+</div>
+</td>
+<td class="py-md px-md">
+<span class="px-sm py-xs rounded bg-outline-variant/30 text-on-surface-variant font-mono-sm text-mono-sm font-semibold inline-flex items-center gap-xs">
+<span class="material-symbols-outlined text-[14px]">badge</span>
+                    KYC / Neo-Banking
+                  </span>
+</td>
+<td class="py-md px-md">
+<div class="flex items-center gap-xs font-medium text-on-surface">
+<span class="w-2 h-2 rounded-full bg-outline"></span>
+<span>Grok Imagine + StyleGAN4</span>
+</div>
+</td>
+<td class="py-md px-md font-mono-sm text-mono-sm text-on-surface-variant">
+                  2026-03-31 03:22:11
+                </td>
+<td class="py-md px-md">
+<span class="px-sm py-0.5 rounded font-mono-sm text-mono-sm font-bold bg-secondary/80 text-on-secondary">7.4 / 10</span>
+</td>
+<td class="py-md px-md">
+<span class="inline-flex items-center gap-xs text-on-tertiary-fixed-variant font-label-md text-label-md font-semibold">
+<span class="material-symbols-outlined text-[16px]">verified</span>
+                    Rule Deployed (Global Gate)
+                  </span>
+</td>
+<td class="py-md px-md text-right">
+<button class="p-xs rounded hover:bg-surface-container text-primary" type="button">
+<span class="material-symbols-outlined text-[18px]">terminal</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</section>
+<!-- Threat Feed Subscription & Alert Webhook Configuration -->
+<section class="w-full px-gutter py-xl bg-surface-container-low">
+<div class="max-w-[1520px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-xl items-center">
+<div class="lg:col-span-5 flex flex-col gap-sm">
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-secondary text-[20px]">notifications_active</span>
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Real-time Push Dispatch</span>
+</div>
+<h2 class="font-headline-lg text-headline-lg text-primary">Threat Feed Subscription &amp; Webhooks</h2>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+          Stream zero-day deepfake signatures directly into your enterprise SIEM, SOAR, or firewall perimeter. Automated YARA artifact updates and low-latency payload signatures pushed within seconds of discovery.
+        </p>
+<div class="flex flex-col gap-xs pt-xs">
+<div class="flex items-center gap-sm font-body-md text-body-md text-on-surface">
+<span class="material-symbols-outlined text-tertiary-container text-[18px]">check_circle</span>
+<span>STIX / TAXII 2.1 Standard Automated Synchronization</span>
+</div>
+<div class="flex items-center gap-sm font-body-md text-body-md text-on-surface">
+<span class="material-symbols-outlined text-tertiary-container text-[18px]">check_circle</span>
+<span>Sub-50ms Webhook dispatch on Critical (Level 4/5) IOCs</span>
+</div>
+<div class="flex items-center gap-sm font-body-md text-body-md text-on-surface">
+<span class="material-symbols-outlined text-tertiary-container text-[18px]">check_circle</span>
+<span>HMAC SHA-256 Payload Signature Verification Included</span>
+</div>
+</div>
+</div>
+<!-- Webhook Config Card -->
+<div class="lg:col-span-7 rounded-xl bg-surface-container-lowest p-lg shadow-md flex flex-col gap-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[22px]">webhook</span>
+</div>
+<div>
+<span class="font-title-lg text-title-lg text-primary block leading-tight">Webhook Stream Endpoints</span>
+<span class="font-label-md text-label-md text-on-surface-variant">Active Pipeline: SOC-Enterprise-East</span>
+</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" id="webhookToggle" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-container peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-secondary"></div>
+</label>
+</div>
+<div class="flex flex-col gap-sm">
+<div>
+<label class="font-label-md text-label-md text-on-surface font-semibold mb-xs block">Production HTTPS Webhook URL</label>
+<div class="flex items-center gap-xs">
+<input class="flex-1 px-md py-xs rounded bg-surface-container-low text-on-surface font-mono-sm text-mono-sm focus:outline-none focus:ring-1 focus:ring-primary shadow-sm" readonly="" type="text" value="https://siem.internal.truthscan-veritas.corp/api/v4/threat-events"/>
+<button class="px-md py-xs rounded bg-surface-container text-primary hover:bg-surface-container-high font-label-md text-label-md" type="button">
+                Test Ping
+              </button>
+</div>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-md pt-xs">
+<div>
+<label class="font-label-md text-label-md text-on-surface font-semibold mb-xs block">Minimum Trigger Threshold</label>
+<select class="w-full px-md py-xs rounded bg-surface-container-low text-on-surface font-body-md text-body-md focus:outline-none focus:ring-1 focus:ring-primary shadow-sm">
+<option>Severity &gt; 8.0 (Critical + High Only)</option>
+<option>Severity &gt; 6.0 (All Verified Deepfakes)</option>
+<option>All Zero-Day Generator Intercepts</option>
+</select>
+</div>
+<div>
+<label class="font-label-md text-label-md text-on-surface font-semibold mb-xs block">Payload Format</label>
+<select class="w-full px-md py-xs rounded bg-surface-container-low text-on-surface font-body-md text-body-md focus:outline-none focus:ring-1 focus:ring-primary shadow-sm">
+<option>Veritas JSON Standard (RFC 7946 GeoJSON)</option>
+<option>STIX 2.1 Bundle</option>
+<option>Splunk HEC Compatible JSON</option>
+</select>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between pt-sm border-t border-surface-container">
+<div class="flex items-center gap-xs text-on-surface-variant font-mono-sm text-mono-sm">
+<span class="material-symbols-outlined text-[16px] text-tertiary-container">lock</span>
+<span>Signing Secret: ************94e0</span>
+</div>
+<div class="flex items-center gap-sm">
+<button class="px-md py-xs rounded text-primary hover:bg-surface-container font-label-md text-label-md font-semibold" type="button">
+              Regenerate Secret
+            </button>
+<button class="px-md py-xs rounded bg-primary text-on-primary hover:bg-primary-container font-label-md text-label-md font-semibold shadow-sm" type="button">
+              Save Preferences
+            </button>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div></main></div>

@@ -1,0 +1,741 @@
+<header class="fixed top-0 left-0 right-0 z-50 bg-surface/90 backdrop-blur-xl border-b border-outline-variant/30 shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 w-full px-gutter flex items-center justify-between gap-md"><div class="flex items-center gap-md"><div class="flex items-center gap-sm"><div class="w-9 h-9 rounded-lg bg-primary flex items-center justify-center text-on-primary shadow-sm"><span class="material-symbols-outlined text-[20px]">verified_user</span></div><div class="flex flex-col"><span class="font-title-lg text-title-lg text-primary leading-tight tracking-tight">TruthScan</span><span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Veritas AI Forensics</span></div></div><div class="hidden xl:flex items-center gap-xs px-sm py-xs rounded-full bg-surface-container border border-outline-variant/40"><span class="w-2 h-2 rounded-full bg-tertiary-fixed-dim animate-pulse"></span><span class="font-mono-sm text-mono-sm text-on-surface font-medium">HF-Ensemble v4.2 • CUDA Active</span><span class="font-mono-sm text-mono-sm text-on-surface-variant">(42ms)</span></div></div><nav class="hidden lg:flex items-center gap-xs p-xs rounded-lg bg-surface-container-low" data-active-classes="bg-primary-container text-on-primary font-semibold shadow-sm"><a class="px-md py-xs rounded text-on-surface-variant font-label-md text-label-md transition-colors hover:text-on-surface hover:bg-surface-container-high" data-path="deepfake-analyzer" href="#">Deepfake Analyzer</a><a aria-current="page" class="px-md py-xs rounded transition-colors bg-primary-container text-on-primary font-semibold shadow-sm" data-path="batch-queue-&amp;-ingestion" href="#">Batch Queue &amp; Ingestion</a><a class="px-md py-xs rounded text-on-surface-variant font-label-md text-label-md transition-colors hover:text-on-surface hover:bg-surface-container-high" data-path="scan-history-&amp;-audit" href="#">Scan History &amp; Audit</a><a class="px-md py-xs rounded text-on-surface-variant font-label-md text-label-md transition-colors hover:text-on-surface hover:bg-surface-container-high" data-path="threat-intelligence" href="#">Threat Intelligence</a><a class="px-md py-xs rounded text-on-surface-variant font-label-md text-label-md transition-colors hover:text-on-surface hover:bg-surface-container-high" data-path="enterprise-api-&amp;-model-hub" href="#">Enterprise API &amp; Model Hub</a><a class="px-md py-xs rounded text-on-surface-variant font-label-md text-label-md transition-colors hover:text-on-surface hover:bg-surface-container-high" data-path="settings" href="#">Settings</a></nav><div class="flex items-center gap-sm"><button class="flex items-center gap-xs px-md py-xs rounded bg-surface-container-high text-on-surface hover:bg-surface-container-highest transition-colors font-label-md text-label-md" type="button"><span class="material-symbols-outlined text-[16px]">file_download</span><span class="hidden 2xl:inline">Export Forensic Report (PDF)</span></button><button class="flex items-center gap-xs px-md py-xs rounded bg-primary text-on-primary hover:bg-primary-container transition-colors font-label-md text-label-md shadow-sm" type="button"><span class="material-symbols-outlined text-[16px]">cloud_upload</span><span>Upload Media</span></button><div class="flex items-center gap-xs px-sm py-xs rounded bg-surface-container text-on-surface-variant" title="Telemetry / Core Cluster 99.98% Operational"><span class="material-symbols-outlined text-tertiary text-[18px]">shield_with_heart</span><span class="hidden sm:inline font-mono-sm text-mono-sm">HEALTHY</span></div><div class="flex items-center gap-sm pl-xs"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div><div class="hidden md:flex flex-col text-left"><span class="font-label-md text-label-md text-on-surface font-semibold leading-tight">Dr. A. Thorne</span><span class="font-label-md text-label-md text-on-surface-variant leading-tight">Sr. Forensic Lead</span></div></div></div></div></header><aside class="fixed left-0 top-16 bottom-0 w-64 bg-surface-container-lowest border-r border-outline-variant/30 flex flex-col justify-between py-md z-40"><div class="flex flex-col gap-md"><div class="px-md"><div class="flex items-center justify-between text-on-surface-variant font-label-md text-label-md uppercase tracking-wider mb-sm"><span>Forensic Operations</span><span class="material-symbols-outlined text-[16px]">security</span></div></div><nav class="flex flex-col gap-xs px-sm" data-active-classes="bg-surface-container-high text-primary font-semibold border-l-2 border-primary"><a class="flex items-center gap-sm px-md py-sm rounded text-on-surface-variant font-body-md text-body-md hover:bg-surface-container-low hover:text-on-surface transition-all" data-path="deepfake-analyzer" href="#"><span class="material-symbols-outlined text-[18px]">csv</span><span>Analyzer Console</span></a><a aria-current="page" class="flex items-center gap-sm px-md py-sm rounded transition-all bg-surface-container-high text-primary font-semibold border-l-2 border-primary" data-path="batch-queue-&amp;-ingestion" href="#"><span class="material-symbols-outlined text-[18px]">view_list</span><span>Batch Pipeline</span></a><a class="flex items-center gap-sm px-md py-sm rounded text-on-surface-variant font-body-md text-body-md hover:bg-surface-container-low hover:text-on-surface transition-all" data-path="scan-history-&amp;-audit" href="#"><span class="material-symbols-outlined text-[18px]">history_toggle_off</span><span>Chain of Custody</span></a><a class="flex items-center gap-sm px-md py-sm rounded text-on-surface-variant font-body-md text-body-md hover:bg-surface-container-low hover:text-on-surface transition-all" data-path="threat-intelligence" href="#"><span class="material-symbols-outlined text-[18px]">radar</span><span>Threat Feeds</span></a><a class="flex items-center gap-sm px-md py-sm rounded text-on-surface-variant font-body-md text-body-md hover:bg-surface-container-low hover:text-on-surface transition-all" data-path="enterprise-api-&amp;-model-hub" href="#"><span class="material-symbols-outlined text-[18px]">hub</span><span>Model Hub &amp; SDK</span></a><a class="flex items-center gap-sm px-md py-sm rounded text-on-surface-variant font-body-md text-body-md hover:bg-surface-container-low hover:text-on-surface transition-all" data-path="settings" href="#"><span class="material-symbols-outlined text-[18px]">tune</span><span>Engine Config</span></a></nav></div><div class="px-md flex flex-col gap-sm"><div class="p-sm rounded bg-surface-container-low border border-outline-variant/30"><div class="flex items-center justify-between text-on-surface-variant font-mono-sm text-mono-sm mb-xs"><span>CUDA VRAM</span><span>7.8 / 24 GB</span></div><div class="w-full h-1.5 bg-surface-container rounded-full overflow-hidden"><div class="bg-secondary h-full rounded-full w-1/3"></div></div></div><div class="flex items-center justify-between text-on-surface-variant font-mono-sm text-mono-sm pt-xs border-t border-outline-variant/20"><span>Cluster node-04</span><span class="flex items-center gap-xs"><span class="w-1.5 h-1.5 rounded-full bg-tertiary-fixed-dim"></span>Synced</span></div></div></aside><div class="pl-64"><main class="relative w-full pt-16 min-h-screen bg-background"><div class="flex flex-col w-full">
+<!-- Sub-Header Status Ticker / Breadcrumb -->
+<div class="w-full px-gutter py-xs bg-surface-container-low flex flex-wrap items-center justify-between text-on-surface-variant font-mono-sm text-mono-sm">
+<div class="flex items-center gap-md flex-wrap">
+<span class="flex items-center gap-xs text-primary font-medium">
+<span class="material-symbols-outlined text-[15px]">inventory_2</span>
+        FORENSIC INGESTION PIPELINE
+      </span>
+<span class="opacity-40">/</span>
+<span>CLUSTER: US-EAST-SECURE-NODE4</span>
+<span class="opacity-40">/</span>
+<span class="text-tertiary font-semibold flex items-center gap-xs">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary-fixed-dim animate-ping"></span>
+        DISPATCHER: ACTIVE (POLLING)
+      </span>
+</div>
+<div class="flex items-center gap-lg">
+<span class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-[14px]">lock</span>
+        FIPS 140-2 LEVEL 3 ENCLAVE
+      </span>
+<span class="font-mono-sm text-on-surface-variant">SESSION ID: #TRU-99042-EVT</span>
+</div>
+</div>
+<div class="p-gutter flex flex-col gap-lg max-w-[1760px] mx-auto w-full">
+<!-- 1. TOP SUMMARY METRICS BANNER -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-md">
+<!-- Metric 1 -->
+<div class="bg-surface-container-lowest rounded-xl p-md shadow-sm flex flex-col justify-between relative overflow-hidden">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md uppercase tracking-wider text-on-surface-variant">Total Files in Queue</span>
+<div class="w-7 h-7 rounded-full bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[16px]">folder_open</span>
+</div>
+</div>
+<div class="mt-sm flex items-baseline gap-sm">
+<span class="font-display-lg text-display-lg text-primary leading-none">18</span>
+<span class="font-label-md text-label-md text-on-surface-variant">items pending / active</span>
+</div>
+<div class="mt-xs flex items-center justify-between text-on-surface-variant font-mono-sm text-mono-sm pt-xs">
+<span>Storage: 4.86 GB</span>
+<span class="text-primary font-medium">9.2% of spool</span>
+</div>
+<div class="w-full bg-surface-container-low h-1 rounded-full mt-xs overflow-hidden">
+<div class="bg-primary h-full rounded-full w-[38%]"></div>
+</div>
+</div>
+<!-- Metric 2 -->
+<div class="bg-surface-container-lowest rounded-xl p-md shadow-sm flex flex-col justify-between relative overflow-hidden">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md uppercase tracking-wider text-on-surface-variant">Processing Pipeline</span>
+<div class="w-7 h-7 rounded-full bg-surface-container flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[16px]">memory</span>
+</div>
+</div>
+<div class="mt-sm flex items-baseline gap-sm">
+<span class="font-display-lg text-display-lg text-secondary leading-none">3</span>
+<span class="font-label-md text-label-md text-on-surface font-medium">Active GPUs</span>
+</div>
+<div class="mt-xs flex items-center justify-between text-on-surface-variant font-mono-sm text-mono-sm pt-xs">
+<span>RTX 4090 Cluster</span>
+<span class="text-on-tertiary-container font-semibold">94% VRAM Util</span>
+</div>
+<div class="w-full bg-surface-container-low h-1 rounded-full mt-xs overflow-hidden">
+<div class="bg-secondary h-full rounded-full w-[84%]"></div>
+</div>
+</div>
+<!-- Metric 3 -->
+<div class="bg-surface-container-lowest rounded-xl p-md shadow-sm flex flex-col justify-between relative overflow-hidden">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md uppercase tracking-wider text-on-surface-variant">Avg Detection Latency</span>
+<div class="w-7 h-7 rounded-full bg-surface-container flex items-center justify-center text-primary-container">
+<span class="material-symbols-outlined text-[16px]">speed</span>
+</div>
+</div>
+<div class="mt-sm flex items-baseline gap-sm">
+<span class="font-display-lg text-display-lg text-on-surface leading-none">1.42s</span>
+<span class="font-label-md text-label-md text-on-surface-variant">/ file media</span>
+</div>
+<div class="mt-xs flex items-center justify-between text-on-surface-variant font-mono-sm text-mono-sm pt-xs">
+<span>Throughput: ~41 fps</span>
+<span class="text-tertiary font-semibold flex items-center gap-xs">
+<span class="material-symbols-outlined text-[14px]">arrow_downward</span> 18% vs v4.1
+          </span>
+</div>
+<div class="w-full bg-surface-container-low h-1 rounded-full mt-xs overflow-hidden">
+<div class="bg-primary-container h-full rounded-full w-[62%]"></div>
+</div>
+</div>
+<!-- Metric 4 -->
+<div class="bg-surface-container-lowest rounded-xl p-md shadow-sm flex flex-col justify-between relative overflow-hidden">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md uppercase tracking-wider text-on-surface-variant">Flagged Anomaly Rate</span>
+<div class="w-7 h-7 rounded-full bg-error-container flex items-center justify-center text-error">
+<span class="material-symbols-outlined text-[16px]">warning</span>
+</div>
+</div>
+<div class="mt-sm flex items-baseline gap-sm">
+<span class="font-display-lg text-display-lg text-error leading-none">38.9%</span>
+<span class="font-label-md text-label-md text-error font-semibold">High Risk</span>
+</div>
+<div class="mt-xs flex items-center justify-between text-on-surface-variant font-mono-sm text-mono-sm pt-xs">
+<span>7 of 18 High Confidence Tamper</span>
+<span class="text-error font-medium">Alert Level 2</span>
+</div>
+<div class="w-full bg-error-container h-1 rounded-full mt-xs overflow-hidden">
+<div class="bg-error h-full rounded-full w-[38.9%]"></div>
+</div>
+</div>
+</div>
+<!-- 2. MULTI-FILE DRAG & DROP UPLOAD DROPZONE & BATCH TAGGER -->
+<div class="bg-surface-container-lowest rounded-xl p-lg shadow-sm flex flex-col lg:flex-row gap-lg items-stretch">
+<!-- Drop Area -->
+<div class="flex-1 rounded-xl bg-surface-container-low hover:bg-surface-container transition-all p-lg flex flex-col items-center justify-center text-center cursor-pointer min-h-[210px] relative group" id="dropzone-area">
+<div class="w-14 h-14 rounded-full bg-primary-fixed flex items-center justify-center text-primary mb-md group-hover:scale-105 transition-transform shadow-sm">
+<span class="material-symbols-outlined text-[30px]">cloud_upload</span>
+</div>
+<div class="flex flex-col gap-xs max-w-lg">
+<div class="flex items-center justify-center gap-xs font-title-lg text-title-lg text-primary">
+<span>Drag &amp; drop evidentiary media files</span>
+<span class="font-body-md text-body-md text-on-surface-variant">or</span>
+<button class="underline font-semibold hover:text-primary-container" type="button">browse filesystem</button>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant">
+            Supports multi-part ingestion: <span class="font-mono-sm text-mono-sm font-semibold text-on-surface">MP4, MOV, WEBP, WAV, TIFF, MP3</span> up to 8GB per container.
+          </p>
+<div class="flex items-center justify-center gap-md mt-sm flex-wrap">
+<span class="inline-flex items-center gap-xs font-mono-sm text-mono-sm text-on-surface-variant bg-surface-container px-sm py-xs rounded">
+<span class="material-symbols-outlined text-[14px] text-tertiary">fingerprint</span> Instant SHA-256 Pre-Hashing
+            </span>
+<span class="inline-flex items-center gap-xs font-mono-sm text-mono-sm text-on-surface-variant bg-surface-container px-sm py-xs rounded">
+<span class="material-symbols-outlined text-[14px] text-secondary">verified</span> Automated rPPG Pulse Extraction
+            </span>
+<span class="inline-flex items-center gap-xs font-mono-sm text-mono-sm text-on-surface-variant bg-surface-container px-sm py-xs rounded">
+<span class="material-symbols-outlined text-[14px] text-primary">shield</span> Zero-Cloud E2EE Enclave
+            </span>
+</div>
+</div>
+</div>
+<!-- Batch Config & Tagging Card -->
+<div class="w-full lg:w-96 rounded-xl bg-surface-container-low p-md flex flex-col justify-between gap-md">
+<div class="flex flex-col gap-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md uppercase tracking-wider text-on-surface-variant font-semibold">Batch Metadata &amp; Custody Tag</span>
+<span class="font-mono-sm text-mono-sm text-tertiary bg-surface-container px-xs py-0.5 rounded">FIPS-READY</span>
+</div>
+<!-- Input: Batch Vault Tag -->
+<div class="flex flex-col gap-xs">
+<label class="font-label-md text-label-md text-on-surface font-medium">Evidence Vault Tag</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-sm top-2.5 text-[16px] text-on-surface-variant">tag</span>
+<input class="w-full pl-xl pr-sm py-xs rounded bg-surface-container-lowest text-on-surface font-mono-sm text-mono-sm focus:outline-none focus:bg-surface-container-high transition-colors" type="text" value="Evidence Vault #2025-08B"/>
+</div>
+</div>
+<!-- Input: Priority Selection -->
+<div class="flex flex-col gap-xs">
+<label class="font-label-md text-label-md text-on-surface font-medium">Pipeline Priority</label>
+<div class="grid grid-cols-3 gap-xs">
+<button class="py-xs px-sm rounded text-center font-label-md text-label-md bg-surface-container-lowest text-on-surface-variant hover:text-on-surface" type="button">Low</button>
+<button class="py-xs px-sm rounded text-center font-label-md text-label-md bg-surface-container-lowest text-on-surface-variant hover:text-on-surface" type="button">Normal</button>
+<button class="py-xs px-sm rounded text-center font-label-md text-label-md bg-error text-on-error font-semibold shadow-sm" type="button">Critical</button>
+</div>
+</div>
+<!-- Model Preset Selector -->
+<div class="flex flex-col gap-xs">
+<label class="font-label-md text-label-md text-on-surface font-medium">Detection Ensemble Model</label>
+<select class="w-full px-sm py-xs rounded bg-surface-container-lowest text-on-surface font-mono-sm text-mono-sm focus:outline-none">
+<option>HF-Ensemble v4.2 (Sora / Kling / Flux / ElevenLabs)</option>
+<option>DeepFake Forensic Full Vitals (Face+Voice+ECG rPPG)</option>
+<option>Voice Biometrics Only (Vocoder Glitch &amp; Formant Discontinuity)</option>
+<option>Strict Court-Admissible Standard (Triple-Validated)</option>
+</select>
+</div>
+</div>
+<div class="flex items-center gap-sm pt-xs">
+<button class="flex-1 py-xs px-md rounded bg-primary hover:bg-primary-container text-on-primary font-label-md text-label-md font-semibold transition-colors flex items-center justify-center gap-xs shadow-sm" type="button">
+<span class="material-symbols-outlined text-[16px]">bolt</span>
+            Ingest &amp; Calculate SHA-256
+          </button>
+<button class="py-xs px-sm rounded bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-label-md text-label-md transition-colors" title="Settings preset" type="button">
+<span class="material-symbols-outlined text-[16px]">tune</span>
+</button>
+</div>
+</div>
+</div>
+<!-- 4. CONTROLS & FILTERS TOOLBAR -->
+<div class="bg-surface-container-lowest rounded-xl p-md shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-md">
+<!-- Filter Chips -->
+<div class="flex items-center gap-xs flex-wrap">
+<span class="font-label-md text-label-md text-on-surface-variant font-semibold mr-xs">FILTER:</span>
+<button class="px-md py-xs rounded bg-primary text-on-primary font-label-md text-label-md font-semibold shadow-sm" type="button">
+          All (18)
+        </button>
+<button class="px-md py-xs rounded bg-surface-container-low text-on-surface-variant hover:text-on-surface font-label-md text-label-md flex items-center gap-xs" type="button">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+          In Progress (5)
+        </button>
+<button class="px-md py-xs rounded bg-surface-container-low text-error hover:bg-error-container font-label-md text-label-md font-semibold flex items-center gap-xs" type="button">
+<span class="w-2 h-2 rounded-full bg-error"></span>
+          Flagged Tampered (7)
+        </button>
+<button class="px-md py-xs rounded bg-surface-container-low text-tertiary-container hover:text-tertiary font-label-md text-label-md flex items-center gap-xs" type="button">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+          Verified Authentic (6)
+        </button>
+</div>
+<!-- Search and Batch Actions -->
+<div class="flex items-center gap-sm flex-wrap">
+<div class="relative min-w-[240px] flex-1 md:flex-initial">
+<span class="material-symbols-outlined absolute left-sm top-2 text-[16px] text-on-surface-variant">search</span>
+<input class="w-full pl-xl pr-sm py-xs rounded bg-surface-container-low text-on-surface font-mono-sm text-mono-sm focus:outline-none focus:bg-surface-container" placeholder="Search filename, hash or node..." type="text"/>
+</div>
+<div class="flex items-center gap-xs">
+<button class="flex items-center gap-xs px-sm py-xs rounded bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md transition-colors" title="Pause entire analysis queue" type="button">
+<span class="material-symbols-outlined text-[16px]">pause_circle</span>
+<span class="hidden sm:inline">Pause All</span>
+</button>
+<button class="flex items-center gap-xs px-sm py-xs rounded bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md transition-colors" title="Download raw evidence bundle zip" type="button">
+<span class="material-symbols-outlined text-[16px]">archive</span>
+<span class="hidden sm:inline">Audit Zip</span>
+</button>
+<button class="flex items-center gap-xs px-sm py-xs rounded bg-primary text-on-primary hover:bg-primary-container font-label-md text-label-md transition-colors shadow-sm" title="Export LE dossier with cryptographic chain-of-custody" type="button">
+<span class="material-symbols-outlined text-[16px]">shield_person</span>
+<span class="hidden sm:inline">LE Dossier</span>
+</button>
+</div>
+</div>
+</div>
+<!-- MAIN TWO-COLUMN SPLIT: MATRIX TABLE (LEFT) + SIDE DRAWER / INSPECTOR (RIGHT) -->
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-lg items-start">
+<!-- 3. ACTIVE INGESTION MATRIX / DATA TABLE (8 cols) -->
+<div class="xl:col-span-8 bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden flex flex-col">
+<!-- Table Header -->
+<div class="p-md bg-surface-container-low flex items-center justify-between flex-wrap gap-sm">
+<div class="flex items-center gap-sm">
+<span class="font-title-lg text-title-lg text-primary">Live Ingestion Matrix</span>
+<span class="px-xs py-0.5 rounded bg-primary-fixed font-mono-sm text-mono-sm text-on-primary-fixed font-semibold">18 FILES QUEUED</span>
+</div>
+<div class="flex items-center gap-md font-mono-sm text-mono-sm text-on-surface-variant">
+<span class="flex items-center gap-xs"><span class="w-2 h-2 rounded-full bg-secondary"></span>GPU 01: BUSY</span>
+<span class="flex items-center gap-xs"><span class="w-2 h-2 rounded-full bg-secondary"></span>GPU 02: BUSY</span>
+<span class="flex items-center gap-xs"><span class="w-2 h-2 rounded-full bg-tertiary-fixed-dim"></span>GPU 03: IDLE</span>
+</div>
+</div>
+<!-- Scrollable Table -->
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead>
+<tr class="bg-surface-container-high/40 text-on-surface-variant font-label-md text-label-md uppercase tracking-wider">
+<th class="py-sm px-md font-semibold">Media Container / Hash</th>
+<th class="py-sm px-md font-semibold">Analysis Engine State</th>
+<th class="py-sm px-md font-semibold">Anomaly Score &amp; Verdict</th>
+<th class="py-sm px-md font-semibold">Compute Node</th>
+<th class="py-sm px-md font-semibold text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-none font-body-md text-body-md">
+<!-- ROW 1: CRITICAL TAMPER (Selected State) -->
+<tr class="bg-surface-container-high/60 hover:bg-surface-container-high transition-colors cursor-pointer group" onclick="selectRow(1)">
+<td class="py-md px-md align-top">
+<div class="flex items-start gap-sm">
+<div class="w-9 h-9 rounded bg-error-container text-error flex items-center justify-center shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[20px]">videocam</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-xs">
+<span class="font-title-lg text-body-lg text-on-surface font-semibold truncate">ceo_keynote_leak_4k.mp4</span>
+<span class="px-xs rounded bg-error text-on-error font-mono-sm text-mono-sm text-[10px] uppercase font-bold">TAMPER</span>
+</div>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant">4K HEVC • 284 MB • 60fps</span>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant/80 truncate max-w-[220px]">SHA: 8f2a99c43b8109d1...</span>
+</div>
+</div>
+</td>
+<td class="py-md px-md align-top">
+<div class="flex flex-col gap-xs min-w-[180px]">
+<div class="flex items-center justify-between text-on-surface font-mono-sm text-mono-sm">
+<span class="font-medium text-secondary">Analyzing Frame 4,120 / 9,800</span>
+<span class="font-semibold text-primary">42%</span>
+</div>
+<div class="w-full bg-surface-container h-2 rounded-full overflow-hidden">
+<div class="bg-secondary h-full rounded-full w-[42%] transition-all duration-300"></div>
+</div>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant flex items-center gap-xs">
+<span class="material-symbols-outlined text-[13px] text-error">center_focus_strong</span>
+                      Face swap diffusion seam flagged
+                    </span>
+</div>
+</td>
+<td class="py-md px-md align-top">
+<div class="flex flex-col gap-xs">
+<div class="inline-flex items-center gap-xs px-sm py-xs rounded bg-error text-on-error font-label-md text-label-md font-semibold self-start shadow-sm">
+<span class="material-symbols-outlined text-[14px]">dangerous</span>
+                      96.4% CRITICAL TAMPER
+                    </div>
+<span class="font-mono-sm text-mono-sm text-error">Model: FaceReenact-ViT (99.1%)</span>
+</div>
+</td>
+<td class="py-md px-md align-top">
+<div class="flex flex-col">
+<span class="font-mono-sm text-mono-sm font-semibold text-on-surface">GPU Node 01</span>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant">RTX 4090 #0 • 68°C</span>
+<span class="font-mono-sm text-mono-sm text-tertiary">144 TFLOPS FP16</span>
+</div>
+</td>
+<td class="py-md px-md align-top text-right">
+<div class="flex items-center justify-end gap-xs">
+<button class="p-xs rounded bg-surface-container text-primary hover:bg-primary hover:text-on-primary transition-colors" title="Inspect telemetry" type="button">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+<button class="p-xs rounded bg-surface-container text-error hover:bg-error hover:text-on-error transition-colors" title="Quarantine file" type="button">
+<span class="material-symbols-outlined text-[18px]">security_update_warning</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- ROW 2: AUDIO CLONE -->
+<tr class="bg-surface-container-lowest hover:bg-surface-container-low transition-colors cursor-pointer" onclick="selectRow(2)">
+<td class="py-md px-md align-top">
+<div class="flex items-start gap-sm">
+<div class="w-9 h-9 rounded bg-error-container text-error flex items-center justify-center shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[20px]">mic</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-xs">
+<span class="font-title-lg text-body-lg text-on-surface font-semibold truncate">cfo_voicemail_cloned.wav</span>
+<span class="px-xs rounded bg-error-container text-error font-mono-sm text-mono-sm text-[10px] uppercase font-bold">SYNTHETIC</span>
+</div>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant">PCM 48kHz • 18 MB • Mono</span>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant/80 truncate max-w-[220px]">SHA: 34e81fa29c7041a9...</span>
+</div>
+</div>
+</td>
+<td class="py-md px-md align-top">
+<div class="flex flex-col gap-xs min-w-[180px]">
+<div class="flex items-center justify-between text-on-surface font-mono-sm text-mono-sm">
+<span class="font-medium text-secondary">Audio Spectral Discontinuity</span>
+<span class="font-semibold text-primary">88%</span>
+</div>
+<div class="w-full bg-surface-container h-2 rounded-full overflow-hidden">
+<div class="bg-secondary h-full rounded-full w-[88%]"></div>
+</div>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant flex items-center gap-xs">
+<span class="material-symbols-outlined text-[13px] text-error">graphic_eq</span>
+                      Vocal tract formants unnatural
+                    </span>
+</div>
+</td>
+<td class="py-md px-md align-top">
+<div class="flex flex-col gap-xs">
+<div class="inline-flex items-center gap-xs px-sm py-xs rounded bg-error-container text-error font-label-md text-label-md font-semibold self-start">
+<span class="material-symbols-outlined text-[14px]">record_voice_over</span>
+                      91.2% AUDIO CLONE
+                    </div>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant">Vocoder Match: ElevenLabs V2</span>
+</div>
+</td>
+<td class="py-md px-md align-top">
+<div class="flex flex-col">
+<span class="font-mono-sm text-mono-sm font-semibold text-on-surface">GPU Node 02</span>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant">RTX 4090 #1 • 59°C</span>
+<span class="font-mono-sm text-mono-sm text-tertiary">98 TFLOPS FP16</span>
+</div>
+</td>
+<td class="py-md px-md align-top text-right">
+<div class="flex items-center justify-end gap-xs">
+<button class="p-xs rounded bg-surface-container text-primary hover:bg-primary hover:text-on-primary transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+<button class="p-xs rounded bg-surface-container text-on-surface-variant hover:bg-surface-container-high transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- ROW 3: COMPLETED / AUTHENTIC -->
+<tr class="bg-surface-container-lowest hover:bg-surface-container-low transition-colors cursor-pointer" onclick="selectRow(3)">
+<td class="py-md px-md align-top">
+<div class="flex items-start gap-sm">
+<div class="w-9 h-9 rounded bg-tertiary-fixed text-on-tertiary-fixed flex items-center justify-center shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[20px]">verified</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-xs">
+<span class="font-title-lg text-body-lg text-on-surface font-semibold truncate">witness_statement_cam02.mp4</span>
+<span class="px-xs rounded bg-tertiary text-on-tertiary font-mono-sm text-mono-sm text-[10px] uppercase font-bold">CLEAN</span>
+</div>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant">1080p H.264 • 512 MB • 29.97fps</span>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant/80 truncate max-w-[220px]">SHA: 11c09ab823e590fa...</span>
+</div>
+</div>
+</td>
+<td class="py-md px-md align-top">
+<div class="flex flex-col gap-xs min-w-[180px]">
+<div class="flex items-center justify-between text-on-surface font-mono-sm text-mono-sm">
+<span class="font-semibold text-tertiary">Completed • Validated</span>
+<span class="font-semibold text-tertiary">100%</span>
+</div>
+<div class="w-full bg-surface-container h-2 rounded-full overflow-hidden">
+<div class="bg-tertiary h-full rounded-full w-full"></div>
+</div>
+<span class="font-mono-sm text-mono-sm text-tertiary flex items-center gap-xs">
+<span class="material-symbols-outlined text-[13px]">monitor_heart</span>
+                      Clean rPPG pulse, valid temporal continuity
+                    </span>
+</div>
+</td>
+<td class="py-md px-md align-top">
+<div class="flex flex-col gap-xs">
+<div class="inline-flex items-center gap-xs px-sm py-xs rounded bg-surface-container-high text-tertiary font-label-md text-label-md font-semibold self-start">
+<span class="material-symbols-outlined text-[14px]">verified_user</span>
+                      1.8% AUTHENTIC
+                    </div>
+<span class="font-mono-sm text-mono-sm text-primary underline cursor-pointer">Signed Certificate #TS-9912</span>
+</div>
+</td>
+<td class="py-md px-md align-top">
+<div class="flex flex-col">
+<span class="font-mono-sm text-mono-sm font-semibold text-on-surface">GPU Node 03</span>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant">Idle • Released</span>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant">Walltime: 1.28s</span>
+</div>
+</td>
+<td class="py-md px-md align-top text-right">
+<div class="flex items-center justify-end gap-xs">
+<button class="p-xs rounded bg-surface-container text-primary hover:bg-primary hover:text-on-primary transition-colors" title="Download signed verification" type="button">
+<span class="material-symbols-outlined text-[18px]">download</span>
+</button>
+<button class="p-xs rounded bg-surface-container text-on-surface-variant hover:bg-surface-container-high transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- ROW 4: QUEUED -->
+<tr class="bg-surface-container-lowest hover:bg-surface-container-low transition-colors cursor-pointer" onclick="selectRow(4)">
+<td class="py-md px-md align-top">
+<div class="flex items-start gap-sm">
+<div class="w-9 h-9 rounded bg-surface-container-high text-on-surface-variant flex items-center justify-center shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[20px]">movie</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-xs">
+<span class="font-title-lg text-body-lg text-on-surface font-semibold truncate">social_clip_broadcast_09.mov</span>
+<span class="px-xs rounded bg-surface-container text-on-surface-variant font-mono-sm text-mono-sm text-[10px] uppercase font-bold">QUEUED</span>
+</div>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant">ProRes 422 • 1.2 GB • 24fps</span>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant/80 truncate max-w-[220px]">SHA: 900fc332da11...</span>
+</div>
+</div>
+</td>
+<td class="py-md px-md align-top">
+<div class="flex flex-col gap-xs min-w-[180px]">
+<div class="flex items-center justify-between text-on-surface-variant font-mono-sm text-mono-sm">
+<span>Queued in buffer</span>
+<span>ETA 45s</span>
+</div>
+<div class="w-full bg-surface-container h-2 rounded-full overflow-hidden">
+<div class="bg-outline-variant h-full rounded-full w-[8%]"></div>
+</div>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant">Awaiting GPU worker assignment</span>
+</div>
+</td>
+<td class="py-md px-md align-top">
+<div class="flex flex-col">
+<span class="px-sm py-xs rounded bg-surface-container text-on-surface-variant font-label-md text-label-md self-start">
+                      PENDING INFERENCE
+                    </span>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant mt-xs">Priority: Normal</span>
+</div>
+</td>
+<td class="py-md px-md align-top">
+<div class="flex flex-col">
+<span class="font-mono-sm text-mono-sm text-on-surface-variant">Spool Node #2</span>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant">Buffer Pos: #4</span>
+</div>
+</td>
+<td class="py-md px-md align-top text-right">
+<div class="flex items-center justify-end gap-xs">
+<button class="p-xs rounded bg-surface-container text-on-surface-variant hover:bg-surface-container-high transition-colors" title="Move up in queue" type="button">
+<span class="material-symbols-outlined text-[18px]">arrow_upward</span>
+</button>
+<button class="p-xs rounded bg-surface-container text-error hover:bg-error hover:text-on-error transition-colors" title="Cancel ingest" type="button">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- ROW 5: SYNTHETIC TTS -->
+<tr class="bg-surface-container-lowest hover:bg-surface-container-low transition-colors cursor-pointer" onclick="selectRow(5)">
+<td class="py-md px-md align-top">
+<div class="flex items-start gap-sm">
+<div class="w-9 h-9 rounded bg-error-container text-error flex items-center justify-center shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[20px]">audio_file</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-xs">
+<span class="font-title-lg text-body-lg text-on-surface font-semibold truncate">boardroom_memo_recording.mp3</span>
+<span class="px-xs rounded bg-error-container text-error font-mono-sm text-mono-sm text-[10px] uppercase font-bold">TAMPER</span>
+</div>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant">MP3 320kbps • 4.2 MB</span>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant/80 truncate max-w-[220px]">SHA: 5c88b901dd74...</span>
+</div>
+</div>
+</td>
+<td class="py-md px-md align-top">
+<div class="flex flex-col gap-xs min-w-[180px]">
+<div class="flex items-center justify-between text-on-surface font-mono-sm text-mono-sm">
+<span class="font-semibold text-on-surface">Analysis Finalized</span>
+<span class="font-semibold text-tertiary">100%</span>
+</div>
+<div class="w-full bg-surface-container h-2 rounded-full overflow-hidden">
+<div class="bg-primary-container h-full rounded-full w-full"></div>
+</div>
+<span class="font-mono-sm text-mono-sm text-error flex items-center gap-xs">
+<span class="material-symbols-outlined text-[13px]">noise_aware</span>
+                      Neural vocoder waveform artifact detected
+                    </span>
+</div>
+</td>
+<td class="py-md px-md align-top">
+<div class="flex flex-col gap-xs">
+<div class="inline-flex items-center gap-xs px-sm py-xs rounded bg-error text-on-error font-label-md text-label-md font-semibold self-start shadow-sm">
+<span class="material-symbols-outlined text-[14px]">warning</span>
+                      84.7% SYNTHETIC TTS
+                    </div>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant">Confidence: 0.942</span>
+</div>
+</td>
+<td class="py-md px-md align-top">
+<div class="flex flex-col">
+<span class="font-mono-sm text-mono-sm font-semibold text-on-surface">GPU Node 01</span>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant">Execution: 0.41s</span>
+</div>
+</td>
+<td class="py-md px-md align-top text-right">
+<div class="flex items-center justify-end gap-xs">
+<button class="p-xs rounded bg-surface-container text-primary hover:bg-primary hover:text-on-primary transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+<button class="p-xs rounded bg-surface-container text-on-surface-variant hover:bg-surface-container-high transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Footer / Batch Stats -->
+<div class="p-md bg-surface-container-low flex flex-wrap items-center justify-between gap-md text-on-surface-variant font-mono-sm text-mono-sm">
+<div class="flex items-center gap-md">
+<span>Showing 5 of 18 Active Tasks</span>
+<span class="opacity-40">•</span>
+<span class="text-tertiary flex items-center gap-xs">
+<span class="w-2 h-2 rounded-full bg-tertiary-fixed-dim"></span> Pipeline Healthy (41.2 files/min)
+            </span>
+</div>
+<div class="flex items-center gap-xs">
+<button class="px-sm py-xs rounded bg-surface-container text-on-surface hover:bg-surface-container-high font-label-md text-label-md" type="button">Previous</button>
+<span class="px-sm py-xs rounded bg-primary text-on-primary font-label-md text-label-md">1</span>
+<button class="px-sm py-xs rounded bg-surface-container text-on-surface hover:bg-surface-container-high font-label-md text-label-md" type="button">2</button>
+<button class="px-sm py-xs rounded bg-surface-container text-on-surface hover:bg-surface-container-high font-label-md text-label-md" type="button">3</button>
+<button class="px-sm py-xs rounded bg-surface-container text-on-surface hover:bg-surface-container-high font-label-md text-label-md" type="button">Next</button>
+</div>
+</div>
+</div>
+<!-- 5. SIDE DRAWER / INSPECTOR PANEL (4 cols) -->
+<div class="xl:col-span-4 bg-surface-container-lowest rounded-xl shadow-sm p-lg flex flex-col gap-lg sticky top-20">
+<!-- Inspector Header -->
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-error text-[20px]">troubleshoot</span>
+<span class="font-title-lg text-title-lg text-primary font-semibold">Forensic Inspector</span>
+</div>
+<span class="px-xs py-0.5 rounded bg-error-container text-error font-mono-sm text-mono-sm font-bold uppercase">
+            FLAGGED #TS-4120
+          </span>
+</div>
+<!-- Selected Item Meta -->
+<div class="flex flex-col gap-xs p-md rounded-xl bg-surface-container-low">
+<div class="flex items-center justify-between">
+<span class="font-title-lg text-body-lg text-on-surface font-semibold truncate">ceo_keynote_leak_4k.mp4</span>
+<span class="font-mono-sm text-mono-sm text-secondary font-semibold">FRAME 4,120</span>
+</div>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant truncate">
+            SHA-256: 8f2a99c43b8109d1e57c6b901bce45e3...
+          </span>
+<div class="flex items-center gap-md mt-xs text-on-surface-variant font-mono-sm text-mono-sm">
+<span>Duration: 00:05:26</span>
+<span>Bitrate: 42 Mbps</span>
+<span class="text-error font-semibold">Anomaly: 96.4%</span>
+</div>
+</div>
+<!-- Frame Extraction Thumbnail Strips -->
+<div class="flex flex-col gap-xs">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md uppercase tracking-wider text-on-surface-variant font-semibold">Frame Extraction Strip (Discontinuity Region)</span>
+<span class="font-mono-sm text-mono-sm text-primary">FPS: 60.00</span>
+</div>
+<div class="grid grid-cols-4 gap-xs">
+<!-- Frame 1 -->
+<div class="flex flex-col gap-xs group relative">
+<div class="w-full h-16 rounded overflow-hidden relative bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="High contrast forensic video frame crop showing a speaker at a podium under stage lighting, face highlighted with subtle bounding box, clean corporate modern setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDEKL-9Fxunlt7LhpS-9MCF5xptWvgw-m2BLeKgiJTcgf8bltd7BOVXpRsVwd1VH8-2L78bdgZaDdjPNBJpNgq9NK0xiRFwFwarbfmxmC-QYWxl7S-LaIG6uau6Dc9QIJesMGoYPMUq5Ia_D_VsdqpmU_A4Zig0yMdd_ioy3w3UL8J9doTngPd_K9Lf-CXKX2Xvy3Jr1oLlrGjnunlJEQmDc52VLAMnkjJd5qQqhAcbJKzbfIrXQM7K"/>
+<span class="absolute bottom-1 left-1 bg-surface/90 text-on-surface font-mono-sm text-[10px] px-0.5 rounded">F:4118</span>
+</div>
+<span class="font-mono-sm text-[10px] text-on-surface-variant text-center">Score: 12%</span>
+</div>
+<!-- Frame 2 -->
+<div class="flex flex-col gap-xs group relative">
+<div class="w-full h-16 rounded overflow-hidden relative bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="Macro zoom on jawline and ear boundary showing subtle synthetic blur and diffusion artifacting under sharp key lights in a forensic laboratory visual style" src="https://lh3.googleusercontent.com/aida-public/AB6AXuABLvZQGLuCnMz3IeLkQwxNbxroLneq9ZvJbRbDzEJ6OoKKaYQRP6Ck-YmJiHh5Y1q1do7L73zzOjhI08jlGE0dUSC6gm-QE6pR9Z7pWVi9RTk5y9k75UZ5cZdyqXTqqXUZayL71J44R9cOb2uW5PNMc28ML4EdhadkDj56LU3VHL1OOCk-cXclqabzWPCTEGIFejlixAE8XL_ORCtL1d9ffvI2rO-ip4Y2R9nrdCy3CJpDmouBu09p"/>
+<span class="absolute bottom-1 left-1 bg-surface/90 text-on-surface font-mono-sm text-[10px] px-0.5 rounded">F:4119</span>
+</div>
+<span class="font-mono-sm text-[10px] text-on-surface-variant text-center">Score: 48%</span>
+</div>
+<!-- Frame 3 (Tamper peak) -->
+<div class="flex flex-col gap-xs group relative">
+<div class="w-full h-16 rounded overflow-hidden relative bg-error/20 p-0.5">
+<img class="w-full h-full object-cover rounded" data-alt="Digital forensic heat map overlay on face showing intense thermal anomaly colors around mouth and eye sockets indicating neural model hallucination and landmark jitter" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBY-5ttzgddRSWTkUuFWnDDmiyxyqfOLDi9qeGzN34g_azfg66P2CDmEq9s_uN8HUrYLpAc_VpRkdUpCDxP1xN8ur_JuNK4tUY4MDVgZVJIMYthSPkYrtyfknBNTJFKAw6CPD7z5xszGSlsQ6yXwPiqDb4ecPrYYgIqoXkGbgJpdbZGYDqR4COcbMDyinUBOmf9UUfueaZawZ08qkc70n7GoCaVyYNe4Nvm15U0meV7d28t1k7snVkA"/>
+<span class="absolute bottom-1 left-1 bg-error text-on-error font-mono-sm text-[10px] px-0.5 rounded font-bold">F:4120</span>
+</div>
+<span class="font-mono-sm text-[10px] text-error font-bold text-center">Score: 96%</span>
+</div>
+<!-- Frame 4 -->
+<div class="flex flex-col gap-xs group relative">
+<div class="w-full h-16 rounded overflow-hidden relative bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="Forensic spectrum analysis visualization showing pixel residual errors and spatial frequency anomalies around neck and clothing collar line" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBMhwTu2FRVmFxe6HWUNGAuVO2Cjh9eDQJk1_Non1vrF6ylzDgqy87KGeZ9OvNpTulrPCD_kBo-Lz7SgZgQytSkbJR4HZhgSPLddw7YqDEDrBmry1FJRteduN_ldctRtDHmHNkRWVCkWL7u0TwfthRSwXml-Zp2T6a1mD9OzKHla-XDTZKhdlCZHPbjeodi_G8PDIspKPTwuzO8tbDdPmSv9Fih0peckLO_uWGt2SnpS5RiilkbKqLu"/>
+<span class="absolute bottom-1 left-1 bg-surface/90 text-on-surface font-mono-sm text-[10px] px-0.5 rounded">F:4121</span>
+</div>
+<span class="font-mono-sm text-[10px] text-on-surface-variant text-center">Score: 89%</span>
+</div>
+</div>
+</div>
+<!-- Confidence Telemetry Breakdown (Radar/Bar Chart) -->
+<div class="flex flex-col gap-sm">
+<span class="font-label-md text-label-md uppercase tracking-wider text-on-surface-variant font-semibold">Confidence Telemetry Breakdown</span>
+<!-- Inline SVG Telemetry Graph -->
+<div class="p-sm bg-surface-container-low rounded-xl flex flex-col gap-sm">
+<div class="flex items-center justify-between text-on-surface font-mono-sm text-mono-sm">
+<span>Temporal Seam Consistency</span>
+<span class="text-error font-bold">98.4% Tampered</span>
+</div>
+<div class="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
+<div class="bg-error h-full rounded-full w-[98%]"></div>
+</div>
+<div class="flex items-center justify-between text-on-surface font-mono-sm text-mono-sm">
+<span>Biometric Blood Flow (rPPG Pulse)</span>
+<span class="text-error font-bold">Flatline / Null (94.1%)</span>
+</div>
+<div class="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
+<div class="bg-error h-full rounded-full w-[94%]"></div>
+</div>
+<div class="flex items-center justify-between text-on-surface font-mono-sm text-mono-sm">
+<span>Blink Frequency &amp; Corneal Reflection</span>
+<span class="text-secondary font-bold">Unnatural (79.2%)</span>
+</div>
+<div class="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
+<div class="bg-secondary h-full rounded-full w-[79%]"></div>
+</div>
+<div class="flex items-center justify-between text-on-surface font-mono-sm text-mono-sm">
+<span>Spatial Compression Residuals (JPEG/HEVC)</span>
+<span class="text-on-surface-variant">Double Quant (61.5%)</span>
+</div>
+<div class="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
+<div class="bg-primary h-full rounded-full w-[61%]"></div>
+</div>
+</div>
+</div>
+<!-- Sensor / Spectrogram Snapshot -->
+<div class="rounded-xl bg-surface-container-low p-md flex flex-col gap-xs">
+<div class="flex items-center justify-between text-on-surface font-label-md text-label-md font-semibold">
+<span>Spectral Noise Floor Residual</span>
+<span class="font-mono-sm text-mono-sm text-tertiary">FFT 2048 • Hanning</span>
+</div>
+<!-- Sparkline / Frequency SVG -->
+<div class="w-full h-12 flex items-end gap-1 pt-2">
+<div class="bg-primary/20 h-[30%] w-full rounded-xs"></div>
+<div class="bg-primary/25 h-[45%] w-full rounded-xs"></div>
+<div class="bg-primary/30 h-[25%] w-full rounded-xs"></div>
+<div class="bg-primary/40 h-[60%] w-full rounded-xs"></div>
+<div class="bg-primary/50 h-[80%] w-full rounded-xs"></div>
+<div class="bg-secondary h-[95%] w-full rounded-xs"></div>
+<div class="bg-error h-[100%] w-full rounded-xs animate-pulse"></div>
+<div class="bg-error h-[90%] w-full rounded-xs"></div>
+<div class="bg-secondary h-[70%] w-full rounded-xs"></div>
+<div class="bg-primary/50 h-[50%] w-full rounded-xs"></div>
+<div class="bg-primary/30 h-[35%] w-full rounded-xs"></div>
+<div class="bg-primary/20 h-[20%] w-full rounded-xs"></div>
+</div>
+<div class="flex items-center justify-between text-on-surface-variant font-mono-sm text-mono-sm">
+<span>0 Hz</span>
+<span class="text-error font-bold">Peak Spike: 14.2 kHz</span>
+<span>24 kHz</span>
+</div>
+</div>
+<!-- Inspector Action Buttons -->
+<div class="flex flex-col gap-xs pt-xs">
+<button class="w-full py-sm px-md rounded bg-primary hover:bg-primary-container text-on-primary font-label-md text-label-md font-semibold flex items-center justify-center gap-xs shadow-sm transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">verified</span>
+            Generate Cryptographic Audit Certificate
+          </button>
+<div class="grid grid-cols-2 gap-xs">
+<button class="py-xs px-sm rounded bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md flex items-center justify-center gap-xs transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">csv</span>
+              Export JSON Telemetry
+            </button>
+<button class="py-xs px-sm rounded bg-error-container hover:bg-error/20 text-error font-label-md text-label-md font-semibold flex items-center justify-center gap-xs transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">lock</span>
+              Chain-of-Custody Lock
+            </button>
+</div>
+</div>
+</div>
+</div>
+<!-- INGESTION PIPELINE ARCHITECTURE CALLOUT FOOTER -->
+<div class="rounded-xl bg-surface-container-low p-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-md">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-on-primary shrink-0">
+<span class="material-symbols-outlined text-[22px]">policy</span>
+</div>
+<div class="flex flex-col">
+<span class="font-title-lg text-title-lg text-primary">Enterprise High-Throughput Cluster Protocol</span>
+<span class="font-body-md text-body-md text-on-surface-variant">
+            Forensic analysis runs across dedicated zero-retention micro-nodes. SHA-256 verification seals are generated before VRAM allocation.
+          </span>
+</div>
+</div>
+<div class="flex items-center gap-sm">
+<a class="px-md py-xs rounded bg-surface-container-lowest hover:bg-surface-container text-on-surface font-label-md text-label-md transition-colors flex items-center gap-xs" href="#">
+<span class="material-symbols-outlined text-[16px]">description</span> Model Whitepaper
+        </a>
+<a class="px-md py-xs rounded bg-primary text-on-primary hover:bg-primary-container font-label-md text-label-md transition-colors shadow-sm flex items-center gap-xs" href="#">
+<span class="material-symbols-outlined text-[16px]">terminal</span> API Dispatch Docs
+        </a>
+</div>
+</div>
+</div>
+</div>
+</main></div>

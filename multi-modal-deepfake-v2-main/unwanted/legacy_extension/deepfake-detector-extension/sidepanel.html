@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deepfake Forensic Dashboard</title>
+    <link href="tailwind.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <script src="chart.js"></script>
+    <link href="style.css" rel="stylesheet">
+</head>
+<body class="h-screen w-full flex bg-slate-950 overflow-hidden text-slate-200">
+    <!-- Compact Sidebar Menu (Veritas AI) -->
+    <aside class="w-16 bg-slate-900 border-r border-slate-800 flex flex-col items-center transition-all duration-300 z-20 shrink-0 py-4 space-y-6">
+        
+        <!-- Logo -->
+        <div class="text-indigo-500 text-2xl group relative cursor-help">
+            <i class="fa-solid fa-shield-halved"></i>
+            <div class="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2 py-1 bg-slate-800 text-xs text-white rounded shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap">Veritas AI</div>
+        </div>
+        
+        <nav class="flex-1 flex flex-col items-center space-y-4 w-full">
+            
+            <a href="#" onclick="switchTab('view-home', this)" class="nav-item active flex items-center justify-center w-10 h-10 rounded-xl text-lg bg-indigo-500/10 text-indigo-400 relative group transition-colors">
+                <div class="absolute left-[-12px] top-1.5 bottom-1.5 w-1 bg-indigo-500 rounded-r-md"></div>
+                <i class="fa-solid fa-crosshairs"></i>
+                <div class="absolute left-full top-1/2 -translate-y-1/2 ml-4 px-2 py-1 bg-slate-800 text-xs text-white rounded shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap">Analyzer</div>
+            </a>
+            
+            <a href="#" onclick="switchTab('view-batch', this)" class="nav-item flex items-center justify-center w-10 h-10 rounded-xl text-lg text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 relative group transition-colors">
+                <div class="absolute left-[-12px] top-1.5 bottom-1.5 w-1 bg-indigo-500 rounded-r-md opacity-0 transition-opacity"></div>
+                <i class="fa-solid fa-layer-group"></i>
+                <div class="absolute left-full top-1/2 -translate-y-1/2 ml-4 px-2 py-1 bg-slate-800 text-xs text-white rounded shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap">Batch Scan</div>
+            </a>
+            
+            <a href="#" onclick="switchTab('view-history', this)" class="nav-item flex items-center justify-center w-10 h-10 rounded-xl text-lg text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 relative group transition-colors">
+                <div class="absolute left-[-12px] top-1.5 bottom-1.5 w-1 bg-indigo-500 rounded-r-md opacity-0 transition-opacity"></div>
+                <i class="fa-solid fa-clock-rotate-left"></i>
+                <div class="absolute left-full top-1/2 -translate-y-1/2 ml-4 px-2 py-1 bg-slate-800 text-xs text-white rounded shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap">History</div>
+            </a>
+            
+            <a href="#" onclick="switchTab('view-intel', this)" class="nav-item flex items-center justify-center w-10 h-10 rounded-xl text-lg text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 relative group transition-colors mt-auto">
+                <div class="absolute left-[-12px] top-1.5 bottom-1.5 w-1 bg-indigo-500 rounded-r-md opacity-0 transition-opacity"></div>
+                <i class="fa-solid fa-globe"></i>
+                <div class="absolute left-full top-1/2 -translate-y-1/2 ml-4 px-2 py-1 bg-slate-800 text-xs text-white rounded shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap">Threat Intel</div>
+            </a>
+        </nav>
+
+        <a href="#" onclick="switchTab('view-settings', this)" class="nav-item flex items-center justify-center w-10 h-10 rounded-xl text-lg text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 relative group transition-colors">
+            <div class="absolute left-[-12px] top-1.5 bottom-1.5 w-1 bg-indigo-500 rounded-r-md opacity-0 transition-opacity"></div>
+            <i class="fa-solid fa-gear"></i>
+            <div class="absolute left-full top-1/2 -translate-y-1/2 ml-4 px-2 py-1 bg-slate-800 text-xs text-white rounded shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap">Settings</div>
+        </a>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 flex flex-col h-screen overflow-hidden relative bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-slate-950">
+        
+        <header class="h-16 flex items-center justify-between px-4 border-b border-slate-800/50 bg-slate-900/30 backdrop-blur-sm z-10 shrink-0">
+            <div>
+                <h2 id="pageTitle" class="text-base font-bold text-slate-100">Deepfake Analyzer</h2>
+                <p id="pageSubtitle" class="text-[10px] text-slate-400">Multi-modal AI forensic analysis</p>
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-4 custom-scrollbar relative">
+            
+            <!-- HOME / ANALYZER VIEW -->
+            <section id="view-home" class="view-section w-full max-w-4xl mx-auto space-y-6 fade-in pb-10">
+                
+                <!-- Upload Zone -->
+                <div class="glass rounded-xl overflow-hidden shadow-xl shadow-indigo-500/5 border border-slate-700/50">
+                    <div id="dropZone" class="drop-zone p-8 text-center cursor-pointer m-4 rounded-xl bg-slate-800/20 hover:bg-slate-800/40 transition-all duration-300 group">
+                        <input type="file" id="fileInput" class="hidden" accept="image/*,video/*,audio/*">
+                        
+                        <div id="uploadPrompt" class="flex flex-col items-center">
+                            <div class="w-16 h-16 rounded-full bg-indigo-500/10 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-indigo-500/20 transition-all duration-500">
+                                <i class="fa-solid fa-cloud-arrow-up text-3xl text-indigo-400"></i>
+                            </div>
+                            <h3 class="text-lg font-bold text-slate-200 mb-2">Select media</h3>
+                            
+                            <div class="flex flex-wrap justify-center gap-2 text-[10px] font-semibold text-slate-500 uppercase tracking-wider mt-4">
+                                <span class="flex items-center bg-slate-800/50 px-2 py-1 rounded"><i class="fa-solid fa-image mr-1 text-blue-400"></i> IMG</span>
+                                <span class="flex items-center bg-slate-800/50 px-2 py-1 rounded"><i class="fa-solid fa-video mr-1 text-emerald-400"></i> VID</span>
+                                <span class="flex items-center bg-slate-800/50 px-2 py-1 rounded"><i class="fa-solid fa-music mr-1 text-purple-400"></i> AUD</span>
+                            </div>
+                        </div>
+
+                        <div id="uploadPreview" class="hidden items-center gap-4 justify-center">
+                            <div class="relative">
+                                <img id="previewThumb" src="" alt="preview" class="hidden w-16 h-16 rounded-lg object-cover shadow-lg border border-slate-700">
+                                <div class="absolute inset-0 ring-1 ring-inset ring-white/10 rounded-lg pointer-events-none"></div>
+                            </div>
+                            <div class="text-left">
+                                <div id="previewName" class="text-sm font-bold text-slate-200 mb-1 w-24 truncate"></div>
+                                <div id="previewSize" class="text-xs text-indigo-400 font-medium bg-indigo-500/10 inline-block px-1.5 py-0.5 rounded"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Loading State -->
+        <div id="loadingContainer" class="hidden glass rounded-xl p-8 text-center slide-up">
+            <div class="inline-block mb-4">
+                <div class="w-12 h-12 border-4 border-indigo-400 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+            <h3 id="loadingText" class="text-lg font-bold text-slate-200 mb-2">Uploading media...</h3>
+            <div class="w-full max-w-md mx-auto bg-slate-700/50 rounded-full h-2 mb-2 overflow-hidden">
+                <div id="progressBar" class="bg-gradient-to-r from-indigo-500 to-purple-500 h-2 rounded-full score-bar-fill" style="width: 10%"></div>
+            </div>
+            <p id="loadingSubtext" class="text-slate-400 text-xs">Connecting to backend</p>
+        </div>
+
+        <!-- ==================== RESULTS DASHBOARD ==================== -->
+        <div id="resultsDashboard" class="hidden space-y-6">
+
+            <!-- Row 1: Verdict Ring + Score Bars -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                <!-- Verdict Ring -->
+                <div id="verdictCard" class="glass rounded-xl p-6 flex flex-col items-center justify-center slide-up">
+                    <div class="text-xs uppercase tracking-widest font-bold text-slate-500 mb-4">Overall Verdict</div>
+                    <div class="ring-gauge mb-4">
+                        <svg viewBox="0 0 200 200" width="200" height="200">
+                            <circle class="track" cx="100" cy="100" r="85"/>
+                            <circle id="ringFill" class="fill" cx="100" cy="100" r="85"
+                                stroke-dasharray="534" stroke-dashoffset="534" stroke="#6366f1"/>
+                        </svg>
+                        <div class="label">
+                            <div id="verdictPercent" class="text-4xl font-black">--%</div>
+                            <div id="verdictTag" class="text-sm font-bold uppercase tracking-wider mt-1">Analyzing</div>
+                        </div>
+                    </div>
+                    <div id="verdictLabel" class="text-sm text-slate-400 font-medium text-center"></div>
+                </div>
+
+                <!-- Score Breakdown Bars -->
+                <div class="glass rounded-xl p-6 flex flex-col justify-center slide-up" style="animation-delay:0.1s">
+                    <div class="text-xs uppercase tracking-widest font-bold text-slate-500 mb-5">Forensic Breakdown</div>
+
+                    <!-- Visual -->
+                    <div class="mb-4">
+                        <div class="flex justify-between mb-1.5">
+                            <span class="text-sm font-semibold text-slate-300"><i class="fa-solid fa-eye text-indigo-400 mr-1.5"></i>Visual Manipulation</span>
+                            <span id="barVisualLabel" class="text-sm font-bold text-indigo-400">--</span>
+                        </div>
+                        <div class="w-full bg-slate-700/50 rounded-full h-2.5 overflow-hidden">
+                            <div id="barVisual" class="h-2.5 rounded-full score-bar-fill bg-gradient-to-r from-indigo-500 to-purple-500" style="width:0%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Audio -->
+                    <div class="mb-4">
+                        <div class="flex justify-between mb-1.5">
+                            <span class="text-sm font-semibold text-slate-300"><i class="fa-solid fa-waveform text-cyan-400 mr-1.5"></i>Audio Forgery</span>
+                            <span id="barAudioLabel" class="text-sm font-bold text-cyan-400">--</span>
+                        </div>
+                        <div class="w-full bg-slate-700/50 rounded-full h-2.5 overflow-hidden">
+                            <div id="barAudio" class="h-2.5 rounded-full score-bar-fill bg-gradient-to-r from-cyan-500 to-blue-500" style="width:0%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Lip Sync -->
+                    <div class="mb-4">
+                        <div class="flex justify-between mb-1.5">
+                            <span class="text-sm font-semibold text-slate-300"><i class="fa-solid fa-lips text-amber-400 mr-1.5"></i>Lip-Sync Coherence</span>
+                            <span id="barLipLabel" class="text-sm font-bold text-amber-400">--</span>
+                        </div>
+                        <div class="w-full bg-slate-700/50 rounded-full h-2.5 overflow-hidden">
+                            <div id="barLip" class="h-2.5 rounded-full score-bar-fill bg-gradient-to-r from-amber-500 to-orange-500" style="width:0%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Audio Biomarkers -->
+                    <div class="grid grid-cols-2 gap-3 mt-2">
+                        <div class="bg-slate-800/50 rounded-lg p-3 text-center group relative cursor-help">
+                            <div class="text-xs text-slate-500 mb-1 border-b border-slate-700/50 inline-block border-dotted pb-0.5">Spectral Flatness</div>
+                            <div id="valFlatness" class="text-lg font-bold text-slate-200">--</div>
+                            <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-slate-900 text-xs text-slate-300 rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">High spectral flatness often indicates synthetic or vocoder-generated voice patterns.</div>
+                        </div>
+                        <div class="bg-slate-800/50 rounded-lg p-3 text-center group relative cursor-help">
+                            <div class="text-xs text-slate-500 mb-1 border-b border-slate-700/50 inline-block border-dotted pb-0.5">Phase Consistency</div>
+                            <div id="valPhase" class="text-lg font-bold text-slate-200">--</div>
+                            <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-slate-900 text-xs text-slate-300 rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">Low phase consistency suggests spliced, edited, or AI-cloned speech artifacts.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 2: Uploaded Image with Face Boxes + ELA Heatmap -->
+            <div id="visionRow" class="hidden grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Uploaded Image with Face Annotations -->
+                <div class="glass rounded-xl p-4 slide-up flex flex-col" style="animation-delay:0.2s">
+                    <div class="text-xs uppercase tracking-widest font-bold text-slate-500 mb-3">
+                        <i class="fa-solid fa-crosshairs text-indigo-400 mr-1"></i> Face Detection
+                    </div>
+                    <div class="relative w-full overflow-hidden rounded-lg group grow flex items-center justify-center bg-slate-900/50">
+                        <img id="uploadedImg" src="" alt="uploaded" class="w-full h-auto max-h-[300px] object-contain hidden">
+                        <div id="faceBoxesContainer" class="absolute inset-0 w-full h-full pointer-events-none"></div>
+                    </div>
+                    <div id="faceList" class="mt-3 space-y-1"></div>
+                </div>
+
+                <!-- ELA Heatmap Comparator -->
+                <div class="glass rounded-xl p-4 slide-up flex flex-col" style="animation-delay:0.25s">
+                    <div class="text-xs uppercase tracking-widest font-bold text-slate-500 mb-3 flex justify-between">
+                        <span><i class="fa-solid fa-fire text-red-400 mr-1"></i> ELA Heatmap</span>
+                        <span class="text-slate-500 font-normal ml-1 lowercase bg-slate-800 px-2 rounded">hover to compare</span>
+                    </div>
+                    <div class="relative w-full overflow-hidden rounded-lg cursor-crosshair group grow flex items-center justify-center bg-slate-900/50">
+                        <!-- Original Image (Bottom Layer) -->
+                        <img id="heatmapOrigImg" src="" alt="original" class="absolute w-full h-auto max-h-[300px] object-contain hidden">
+                        <!-- Heatmap Image (Top Layer - fades on hover) -->
+                        <img id="heatmapImg" src="" alt="heatmap" class="relative w-full h-auto max-h-[300px] object-contain hidden transition-opacity duration-300 group-hover:opacity-10">
+                    </div>
+                    <p class="text-xs text-slate-500 mt-2"><i class="fa-solid fa-circle-info mr-1"></i>Bright regions indicate areas with different compression levels — a sign of editing.</p>
+                </div>
+            </div>
+
+            <!-- Row 3: FFT + Spectrogram -->
+            <div id="analysisRow" class="hidden grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- FFT -->
+                <div class="glass rounded-xl p-4 slide-up" style="animation-delay:0.3s">
+                    <div class="text-xs uppercase tracking-widest font-bold text-slate-500 mb-3">
+                        <i class="fa-solid fa-wave-square text-purple-400 mr-1"></i> FFT Frequency Spectrum
+                    </div>
+                    <img id="fftImg" src="" alt="fft" class="forensic-img hidden">
+                    <p class="text-xs text-slate-500 mt-2"><i class="fa-solid fa-circle-info mr-1"></i>Frequency artifacts reveal GAN-generated image patterns invisible to the eye.</p>
+                </div>
+
+                <!-- Audio Spectrogram -->
+                <div class="glass rounded-xl p-4 slide-up" style="animation-delay:0.35s">
+                    <div class="text-xs uppercase tracking-widest font-bold text-slate-500 mb-3">
+                        <i class="fa-solid fa-signal text-cyan-400 mr-1"></i> Audio Spectrogram
+                    </div>
+                    <img id="spectrogramImg" src="" alt="spectrogram" class="forensic-img hidden">
+                    <p id="spectrogramPlaceholder" class="text-sm text-slate-500 text-center py-8 hidden">
+                        <i class="fa-solid fa-volume-xmark text-2xl mb-2 block text-slate-600"></i>
+                        No audio track detected
+                    </p>
+                    <p class="text-xs text-slate-500 mt-2"><i class="fa-solid fa-circle-info mr-1"></i>Mel-scaled spectrogram reveals unnatural vocal patterns in cloned speech.</p>
+                </div>
+            </div>
+
+            <!-- Row 4: Video Timeline (only for videos) -->
+            <div id="timelineRow" class="hidden glass rounded-xl p-4 slide-up" style="animation-delay:0.4s">
+                <div class="text-xs uppercase tracking-widest font-bold text-slate-500 mb-3">
+                    <i class="fa-solid fa-timeline text-emerald-400 mr-1"></i> Frame-by-Frame Analysis
+                </div>
+                <canvas id="timelineChart" height="100"></canvas>
+                <p class="text-xs text-slate-500 mt-2"><i class="fa-solid fa-circle-info mr-1"></i>Per-second fake probability across the video. Spikes indicate manipulated segments.</p>
+            </div>
+
+            <!-- Reset Button -->
+            <div class="text-center pt-2 pb-8">
+                <button id="resetBtn" class="px-6 py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg text-sm font-semibold transition">
+                    <i class="fa-solid fa-rotate-left mr-1.5"></i> Analyze Another File
+                </button>
+            </div>
+        </div>
+            </section> <!-- end view-home -->
+
+            <!-- BATCH SCAN VIEW -->
+            <section id="view-batch" class="view-section hidden w-full h-full flex flex-col items-center justify-center fade-in text-center mt-20">
+                <i class="fa-solid fa-layer-group text-6xl text-slate-700 mb-4"></i>
+                <h3 class="text-xl font-bold text-slate-300">Batch Scan</h3>
+                <p class="text-slate-500 max-w-md mx-auto mt-2">Coming soon.</p>
+            </section>
+
+            <!-- HISTORY VIEW -->
+            <section id="view-history" class="view-section hidden w-full h-full flex flex-col items-center justify-center fade-in text-center mt-20">
+                <i class="fa-solid fa-clock-rotate-left text-6xl text-slate-700 mb-4"></i>
+                <h3 class="text-xl font-bold text-slate-300">Scan History</h3>
+                <p class="text-slate-500 max-w-md mx-auto mt-2">Coming soon.</p>
+            </section>
+
+            <!-- THREAT INTEL VIEW -->
+            <section id="view-intel" class="view-section hidden w-full h-full flex flex-col items-center justify-center fade-in text-center mt-20">
+                <i class="fa-solid fa-globe text-6xl text-slate-700 mb-4"></i>
+                <h3 class="text-xl font-bold text-slate-300">Threat Intelligence</h3>
+                <p class="text-slate-500 max-w-md mx-auto mt-2">Global trends.</p>
+            </section>
+
+            <!-- SETTINGS VIEW -->
+            <section id="view-settings" class="view-section hidden w-full max-w-2xl mx-auto space-y-6 fade-in mt-10">
+                <div class="glass rounded-xl p-6">
+                    <h3 class="text-lg font-bold text-slate-200 mb-4 border-b border-slate-700 pb-2">Connection Settings</h3>
+                    <label for="apiUrl" class="block text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wider">Backend API URL</label>
+                    <div class="flex gap-2">
+                        <span class="inline-flex items-center px-4 text-sm text-slate-400 bg-slate-800/80 border border-slate-600 rounded-l-lg">
+                            <i class="fa-solid fa-link"></i>
+                        </span>
+                        <input type="url" id="apiUrl" value="https://upside-shower-handling.ngrok-free.dev"
+                            class="rounded-r-lg bg-slate-800/80 border border-slate-600 text-slate-200 block flex-1 min-w-0 w-full text-sm p-3 focus:ring-indigo-500 focus:border-indigo-500 outline-none placeholder-slate-500 shadow-inner"
+                            placeholder="https://your-ngrok-url.ngrok-free.dev">
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <script src="sidepanel.js"></script>
+    <script>
+        // --- Veritas AI Routing ---
+        const pageTitles = {
+            'view-home': { title: 'Deepfake Analyzer', sub: 'Multi-modal AI forensic analysis' },
+            'view-batch': { title: 'Batch Scan', sub: 'Analyze multiple files' },
+            'view-history': { title: 'Scan History', sub: 'Review previous reports' },
+            'view-intel': { title: 'Threat Intelligence', sub: 'Global signatures' },
+            'view-settings': { title: 'Settings', sub: 'Configure API preferences' }
+        };
+
+        function switchTab(viewId, navElement) {
+            // Update active nav styling
+            document.querySelectorAll('.nav-item').forEach(el => {
+                el.classList.remove('active', 'bg-indigo-500/10', 'text-indigo-400');
+                el.classList.add('text-slate-400');
+                const bar = el.querySelector('.w-1');
+                if(bar) { bar.classList.remove('opacity-100'); bar.classList.add('opacity-0'); }
+            });
+            
+            navElement.classList.add('active', 'bg-indigo-500/10', 'text-indigo-400');
+            navElement.classList.remove('text-slate-400');
+            const activeBar = navElement.querySelector('.w-1');
+            if(activeBar) { activeBar.classList.remove('opacity-0'); activeBar.classList.add('opacity-100'); }
+
+            // Hide all views, show target
+            document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+            document.getElementById(viewId).classList.remove('hidden');
+
+            // Update Header
+            if (pageTitles[viewId]) {
+                document.getElementById('pageTitle').textContent = pageTitles[viewId].title;
+                document.getElementById('pageSubtitle').textContent = pageTitles[viewId].sub;
+            }
+        }
+    </script>
+</body>
+</html>

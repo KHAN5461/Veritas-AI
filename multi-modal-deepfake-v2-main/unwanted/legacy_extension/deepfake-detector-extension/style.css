@@ -1,0 +1,40 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+* { font-family: 'Inter', sans-serif; }
+body { background: #0f172a; color: #e2e8f0; }
+
+.glass { background: rgba(30, 41, 59, 0.8); backdrop-filter: blur(16px); border: 1px solid rgba(71, 85, 105, 0.4); }
+.glass-light { background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(71, 85, 105, 0.3); }
+
+.drop-zone { border: 2px dashed #475569; transition: all 0.3s ease; }
+.drop-zone:hover, .drop-zone.dragover { border-color: #6366f1; background: rgba(99,102,241,0.08); }
+
+/* Animated ring gauge */
+.ring-gauge { position: relative; width: 200px; height: 200px; }
+.ring-gauge svg { transform: rotate(-90deg); }
+.ring-gauge .track { stroke: #1e293b; fill: none; stroke-width: 12; }
+.ring-gauge .fill { fill: none; stroke-width: 12; stroke-linecap: round; transition: stroke-dashoffset 1.5s ease, stroke 0.5s ease; }
+.ring-gauge .label { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+
+/* Animated score bars */
+.score-bar-fill { transition: width 1.2s cubic-bezier(.22,1,.36,1); }
+
+/* Face overlay canvas */
+.face-canvas-wrap { position: relative; display: inline-block; }
+.face-canvas-wrap canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+
+/* Glow effects */
+.glow-red { box-shadow: 0 0 30px rgba(239,68,68,0.15); }
+.glow-green { box-shadow: 0 0 30px rgba(16,185,129,0.15); }
+.glow-indigo { box-shadow: 0 0 20px rgba(99,102,241,0.1); }
+
+.fade-in { animation: fadeIn 0.6s ease forwards; opacity: 0; }
+@keyframes fadeIn { to { opacity: 1; } }
+
+.slide-up { animation: slideUp 0.5s ease forwards; opacity: 0; transform: translateY(20px); }
+@keyframes slideUp { to { opacity: 1; transform: translateY(0); } }
+
+/* Preview thumbnail */
+#previewThumb { max-height: 120px; border-radius: 8px; object-fit: cover; }
+
+/* Hide scrollbar on forensic images */
+.forensic-img { border-radius: 8px; width: 100%; height: auto; image-rendering: auto; }

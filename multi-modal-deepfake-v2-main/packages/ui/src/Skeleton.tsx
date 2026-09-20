@@ -1,0 +1,1 @@
+export const Skeleton = ({ className }: any) => <div className={`animate-pulse bg-white/20 rounded-xl ${className}`} />;

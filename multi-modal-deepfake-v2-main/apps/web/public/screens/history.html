@@ -1,0 +1,940 @@
+<header class="fixed top-0 left-0 right-0 z-50 bg-surface/90 backdrop-blur-xl border-b border-outline-variant/30 shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 w-full px-gutter flex items-center justify-between gap-md"><div class="flex items-center gap-md"><div class="flex items-center gap-sm"><div class="w-9 h-9 rounded-lg bg-primary flex items-center justify-center text-on-primary shadow-sm"><span class="material-symbols-outlined text-[20px]">verified_user</span></div><div class="flex flex-col"><span class="font-title-lg text-title-lg text-primary leading-tight tracking-tight">TruthScan</span><span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Veritas AI Forensics</span></div></div><div class="hidden xl:flex items-center gap-xs px-sm py-xs rounded-full bg-surface-container border border-outline-variant/40"><span class="w-2 h-2 rounded-full bg-tertiary-fixed-dim animate-pulse"></span><span class="font-mono-sm text-mono-sm text-on-surface font-medium">HF-Ensemble v4.2 • CUDA Active</span><span class="font-mono-sm text-mono-sm text-on-surface-variant">(42ms)</span></div></div><nav class="hidden lg:flex items-center gap-xs p-xs rounded-lg bg-surface-container-low" data-active-classes="bg-primary-container text-on-primary font-semibold shadow-sm"><a class="px-md py-xs rounded text-on-surface-variant font-label-md text-label-md transition-colors hover:text-on-surface hover:bg-surface-container-high" data-path="deepfake-analyzer" href="#">Deepfake Analyzer</a><a class="px-md py-xs rounded text-on-surface-variant font-label-md text-label-md transition-colors hover:text-on-surface hover:bg-surface-container-high" data-path="batch-queue-&amp;-ingestion" href="#">Batch Queue &amp; Ingestion</a><a aria-current="page" class="px-md py-xs rounded transition-colors bg-primary-container text-on-primary font-semibold shadow-sm" data-path="scan-history-&amp;-audit" href="#">Scan History &amp; Audit</a><a class="px-md py-xs rounded text-on-surface-variant font-label-md text-label-md transition-colors hover:text-on-surface hover:bg-surface-container-high" data-path="threat-intelligence" href="#">Threat Intelligence</a><a class="px-md py-xs rounded text-on-surface-variant font-label-md text-label-md transition-colors hover:text-on-surface hover:bg-surface-container-high" data-path="enterprise-api-&amp;-model-hub" href="#">Enterprise API &amp; Model Hub</a><a class="px-md py-xs rounded text-on-surface-variant font-label-md text-label-md transition-colors hover:text-on-surface hover:bg-surface-container-high" data-path="settings" href="#">Settings</a></nav><div class="flex items-center gap-sm"><button class="flex items-center gap-xs px-md py-xs rounded bg-surface-container-high text-on-surface hover:bg-surface-container-highest transition-colors font-label-md text-label-md" type="button"><span class="material-symbols-outlined text-[16px]">file_download</span><span class="hidden 2xl:inline">Export Forensic Report (PDF)</span></button><button class="flex items-center gap-xs px-md py-xs rounded bg-primary text-on-primary hover:bg-primary-container transition-colors font-label-md text-label-md shadow-sm" type="button"><span class="material-symbols-outlined text-[16px]">cloud_upload</span><span>Upload Media</span></button><div class="flex items-center gap-xs px-sm py-xs rounded bg-surface-container text-on-surface-variant" title="Telemetry / Core Cluster 99.98% Operational"><span class="material-symbols-outlined text-tertiary text-[18px]">shield_with_heart</span><span class="hidden sm:inline font-mono-sm text-mono-sm">HEALTHY</span></div><div class="flex items-center gap-sm pl-xs"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div><div class="hidden md:flex flex-col text-left"><span class="font-label-md text-label-md text-on-surface font-semibold leading-tight">Dr. A. Thorne</span><span class="font-label-md text-label-md text-on-surface-variant leading-tight">Sr. Forensic Lead</span></div></div></div></div></header><aside class="fixed left-0 top-16 bottom-0 w-64 bg-surface-container-lowest border-r border-outline-variant/30 flex flex-col justify-between py-md z-40"><div class="flex flex-col gap-md"><div class="px-md"><div class="flex items-center justify-between text-on-surface-variant font-label-md text-label-md uppercase tracking-wider mb-sm"><span>Forensic Operations</span><span class="material-symbols-outlined text-[16px]">security</span></div></div><nav class="flex flex-col gap-xs px-sm" data-active-classes="bg-surface-container-high text-primary font-semibold border-l-2 border-primary"><a class="flex items-center gap-sm px-md py-sm rounded text-on-surface-variant font-body-md text-body-md hover:bg-surface-container-low hover:text-on-surface transition-all" data-path="deepfake-analyzer" href="#"><span class="material-symbols-outlined text-[18px]">csv</span><span>Analyzer Console</span></a><a class="flex items-center gap-sm px-md py-sm rounded text-on-surface-variant font-body-md text-body-md hover:bg-surface-container-low hover:text-on-surface transition-all" data-path="batch-queue-&amp;-ingestion" href="#"><span class="material-symbols-outlined text-[18px]">view_list</span><span>Batch Pipeline</span></a><a aria-current="page" class="flex items-center gap-sm px-md py-sm rounded transition-all bg-surface-container-high text-primary font-semibold border-l-2 border-primary" data-path="scan-history-&amp;-audit" href="#"><span class="material-symbols-outlined text-[18px]">history_toggle_off</span><span>Chain of Custody</span></a><a class="flex items-center gap-sm px-md py-sm rounded text-on-surface-variant font-body-md text-body-md hover:bg-surface-container-low hover:text-on-surface transition-all" data-path="threat-intelligence" href="#"><span class="material-symbols-outlined text-[18px]">radar</span><span>Threat Feeds</span></a><a class="flex items-center gap-sm px-md py-sm rounded text-on-surface-variant font-body-md text-body-md hover:bg-surface-container-low hover:text-on-surface transition-all" data-path="enterprise-api-&amp;-model-hub" href="#"><span class="material-symbols-outlined text-[18px]">hub</span><span>Model Hub &amp; SDK</span></a><a class="flex items-center gap-sm px-md py-sm rounded text-on-surface-variant font-body-md text-body-md hover:bg-surface-container-low hover:text-on-surface transition-all" data-path="settings" href="#"><span class="material-symbols-outlined text-[18px]">tune</span><span>Engine Config</span></a></nav></div><div class="px-md flex flex-col gap-sm"><div class="p-sm rounded bg-surface-container-low border border-outline-variant/30"><div class="flex items-center justify-between text-on-surface-variant font-mono-sm text-mono-sm mb-xs"><span>CUDA VRAM</span><span>7.8 / 24 GB</span></div><div class="w-full h-1.5 bg-surface-container rounded-full overflow-hidden"><div class="bg-secondary h-full rounded-full w-1/3"></div></div></div><div class="flex items-center justify-between text-on-surface-variant font-mono-sm text-mono-sm pt-xs border-t border-outline-variant/20"><span>Cluster node-04</span><span class="flex items-center gap-xs"><span class="w-1.5 h-1.5 rounded-full bg-tertiary-fixed-dim"></span>Synced</span></div></div></aside><div class="pl-64"><main class="relative w-full pt-16 min-h-screen bg-background"><div class="flex flex-col w-full">
+<!-- Top Forensic Identity Bar & Cryptographic Ledger Banner -->
+<div class="w-full px-margin-desktop py-lg flex flex-col gap-md">
+<!-- Meta Breadcrumb & Standards Badges -->
+<div class="flex flex-wrap items-center justify-between gap-md">
+<div class="flex items-center gap-sm">
+<span class="font-mono-sm text-mono-sm text-primary uppercase font-bold tracking-widest">TruthScan Core v4.2</span>
+<span class="text-outline-variant">•</span>
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">National Evidence Standard Compliance</span>
+</div>
+<div class="flex flex-wrap items-center gap-xs">
+<span class="px-sm py-xs rounded bg-surface-container-high text-primary font-mono-sm text-mono-sm font-semibold flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px] text-tertiary">verified</span>
+          ISO/IEC 27037:2012
+        </span>
+<span class="px-sm py-xs rounded bg-surface-container-high text-primary font-mono-sm text-mono-sm font-semibold flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px] text-tertiary">gavel</span>
+          NIST SP 800-86
+        </span>
+<span class="px-sm py-xs rounded bg-surface-container-high text-primary font-mono-sm text-mono-sm font-semibold flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px] text-tertiary">lock</span>
+          FRE Rule 902(14)
+        </span>
+</div>
+</div>
+<!-- Main Title & Cryptographic Merkle Root Pill -->
+<div class="flex flex-col xl:flex-row xl:items-end justify-between gap-md">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">Evidence Chain of Custody Registry</h1>
+<p class="font-body-md text-body-md text-on-surface-variant mt-xs max-w-2xl">
+          Immutable forensic ledger for synthetic media triage, face-swap artifact verification, and voice-clone biometrics. All records cryptographically anchored in the SHA-256 Veritas Merkle Tree.
+        </p>
+</div>
+<!-- Ledger Status Badge -->
+<div class="flex items-center gap-md p-sm px-md rounded-xl bg-surface-container-lowest shadow-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[24px]">account_tree</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-xs">
+<span class="w-2 h-2 rounded-full bg-tertiary-fixed-dim animate-ping"></span>
+<span class="font-mono-sm text-mono-sm text-on-surface font-semibold">LEDGER ROOT: 0x9e12…b5f7</span>
+</div>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant">Block #1,940,283 • 0 Tamper Inconsistencies</span>
+</div>
+<button class="ml-sm p-xs rounded hover:bg-surface-container text-on-surface-variant" title="Verify Merkle Proofs" type="button">
+<span class="material-symbols-outlined text-[18px]">rule</span>
+</button>
+</div>
+</div>
+<!-- Forensic Snapshot Telemetry Strips -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-md pt-sm">
+<div class="p-md rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="font-label-md text-label-md uppercase tracking-wider">Total Dossiers Logged</span>
+<span class="material-symbols-outlined text-[18px] text-primary">folder_open</span>
+</div>
+<div class="mt-sm flex items-baseline gap-xs">
+<span class="font-display-lg text-display-lg text-primary leading-none font-bold">2,489</span>
+<span class="font-mono-sm text-mono-sm text-tertiary font-semibold">+14 today</span>
+</div>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant mt-xs">100% Cryptographically Sealed</span>
+</div>
+<div class="p-md rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="font-label-md text-label-md uppercase tracking-wider">Deepfake / Tampered</span>
+<span class="material-symbols-outlined text-[18px] text-error">warning</span>
+</div>
+<div class="mt-sm flex items-baseline gap-xs">
+<span class="font-display-lg text-display-lg text-error leading-none font-bold">412</span>
+<span class="font-mono-sm text-mono-sm text-error font-semibold">16.5% rate</span>
+</div>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant mt-xs">FaceSwap, VoiceClone, SVD, Sora</span>
+</div>
+<div class="p-md rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="font-label-md text-label-md uppercase tracking-wider">Ensemble Confidence</span>
+<span class="material-symbols-outlined text-[18px] text-tertiary">analytics</span>
+</div>
+<div class="mt-sm flex items-baseline gap-xs">
+<span class="font-display-lg text-display-lg text-tertiary leading-none font-bold">99.4%</span>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant">±0.12% err</span>
+</div>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant mt-xs">ViT-L • MesoNet-v4 • WavLM</span>
+</div>
+<div class="p-md rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="font-label-md text-label-md uppercase tracking-wider">SIEM Sync Pipeline</span>
+<span class="material-symbols-outlined text-[18px] text-secondary">cloud_sync</span>
+</div>
+<div class="mt-sm flex items-baseline gap-xs">
+<span class="font-display-lg text-display-lg text-on-surface leading-none font-bold">Active</span>
+<span class="font-mono-sm text-mono-sm text-tertiary font-semibold">12ms sync</span>
+</div>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant mt-xs">Splunk HEC &amp; Elastic SIEM</span>
+</div>
+</div>
+</div>
+<!-- Filter & Query Control Console -->
+<div class="w-full px-margin-desktop py-sm">
+<div class="bg-surface-container-lowest rounded-xl p-md shadow-sm flex flex-col gap-md">
+<!-- Top Row: Search + Preset Date Filters + Quick Actions -->
+<div class="flex flex-col lg:flex-row items-center justify-between gap-md">
+<!-- Search Input with Case / Hash / Investigator tags -->
+<div class="w-full lg:w-96 relative flex items-center">
+<span class="material-symbols-outlined absolute left-3 text-on-surface-variant text-[20px]">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-surface-container-low rounded-lg font-body-md text-body-md text-on-surface placeholder:text-outline focus:outline-none focus:bg-surface-container-high transition-colors" placeholder="Search Case ID, SHA-256 Hash, File Name..." type="text"/>
+</div>
+<!-- Date Range Filter Buttons -->
+<div class="flex items-center gap-xs p-1 bg-surface-container-low rounded-lg w-full lg:w-auto overflow-x-auto">
+<button class="px-md py-1 rounded bg-surface-container-lowest shadow-sm text-primary font-label-md text-label-md font-semibold" type="button">Last 24h</button>
+<button class="px-md py-1 rounded text-on-surface-variant hover:text-on-surface font-label-md text-label-md" type="button">7 Days</button>
+<button class="px-md py-1 rounded text-on-surface-variant hover:text-on-surface font-label-md text-label-md" type="button">30 Days</button>
+<button class="px-md py-1 rounded text-on-surface-variant hover:text-on-surface font-label-md text-label-md flex items-center gap-xs" type="button">
+<span class="material-symbols-outlined text-[14px]">calendar_today</span>
+            Custom
+          </button>
+</div>
+<!-- Pipeline Export & SIEM dispatch controls -->
+<div class="flex items-center gap-sm w-full lg:w-auto justify-end">
+<button class="flex items-center gap-xs px-md py-2 rounded-lg bg-surface-container-high text-on-surface hover:bg-surface-container-highest transition-colors font-label-md text-label-md" type="button">
+<span class="material-symbols-outlined text-[16px]">table_view</span>
+<span>Export CSV Trail</span>
+</button>
+<button class="flex items-center gap-xs px-md py-2 rounded-lg bg-surface-container-high text-on-surface hover:bg-surface-container-highest transition-colors font-label-md text-label-md" type="button">
+<span class="material-symbols-outlined text-[16px]">picture_as_pdf</span>
+<span>Signed Dossiers (.zip)</span>
+</button>
+<button class="flex items-center gap-xs px-md py-2 rounded-lg bg-primary text-on-primary hover:bg-primary-container transition-colors font-label-md text-label-md shadow-sm" type="button">
+<span class="material-symbols-outlined text-[16px]">sync_alt</span>
+<span>Dispatch to SIEM</span>
+</button>
+</div>
+</div>
+<!-- Second Row: Secondary Dropdowns for Precision Triage -->
+<div class="flex flex-wrap items-center justify-between gap-sm pt-xs border-t border-outline-variant/20">
+<div class="flex flex-wrap items-center gap-sm">
+<!-- Verdict Filter -->
+<div class="flex items-center gap-xs bg-surface-container-low px-sm py-1 rounded-lg">
+<span class="font-label-md text-label-md text-on-surface-variant">Verdict:</span>
+<select class="bg-transparent text-on-surface font-mono-sm text-mono-sm font-semibold focus:outline-none cursor-pointer">
+<option value="all">All Verdicts</option>
+<option selected="" value="deepfake">Deepfake / High Risk</option>
+<option value="audio_clone">Suspect Voice Clone</option>
+<option value="authentic">Natural Authentic</option>
+<option value="inconclusive">Inconclusive</option>
+</select>
+</div>
+<!-- File Modality -->
+<div class="flex items-center gap-xs bg-surface-container-low px-sm py-1 rounded-lg">
+<span class="font-label-md text-label-md text-on-surface-variant">Format:</span>
+<select class="bg-transparent text-on-surface font-mono-sm text-mono-sm font-semibold focus:outline-none cursor-pointer">
+<option value="all">All Modalities (Video, Audio, Image)</option>
+<option value="video">Video (4K / 1080p ProRes &amp; MP4)</option>
+<option value="audio">Audio Stems (WAV / FLAC)</option>
+<option value="image">High-Res Still (RAW / PNG)</option>
+</select>
+</div>
+<!-- Model Ensemble Filter -->
+<div class="flex items-center gap-xs bg-surface-container-low px-sm py-1 rounded-lg">
+<span class="font-label-md text-label-md text-on-surface-variant">Engine:</span>
+<select class="bg-transparent text-on-surface font-mono-sm text-mono-sm font-semibold focus:outline-none cursor-pointer">
+<option value="all">Any Model Consensus</option>
+<option value="vit">ViT-L Artifact Hunter</option>
+<option value="meso">MesoNet-v4 Frequency</option>
+<option value="wavlm">WavLM Speech Forensics</option>
+<option value="perioral">Perioral Landmark Sync</option>
+</select>
+</div>
+<!-- Cryptographic Verification State -->
+<div class="flex items-center gap-xs bg-surface-container-low px-sm py-1 rounded-lg">
+<span class="font-label-md text-label-md text-on-surface-variant">Chain Status:</span>
+<select class="bg-transparent text-on-surface font-mono-sm text-mono-sm font-semibold focus:outline-none cursor-pointer">
+<option value="verified">Verified in Merkle Tree (6)</option>
+<option value="pending">Pending Block Confirmation (0)</option>
+<option value="tamper">Chain Tamper Detected (0)</option>
+</select>
+</div>
+</div>
+<div class="flex items-center gap-sm">
+<span class="font-mono-sm text-mono-sm text-on-surface-variant">Showing 6 of 2,489 records</span>
+<button class="p-1 rounded bg-surface-container-low hover:bg-surface-container text-on-surface" title="Refresh Table" type="button">
+<span class="material-symbols-outlined text-[16px]">refresh</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Primary Forensic Chain of Custody Table -->
+<div class="w-full px-margin-desktop py-md">
+<div class="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low text-on-surface-variant font-label-md text-label-md uppercase tracking-wider">
+<th class="py-md px-md">Evidence ID &amp; Case</th>
+<th class="py-md px-md">Media Artifact</th>
+<th class="py-md px-md">Timestamp &amp; Investigator</th>
+<th class="py-md px-md">Detection Ensemble</th>
+<th class="py-md px-md">Forensic Verdict</th>
+<th class="py-md px-md">Cryptographic Chain</th>
+<th class="py-md px-md text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container-low font-body-md text-body-md">
+<!-- Row 1: High-Profile Press Conference Video Deepfake -->
+<tr class="hover:bg-surface-container-lowest/70 transition-colors group">
+<td class="py-md px-md">
+<div class="flex flex-col">
+<span class="font-mono-sm text-mono-sm font-bold text-primary">EVID-2025-9941X</span>
+<span class="font-label-md text-label-md text-on-surface-variant">CASE-992: FedGov Whistle</span>
+<span class="mt-xs inline-flex items-center gap-xs px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant font-mono-sm text-[10px] w-fit">
+<span class="material-symbols-outlined text-[10px] text-tertiary">lock</span> SEC-LEVEL 4
+                  </span>
+</div>
+</td>
+<td class="py-md px-md">
+<div class="flex items-center gap-sm">
+<div class="w-16 h-11 rounded-lg bg-surface-container-high overflow-hidden relative flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="Forensic capture preview of a political press conference microphone shot with highlighted red facial bounding box around chin artifacts, high key lighting, technological grid overlay." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB0Ow6HDANftEycpNHFU8PyUjACKrUztu5ujpCvAWlsIcrwTPaOYy0cAHoIbz25LLfUv_o2EMF53U54a-FCCEq6SOFDGshsP9YicViaS01f9oqNouM7tIxbS2w69hylSBlT7NqOKkdyXCUmYIU5-Oh3BM64rkHItpxQ8RsSDcXbYCwCYJxsUd5vMimH9Kx4-JbAE61xs7UC7QS7KYXpuWDQJzU9q-xxan_Yp7Buj_3THBSVzizK0uXp"/>
+<div class="absolute bottom-0.5 right-0.5 px-1 rounded bg-black/70 text-white font-mono-sm text-[9px]">4K</div>
+</div>
+<div class="flex flex-col min-w-0 max-w-[180px]">
+<span class="font-mono-sm text-mono-sm font-semibold text-on-surface truncate" title="press_conf_leak_4k.mp4">press_conf_leak_4k.mp4</span>
+<span class="font-label-md text-label-md text-on-surface-variant">Video • 1.42 GB</span>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant">FPS: 59.94 • H.265</span>
+</div>
+</div>
+</td>
+<td class="py-md px-md">
+<div class="flex flex-col">
+<span class="font-mono-sm text-mono-sm font-medium text-on-surface">2026-03-30 08:41:22 UTC</span>
+<span class="font-label-md text-label-md text-on-surface-variant mt-xs flex items-center gap-xs">
+<span class="w-4 h-4 rounded-full bg-primary flex items-center justify-center text-[9px] text-on-primary">AT</span>
+                    Dr. A. Thorne (Sr. Lead)
+                  </span>
+<span class="font-mono-sm text-[10px] text-outline">Terminal ID: DC-FORENSIC-04</span>
+</div>
+</td>
+<td class="py-md px-md">
+<div class="flex flex-col gap-xs">
+<div class="flex items-center gap-xs">
+<span class="px-1.5 py-0.5 rounded bg-surface-container font-mono-sm text-[11px] text-on-surface">ViT-L: 99.8%</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container font-mono-sm text-[11px] text-on-surface">Meso-4: 98.4%</span>
+</div>
+<div class="flex items-center gap-xs">
+<span class="px-1.5 py-0.5 rounded bg-surface-container font-mono-sm text-[11px] text-on-surface">Perioral-Sync: 0.14 ERR</span>
+</div>
+<span class="font-mono-sm text-[10px] text-error font-medium">5 of 5 engines flagged synthetic</span>
+</div>
+</td>
+<td class="py-md px-md">
+<div class="flex flex-col gap-xs">
+<div class="inline-flex items-center gap-xs px-sm py-1 rounded bg-error/10 text-error font-mono-sm text-mono-sm font-bold w-fit">
+<span class="material-symbols-outlined text-[14px]">crisis_alert</span>
+                    DEEPFAKE (99.6%)
+                  </div>
+<span class="font-label-md text-label-md text-error">Face-Swap / Wan 2.5 Synth</span>
+</div>
+</td>
+<td class="py-md px-md">
+<div class="flex flex-col gap-xs">
+<div class="flex items-center gap-xs text-tertiary">
+<span class="material-symbols-outlined text-[16px]">verified</span>
+<span class="font-mono-sm text-mono-sm font-bold">Merkle Verified</span>
+</div>
+<span class="font-mono-sm text-[11px] text-outline font-mono cursor-pointer hover:text-primary" title="Click to copy full SHA-256">
+                    SHA: 4a2b9f8d…11e9a3c
+                  </span>
+<span class="font-mono-sm text-[10px] text-on-surface-variant">Block #1,940,240</span>
+</div>
+</td>
+<td class="py-md px-md text-right">
+<div class="flex items-center justify-end gap-xs">
+<button class="p-xs rounded bg-surface-container hover:bg-surface-container-high text-primary" onclick="openCertificateModal('EVID-2025-9941X', 'press_conf_leak_4k.mp4', 'DEEPFAKE (Wan 2.5 Reenactment)', '99.6%', '4a2b9f8de92bc7f81902ba7c6543b18d20e89190cde11e9a3c', 'Dr. A. Thorne', '5/5 Ensembles Concurred')" title="View Forensic Verification Certificate" type="button">
+<span class="material-symbols-outlined text-[18px]">workspace_premium</span>
+</button>
+<button class="p-xs rounded bg-surface-container hover:bg-surface-container-high text-on-surface" title="Download Signed Evidentiary Package" type="button">
+<span class="material-symbols-outlined text-[18px]">download</span>
+</button>
+<button class="p-xs rounded bg-surface-container hover:bg-surface-container-high text-on-surface-variant" title="Chain Audit Details" type="button">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2: Executive Speech Video Manipulated -->
+<tr class="hover:bg-surface-container-lowest/70 transition-colors group">
+<td class="py-md px-md">
+<div class="flex flex-col">
+<span class="font-mono-sm text-mono-sm font-bold text-primary">CASE-4402</span>
+<span class="font-label-md text-label-md text-on-surface-variant">CORP-SEC: Fortune 50 CEO</span>
+<span class="mt-xs inline-flex items-center gap-xs px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant font-mono-sm text-[10px] w-fit">
+<span class="material-symbols-outlined text-[10px] text-tertiary">lock</span> CONFIDENTIAL
+                  </span>
+</div>
+</td>
+<td class="py-md px-md">
+<div class="flex items-center gap-sm">
+<div class="w-16 h-11 rounded-lg bg-surface-container-high overflow-hidden relative flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="Corporate boardroom broadcast screenshot with an executive speaking at a podium, high quality studio lighting, blue and gray modern tones, forensic boundary markers around lip contours." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDhm59BvBR441d7Howb_o7bd5mJKkKpdKmfsSW2CLi3B013DCBLtk68x1WmYjTYOZUr2y-z2zUhmVamdLC8XKn8ZzDgshz61no2JEovJvbJAqRsFOLvPonnF_ymidADestKISS3om_2rCj61NvAsoMhxWqbD5P5shJKAY25lw9Qf5gAV490EFZL6sMW31mS901LMZ1qa_ymv4ZwxvCN5SNRsC72QW6pIuM_urKY1pBEdclBtGbxRvif"/>
+<div class="absolute bottom-0.5 right-0.5 px-1 rounded bg-black/70 text-white font-mono-sm text-[9px]">1080p</div>
+</div>
+<div class="flex flex-col min-w-0 max-w-[180px]">
+<span class="font-mono-sm text-mono-sm font-semibold text-on-surface truncate" title="executive_speech_deepfake.mp4">executive_speech_deepfake.mp4</span>
+<span class="font-label-md text-label-md text-on-surface-variant">Video • 340 MB</span>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant">FPS: 30.00 • H.264</span>
+</div>
+</div>
+</td>
+<td class="py-md px-md">
+<div class="flex flex-col">
+<span class="font-mono-sm text-mono-sm font-medium text-on-surface">2026-03-30 06:18:04 UTC</span>
+<span class="font-label-md text-label-md text-on-surface-variant mt-xs flex items-center gap-xs">
+<span class="w-4 h-4 rounded-full bg-secondary flex items-center justify-center text-[9px] text-on-secondary">KL</span>
+                    K. Lindqvist (Analyst)
+                  </span>
+<span class="font-mono-sm text-[10px] text-outline">Terminal ID: EU-NORTH-01</span>
+</div>
+</td>
+<td class="py-md px-md">
+<div class="flex flex-col gap-xs">
+<div class="flex items-center gap-xs">
+<span class="px-1.5 py-0.5 rounded bg-surface-container font-mono-sm text-[11px] text-on-surface">ViT-L: 97.2%</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container font-mono-sm text-[11px] text-on-surface">Meso-4: 94.1%</span>
+</div>
+<div class="flex items-center gap-xs">
+<span class="px-1.5 py-0.5 rounded bg-surface-container font-mono-sm text-[11px] text-on-surface">LipSync: Desync</span>
+</div>
+<span class="font-mono-sm text-[10px] text-error font-medium">4 of 5 engines flagged synthetic</span>
+</div>
+</td>
+<td class="py-md px-md">
+<div class="flex flex-col gap-xs">
+<div class="inline-flex items-center gap-xs px-sm py-1 rounded bg-error/10 text-error font-mono-sm text-mono-sm font-bold w-fit">
+<span class="material-symbols-outlined text-[14px]">crisis_alert</span>
+                    DEEPFAKE (96.8%)
+                  </div>
+<span class="font-label-md text-label-md text-error">Lip Sync / HeyGen Attack</span>
+</div>
+</td>
+<td class="py-md px-md">
+<div class="flex flex-col gap-xs">
+<div class="flex items-center gap-xs text-tertiary">
+<span class="material-symbols-outlined text-[16px]">verified</span>
+<span class="font-mono-sm text-mono-sm font-bold">Merkle Verified</span>
+</div>
+<span class="font-mono-sm text-[11px] text-outline font-mono cursor-pointer hover:text-primary" title="Click to copy full SHA-256">
+                    SHA: 88cf1a02…ee7b99c
+                  </span>
+<span class="font-mono-sm text-[10px] text-on-surface-variant">Block #1,940,211</span>
+</div>
+</td>
+<td class="py-md px-md text-right">
+<div class="flex items-center justify-end gap-xs">
+<button class="p-xs rounded bg-surface-container hover:bg-surface-container-high text-primary" onclick="openCertificateModal('CASE-4402', 'executive_speech_deepfake.mp4', 'DEEPFAKE (Facial Audio Sync Anomaly)', '96.8%', '88cf1a02bc5633e89a421df0193bb182ee7b99c', 'K. Lindqvist', '4/5 Ensembles Concurred')" title="View Forensic Verification Certificate" type="button">
+<span class="material-symbols-outlined text-[18px]">workspace_premium</span>
+</button>
+<button class="p-xs rounded bg-surface-container hover:bg-surface-container-high text-on-surface" title="Download Signed Evidentiary Package" type="button">
+<span class="material-symbols-outlined text-[18px]">download</span>
+</button>
+<button class="p-xs rounded bg-surface-container hover:bg-surface-container-high text-on-surface-variant" title="Chain Audit Details" type="button">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3: CFO Wire Transfer Voice Sample (Audio Cloning) -->
+<tr class="hover:bg-surface-container-lowest/70 transition-colors group">
+<td class="py-md px-md">
+<div class="flex flex-col">
+<span class="font-mono-sm text-mono-sm font-bold text-primary">SEC-8819</span>
+<span class="font-label-md text-label-md text-on-surface-variant">FINRA: Wire Verification</span>
+<span class="mt-xs inline-flex items-center gap-xs px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant font-mono-sm text-[10px] w-fit">
+<span class="material-symbols-outlined text-[10px] text-tertiary">lock</span> CRITICAL BANK FRAUD
+                  </span>
+</div>
+</td>
+<td class="py-md px-md">
+<div class="flex items-center gap-sm">
+<div class="w-16 h-11 rounded-lg bg-surface-container-high flex flex-col items-center justify-center text-primary flex-shrink-0">
+<span class="material-symbols-outlined text-[20px]">graphic_eq</span>
+<span class="font-mono-sm text-[8px] text-on-surface-variant">WAV 96kHz</span>
+</div>
+<div class="flex flex-col min-w-0 max-w-[180px]">
+<span class="font-mono-sm text-mono-sm font-semibold text-on-surface truncate" title="cfo_wire_transfer_voice_sample.wav">cfo_wire_transfer_voice_sample.wav</span>
+<span class="font-label-md text-label-md text-on-surface-variant">Audio • 48.2 MB</span>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant">PCM • 24-bit stereo</span>
+</div>
+</div>
+</td>
+<td class="py-md px-md">
+<div class="flex flex-col">
+<span class="font-mono-sm text-mono-sm font-medium text-on-surface">2026-03-29 22:15:40 UTC</span>
+<span class="font-label-md text-label-md text-on-surface-variant mt-xs flex items-center gap-xs">
+<span class="w-4 h-4 rounded-full bg-primary-container flex items-center justify-center text-[9px] text-on-primary-container">RM</span>
+                    R. Mehta (Audio Special)
+                  </span>
+<span class="font-mono-sm text-[10px] text-outline">Terminal ID: NY-FORENSIC-02</span>
+</div>
+</td>
+<td class="py-md px-md">
+<div class="flex flex-col gap-xs">
+<div class="flex items-center gap-xs">
+<span class="px-1.5 py-0.5 rounded bg-surface-container font-mono-sm text-[11px] text-on-surface">WavLM-XL: 99.2%</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container font-mono-sm text-[11px] text-on-surface">Vocoder Res: 0.96</span>
+</div>
+<div class="flex items-center gap-xs">
+<span class="px-1.5 py-0.5 rounded bg-surface-container font-mono-sm text-[11px] text-on-surface">ElevenLabs Signature Match</span>
+</div>
+<span class="font-mono-sm text-[10px] text-error font-medium">Synthetic vocal tract detected</span>
+</div>
+</td>
+<td class="py-md px-md">
+<div class="flex flex-col gap-xs">
+<div class="inline-flex items-center gap-xs px-sm py-1 rounded bg-secondary/10 text-secondary font-mono-sm text-mono-sm font-bold w-fit">
+<span class="material-symbols-outlined text-[14px]">record_voice_over</span>
+                    VOICE CLONE (98.9%)
+                  </div>
+<span class="font-label-md text-label-md text-secondary">Neural Mel-Spectrogram Artifacts</span>
+</div>
+</td>
+<td class="py-md px-md">
+<div class="flex flex-col gap-xs">
+<div class="flex items-center gap-xs text-tertiary">
+<span class="material-symbols-outlined text-[16px]">verified</span>
+<span class="font-mono-sm text-mono-sm font-bold">Merkle Verified</span>
+</div>
+<span class="font-mono-sm text-[11px] text-outline font-mono cursor-pointer hover:text-primary" title="Click to copy full SHA-256">
+                    SHA: 12d37c9a…fe0148b
+                  </span>
+<span class="font-mono-sm text-[10px] text-on-surface-variant">Block #1,940,189</span>
+</div>
+</td>
+<td class="py-md px-md text-right">
+<div class="flex items-center justify-end gap-xs">
+<button class="p-xs rounded bg-surface-container hover:bg-surface-container-high text-primary" onclick="openCertificateModal('SEC-8819', 'cfo_wire_transfer_voice_sample.wav', 'VOICE CLONE (Neural TTS)', '98.9%', '12d37c9afe0148b991402ba4415518bca012ef4b', 'R. Mehta', 'WavLM &amp; Vocoder Consensus (5/5)')" title="View Forensic Verification Certificate" type="button">
+<span class="material-symbols-outlined text-[18px]">workspace_premium</span>
+</button>
+<button class="p-xs rounded bg-surface-container hover:bg-surface-container-high text-on-surface" title="Download Signed Evidentiary Package" type="button">
+<span class="material-symbols-outlined text-[18px]">download</span>
+</button>
+<button class="p-xs rounded bg-surface-container hover:bg-surface-container-high text-on-surface-variant" title="Chain Audit Details" type="button">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 4: Authentic Syndicated Anchor Broadcast (Natural Authentic) -->
+<tr class="hover:bg-surface-container-lowest/70 transition-colors group">
+<td class="py-md px-md">
+<div class="flex flex-col">
+<span class="font-mono-sm text-mono-sm font-bold text-primary">MEDIA-0091</span>
+<span class="font-label-md text-label-md text-on-surface-variant">AP Newsdesk Syndication</span>
+<span class="mt-xs inline-flex items-center gap-xs px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant font-mono-sm text-[10px] w-fit">
+<span class="material-symbols-outlined text-[10px] text-tertiary">check_circle</span> BROADCAST CLEAR
+                  </span>
+</div>
+</td>
+<td class="py-md px-md">
+<div class="flex items-center gap-sm">
+<div class="w-16 h-11 rounded-lg bg-surface-container-high overflow-hidden relative flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="Authentic television news broadcast studio frame with female anchor, teleprompter reflections, camera sensor noise patterns, clean depth of field and soft newsroom background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAdknv-HXB0425CgBo9C9OaL_O4SQQcqIv6Q92AntoW13u1Ny7AXCt7zuI6ygYZL6ECsUc6K64mFunNzBKVcAFg0ZLfcjX5oXG_tbZnrgTMNkavzUMgIDrj4K2DvORIbdvVXdVOku2aiGA-bPA9IjzMpQQaJhTaI_tTtz_Q8op01ppS8GMGnpT1NlYbt04Z2dTLU_IvlhJrRrXUjtiFZnj3_2RcgZxapfpxUGBwR_T1yllA5c9qE67A"/>
+<div class="absolute bottom-0.5 right-0.5 px-1 rounded bg-black/70 text-white font-mono-sm text-[9px]">1080p</div>
+</div>
+<div class="flex flex-col min-w-0 max-w-[180px]">
+<span class="font-mono-sm text-mono-sm font-semibold text-on-surface truncate" title="anchor_broadcast_syndicated.mp4">anchor_broadcast_syndicated.mp4</span>
+<span class="font-label-md text-label-md text-on-surface-variant">Video • 890 MB</span>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant">FPS: 29.97 • ProRes 422</span>
+</div>
+</div>
+</td>
+<td class="py-md px-md">
+<div class="flex flex-col">
+<span class="font-mono-sm text-mono-sm font-medium text-on-surface">2026-03-29 19:04:11 UTC</span>
+<span class="font-label-md text-label-md text-on-surface-variant mt-xs flex items-center gap-xs">
+<span class="w-4 h-4 rounded-full bg-primary flex items-center justify-center text-[9px] text-on-primary">AT</span>
+                    Dr. A. Thorne (Sr. Lead)
+                  </span>
+<span class="font-mono-sm text-[10px] text-outline">Terminal ID: DC-FORENSIC-04</span>
+</div>
+</td>
+<td class="py-md px-md">
+<div class="flex flex-col gap-xs">
+<div class="flex items-center gap-xs">
+<span class="px-1.5 py-0.5 rounded bg-surface-container font-mono-sm text-[11px] text-on-surface">ViT-L: 0.04%</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container font-mono-sm text-[11px] text-on-surface">Meso-4: 0.02%</span>
+</div>
+<div class="flex items-center gap-xs">
+<span class="px-1.5 py-0.5 rounded bg-surface-container font-mono-sm text-[11px] text-on-surface">PRNU Sensor Noise: MATCH</span>
+</div>
+<span class="font-mono-sm text-[10px] text-tertiary font-medium">Physical optical sensor coherence OK</span>
+</div>
+</td>
+<td class="py-md px-md">
+<div class="flex flex-col gap-xs">
+<div class="inline-flex items-center gap-xs px-sm py-1 rounded bg-tertiary-fixed-dim/30 text-on-tertiary-fixed-variant font-mono-sm text-mono-sm font-bold w-fit">
+<span class="material-symbols-outlined text-[14px]">verified_user</span>
+                    NATURAL AUTHENTIC
+                  </div>
+<span class="font-label-md text-label-md text-on-tertiary-fixed-variant">Authenticity Score: 99.8%</span>
+</div>
+</td>
+<td class="py-md px-md">
+<div class="flex flex-col gap-xs">
+<div class="flex items-center gap-xs text-tertiary">
+<span class="material-symbols-outlined text-[16px]">verified</span>
+<span class="font-mono-sm text-mono-sm font-bold">Merkle Verified</span>
+</div>
+<span class="font-mono-sm text-[11px] text-outline font-mono cursor-pointer hover:text-primary" title="Click to copy full SHA-256">
+                    SHA: 9f0012ac…aa44021
+                  </span>
+<span class="font-mono-sm text-[10px] text-on-surface-variant">Block #1,940,128</span>
+</div>
+</td>
+<td class="py-md px-md text-right">
+<div class="flex items-center justify-end gap-xs">
+<button class="p-xs rounded bg-surface-container hover:bg-surface-container-high text-primary" onclick="openCertificateModal('MEDIA-0091', 'anchor_broadcast_syndicated.mp4', 'AUTHENTIC CAMERA CAPTURE', '99.8%', '9f0012acff904128bb1892cfae8810aa44021', 'Dr. A. Thorne', '5/5 Ensembles Concurred Natural')" title="View Forensic Verification Certificate" type="button">
+<span class="material-symbols-outlined text-[18px]">workspace_premium</span>
+</button>
+<button class="p-xs rounded bg-surface-container hover:bg-surface-container-high text-on-surface" title="Download Signed Evidentiary Package" type="button">
+<span class="material-symbols-outlined text-[18px]">download</span>
+</button>
+<button class="p-xs rounded bg-surface-container hover:bg-surface-container-high text-on-surface-variant" title="Chain Audit Details" type="button">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 5: High-Res Passport Portrait (Inconclusive / Compression Warning) -->
+<tr class="hover:bg-surface-container-lowest/70 transition-colors group">
+<td class="py-md px-md">
+<div class="flex flex-col">
+<span class="font-mono-sm text-mono-sm font-bold text-primary">KYC-7704</span>
+<span class="font-label-md text-label-md text-on-surface-variant">Banking KYC Onboarding</span>
+<span class="mt-xs inline-flex items-center gap-xs px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant font-mono-sm text-[10px] w-fit">
+<span class="material-symbols-outlined text-[10px] text-secondary">help</span> MANUAL REVIEW REQ
+                  </span>
+</div>
+</td>
+<td class="py-md px-md">
+<div class="flex items-center gap-sm">
+<div class="w-16 h-11 rounded-lg bg-surface-container-high overflow-hidden relative flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="Close-up forensic biometric portrait scan of an international passport document with security watermarks, holographic overlay artifacts, natural grain, and slight JPEG compression blocking." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAjduIkVBUT974wKfoiAt7t4MnlPeuUo_8_uVPMaAW21VCud2jQu2-ouDYqbD-Vb4YW3F84EDFaUBTW9S5G_HkrBWHQrkqJZnXG2Ft_UUJXbQEiQsANFeDy4Rs680y-31StALgFO4kBuU91pAqCqBnwtRIi9qH11HsBwGPfTqOYo1zcWQj3xEjGwmITnEYhfjvB6yKkiRWLR1RrpfP4s3FIAgGLetXeg0-OQ9Lw6edvKdYbbrsjfUQw"/>
+<div class="absolute bottom-0.5 right-0.5 px-1 rounded bg-black/70 text-white font-mono-sm text-[9px]">RAW</div>
+</div>
+<div class="flex flex-col min-w-0 max-w-[180px]">
+<span class="font-mono-sm text-mono-sm font-semibold text-on-surface truncate" title="applicant_id_scan_hq.png">applicant_id_scan_hq.png</span>
+<span class="font-label-md text-label-md text-on-surface-variant">Still Image • 14.8 MB</span>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant">4096 × 2800 • PNG</span>
+</div>
+</div>
+</td>
+<td class="py-md px-md">
+<div class="flex flex-col">
+<span class="font-mono-sm text-mono-sm font-medium text-on-surface">2026-03-29 14:22:19 UTC</span>
+<span class="font-label-md text-label-md text-on-surface-variant mt-xs flex items-center gap-xs">
+<span class="w-4 h-4 rounded-full bg-secondary-container flex items-center justify-center text-[9px] text-on-secondary-container">ES</span>
+                    E. Sterling (KYC Lead)
+                  </span>
+<span class="font-mono-sm text-[10px] text-outline">Terminal ID: UK-CORE-07</span>
+</div>
+</td>
+<td class="py-md px-md">
+<div class="flex flex-col gap-xs">
+<div class="flex items-center gap-xs">
+<span class="px-1.5 py-0.5 rounded bg-surface-container font-mono-sm text-[11px] text-on-surface">StyleGAN-3: 48.1%</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container font-mono-sm text-[11px] text-on-surface">Noise: Discordant</span>
+</div>
+<div class="flex items-center gap-xs">
+<span class="px-1.5 py-0.5 rounded bg-surface-container font-mono-sm text-[11px] text-on-surface">Double JPEG Resave</span>
+</div>
+<span class="font-mono-sm text-[10px] text-on-surface-variant font-medium">Model variance &gt; 35%</span>
+</div>
+</td>
+<td class="py-md px-md">
+<div class="flex flex-col gap-xs">
+<div class="inline-flex items-center gap-xs px-sm py-1 rounded bg-surface-container-highest text-on-surface-variant font-mono-sm text-mono-sm font-bold w-fit">
+<span class="material-symbols-outlined text-[14px]">indeterminate_check_box</span>
+                    INCONCLUSIVE
+                  </div>
+<span class="font-label-md text-label-md text-on-surface-variant">Artifacts Masked by Re-encoding</span>
+</div>
+</td>
+<td class="py-md px-md">
+<div class="flex flex-col gap-xs">
+<div class="flex items-center gap-xs text-tertiary">
+<span class="material-symbols-outlined text-[16px]">verified</span>
+<span class="font-mono-sm text-mono-sm font-bold">Merkle Verified</span>
+</div>
+<span class="font-mono-sm text-[11px] text-outline font-mono cursor-pointer hover:text-primary" title="Click to copy full SHA-256">
+                    SHA: eb44019a…188da99
+                  </span>
+<span class="font-mono-sm text-[10px] text-on-surface-variant">Block #1,940,094</span>
+</div>
+</td>
+<td class="py-md px-md text-right">
+<div class="flex items-center justify-end gap-xs">
+<button class="p-xs rounded bg-surface-container hover:bg-surface-container-high text-primary" onclick="openCertificateModal('KYC-7704', 'applicant_id_scan_hq.png', 'INCONCLUSIVE (Heavy Secondary Compression)', '51.2%', 'eb44019a7719fbc41029ba8100188da9910aefb', 'E. Sterling', 'Split Decision (2/5 Flagged)')" title="View Forensic Verification Certificate" type="button">
+<span class="material-symbols-outlined text-[18px]">workspace_premium</span>
+</button>
+<button class="p-xs rounded bg-surface-container hover:bg-surface-container-high text-on-surface" title="Download Signed Evidentiary Package" type="button">
+<span class="material-symbols-outlined text-[18px]">download</span>
+</button>
+<button class="p-xs rounded bg-surface-container hover:bg-surface-container-high text-on-surface-variant" title="Chain Audit Details" type="button">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 6: Sora 2 Synthetic Simulation Viral Video -->
+<tr class="hover:bg-surface-container-lowest/70 transition-colors group">
+<td class="py-md px-md">
+<div class="flex flex-col">
+<span class="font-mono-sm text-mono-sm font-bold text-primary">DISINFO-1092</span>
+<span class="font-label-md text-label-md text-on-surface-variant">Election Security Taskforce</span>
+<span class="mt-xs inline-flex items-center gap-xs px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant font-mono-sm text-[10px] w-fit">
+<span class="material-symbols-outlined text-[10px] text-error">flag</span> CISA ALERT NOTICE
+                  </span>
+</div>
+</td>
+<td class="py-md px-md">
+<div class="flex items-center gap-sm">
+<div class="w-16 h-11 rounded-lg bg-surface-container-high overflow-hidden relative flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="Hyper-realistic synthetic video screenshot depicting an explosion outside a city hall, hyper-saturated embers, diffusion model temporal flickering artifacts across background windows." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCRGy9sTqW5mP4W8I3j_ARImLQ1pBbkdjuoKhGHKVrITD_MPIKRQVq5JhrrYv-8VRizjPavcyOcMsBgMjNc0bRXdW15k7RCne5Q7eelYb9zMQRPIcE94ulIBEGwsHIblvebms1Qd9EDtDef1GqYmhX3CJH1Syo3mIZdKrfQjhn4HMgo7Lc311wS-c5BCcZsrW1AWZ6WHxolhMRU04Pss0aIe2vmPzCqVnJJt-E6nEj2_pLF26UyNSzQ"/>
+<div class="absolute bottom-0.5 right-0.5 px-1 rounded bg-black/70 text-white font-mono-sm text-[9px]">4K</div>
+</div>
+<div class="flex flex-col min-w-0 max-w-[180px]">
+<span class="font-mono-sm text-mono-sm font-semibold text-on-surface truncate" title="downtown_crisis_simulation.mp4">downtown_crisis_simulation.mp4</span>
+<span class="font-label-md text-label-md text-on-surface-variant">Video • 612 MB</span>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant">FPS: 24.00 • Sora 2 Gen</span>
+</div>
+</div>
+</td>
+<td class="py-md px-md">
+<div class="flex flex-col">
+<span class="font-mono-sm text-mono-sm font-medium text-on-surface">2026-03-29 11:05:51 UTC</span>
+<span class="font-label-md text-label-md text-on-surface-variant mt-xs flex items-center gap-xs">
+<span class="w-4 h-4 rounded-full bg-primary flex items-center justify-center text-[9px] text-on-primary">AT</span>
+                    Dr. A. Thorne (Sr. Lead)
+                  </span>
+<span class="font-mono-sm text-[10px] text-outline">Terminal ID: DC-FORENSIC-04</span>
+</div>
+</td>
+<td class="py-md px-md">
+<div class="flex flex-col gap-xs">
+<div class="flex items-center gap-xs">
+<span class="px-1.5 py-0.5 rounded bg-surface-container font-mono-sm text-[11px] text-on-surface">Sora Latent: 99.9%</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container font-mono-sm text-[11px] text-on-surface">Optical Flow: Anomaly</span>
+</div>
+<div class="flex items-center gap-xs">
+<span class="px-1.5 py-0.5 rounded bg-surface-container font-mono-sm text-[11px] text-on-surface">Physics Incoherence: 0.89</span>
+</div>
+<span class="font-mono-sm text-[10px] text-error font-medium">Full AI Generative Diffusion</span>
+</div>
+</td>
+<td class="py-md px-md">
+<div class="flex flex-col gap-xs">
+<div class="inline-flex items-center gap-xs px-sm py-1 rounded bg-error/10 text-error font-mono-sm text-mono-sm font-bold w-fit">
+<span class="material-symbols-outlined text-[14px]">crisis_alert</span>
+                    SYNTHETIC MEDIA (99.9%)
+                  </div>
+<span class="font-label-md text-label-md text-error">Sora 2 Full Video Generation</span>
+</div>
+</td>
+<td class="py-md px-md">
+<div class="flex flex-col gap-xs">
+<div class="flex items-center gap-xs text-tertiary">
+<span class="material-symbols-outlined text-[16px]">verified</span>
+<span class="font-mono-sm text-mono-sm font-bold">Merkle Verified</span>
+</div>
+<span class="font-mono-sm text-[11px] text-outline font-mono cursor-pointer hover:text-primary" title="Click to copy full SHA-256">
+                    SHA: cc30981b…419208a
+                  </span>
+<span class="font-mono-sm text-[10px] text-on-surface-variant">Block #1,940,012</span>
+</div>
+</td>
+<td class="py-md px-md text-right">
+<div class="flex items-center justify-end gap-xs">
+<button class="p-xs rounded bg-surface-container hover:bg-surface-container-high text-primary" onclick="openCertificateModal('DISINFO-1092', 'downtown_crisis_simulation.mp4', 'SYNTHETIC MEDIA (Sora 2 Diffusion)', '99.9%', 'cc30981b8921da901cbf50012ba4419208a', 'Dr. A. Thorne', 'Full Ensemble Concurrence (5/5)')" title="View Forensic Verification Certificate" type="button">
+<span class="material-symbols-outlined text-[18px]">workspace_premium</span>
+</button>
+<button class="p-xs rounded bg-surface-container hover:bg-surface-container-high text-on-surface" title="Download Signed Evidentiary Package" type="button">
+<span class="material-symbols-outlined text-[18px]">download</span>
+</button>
+<button class="p-xs rounded bg-surface-container hover:bg-surface-container-high text-on-surface-variant" title="Chain Audit Details" type="button">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination and Ledger Checksum Footer -->
+<div class="p-md bg-surface-container-low flex flex-col md:flex-row items-center justify-between gap-md border-t border-outline-variant/20">
+<div class="flex items-center gap-sm">
+<span class="font-mono-sm text-mono-sm text-on-surface-variant">
+            Page 1 of 415 • Records 1 - 6 of 2,489
+          </span>
+<span class="text-outline-variant">|</span>
+<span class="font-mono-sm text-mono-sm text-on-surface font-semibold flex items-center gap-xs">
+<span class="material-symbols-outlined text-[14px] text-tertiary">enhanced_encryption</span>
+            Audit Chain Consistency Verified
+          </span>
+</div>
+<div class="flex items-center gap-xs">
+<button class="px-sm py-1 rounded bg-surface-container text-on-surface-variant cursor-not-allowed opacity-50 font-label-md text-label-md" disabled="" type="button">First</button>
+<button class="px-sm py-1 rounded bg-surface-container text-on-surface-variant cursor-not-allowed opacity-50 font-label-md text-label-md" disabled="" type="button">Prev</button>
+<button class="px-sm py-1 rounded bg-primary text-on-primary font-mono-sm text-mono-sm font-bold" type="button">1</button>
+<button class="px-sm py-1 rounded bg-surface-container hover:bg-surface-container-high text-on-surface font-mono-sm text-mono-sm" type="button">2</button>
+<button class="px-sm py-1 rounded bg-surface-container hover:bg-surface-container-high text-on-surface font-mono-sm text-mono-sm" type="button">3</button>
+<span class="px-xs text-on-surface-variant">…</span>
+<button class="px-sm py-1 rounded bg-surface-container hover:bg-surface-container-high text-on-surface font-mono-sm text-mono-sm" type="button">415</button>
+<button class="px-sm py-1 rounded bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md" type="button">Next</button>
+<button class="px-sm py-1 rounded bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md" type="button">Last</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Real-time Merkle Chain Ingestion & SIEM Integrations Tray -->
+<div class="w-full px-margin-desktop py-md">
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-md">
+<!-- SIEM Dispatch Status -->
+<div class="p-md rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-sm">
+<span class="font-title-lg text-title-lg text-on-surface">SIEM / SOC Webhooks</span>
+<span class="px-sm py-xs rounded-full bg-tertiary/10 text-tertiary font-mono-sm text-[11px] font-bold">LIVE STREAM</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-md">
+            Every verdict above is synchronously buffered to SIEM endpoints. Tamper signatures push syslog CEF events within 18ms.
+          </p>
+<div class="space-y-xs">
+<div class="flex items-center justify-between p-xs px-sm rounded bg-surface-container-low">
+<span class="font-mono-sm text-mono-sm text-on-surface font-medium">Splunk HEC Primary</span>
+<span class="font-mono-sm text-mono-sm text-tertiary flex items-center gap-xs">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary-fixed-dim"></span>CONNECTED (4ms)
+              </span>
+</div>
+<div class="flex items-center justify-between p-xs px-sm rounded bg-surface-container-low">
+<span class="font-mono-sm text-mono-sm text-on-surface font-medium">Elastic Security Cluster</span>
+<span class="font-mono-sm text-mono-sm text-tertiary flex items-center gap-xs">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary-fixed-dim"></span>CONNECTED (8ms)
+              </span>
+</div>
+<div class="flex items-center justify-between p-xs px-sm rounded bg-surface-container-low">
+<span class="font-mono-sm text-mono-sm text-on-surface font-medium">Microsoft Sentinel</span>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant">STANDBY (FAILOVER)</span>
+</div>
+</div>
+</div>
+<div class="mt-md pt-sm border-t border-outline-variant/20 flex items-center justify-between">
+<span class="font-mono-sm text-[11px] text-on-surface-variant">Last ping: 2 sec ago</span>
+<button class="text-primary hover:text-primary-container font-label-md text-label-md font-semibold" type="button">Test Pipe →</button>
+</div>
+</div>
+<!-- Chain of Custody Protocol Overview -->
+<div class="p-md rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-sm">
+<span class="font-title-lg text-title-lg text-on-surface">Legal Admissibility</span>
+<span class="material-symbols-outlined text-primary text-[20px]">verified</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-md">
+            Built strictly to meet the criteria of Federal Rules of Evidence Rule 902(14) for self-authenticating digital records through cryptographic validation.
+          </p>
+<div class="p-sm rounded bg-surface-container-low flex flex-col gap-xs">
+<div class="flex items-center justify-between font-mono-sm text-mono-sm">
+<span class="text-on-surface font-semibold">Cryptographic Hash</span>
+<span class="text-primary font-bold">SHA-256 / Ed25519</span>
+</div>
+<div class="flex items-center justify-between font-mono-sm text-mono-sm">
+<span class="text-on-surface font-semibold">Merkle Root Interval</span>
+<span class="text-on-surface-variant">100 Records / Block</span>
+</div>
+<div class="flex items-center justify-between font-mono-sm text-mono-sm">
+<span class="text-on-surface font-semibold">Time-Stamping Auth</span>
+<span class="text-on-surface-variant">RFC 3161 TSA Master</span>
+</div>
+</div>
+</div>
+<div class="mt-md pt-sm border-t border-outline-variant/20 flex items-center justify-between">
+<span class="font-mono-sm text-[11px] text-on-surface-variant">Audited by CertiK • Q1 2026</span>
+<button class="text-primary hover:text-primary-container font-label-md text-label-md font-semibold" type="button">Compliance Whitepaper →</button>
+</div>
+</div>
+<!-- Quick Scan Ingestion Dropzone -->
+<div class="p-md rounded-xl bg-primary text-on-primary shadow-sm flex flex-col justify-between relative overflow-hidden">
+<div class="relative z-10">
+<div class="flex items-center justify-between mb-sm">
+<span class="font-title-lg text-title-lg font-bold">Ad-hoc Forensic Ingest</span>
+<span class="material-symbols-outlined text-[20px] text-primary-fixed-dim">upload_file</span>
+</div>
+<p class="font-body-md text-body-md text-primary-fixed-dim mb-md">
+            Drop raw footage, audio streams, or suspect media to initiate instant SHA-256 seal and 5-model deepfake extraction.
+          </p>
+<div class="border-2 border-dashed border-primary-fixed-dim/40 rounded-xl p-md flex flex-col items-center justify-center text-center cursor-pointer hover:bg-primary-container/40 transition-colors">
+<span class="material-symbols-outlined text-[32px] text-primary-fixed-dim mb-xs">add_photo_alternate</span>
+<span class="font-body-md text-body-md font-medium text-on-primary">Drag &amp; drop evidence file</span>
+<span class="font-mono-sm text-mono-sm text-primary-fixed-dim mt-xs">Up to 8GB • MP4, MOV, WAV, PNG, RAW</span>
+</div>
+</div>
+<div class="mt-md pt-sm border-t border-primary-fixed-dim/20 flex items-center justify-between relative z-10">
+<span class="font-mono-sm text-[11px] text-primary-fixed-dim">Instant Certificate Generation</span>
+<button class="px-md py-1 rounded bg-on-primary text-primary font-label-md text-label-md font-bold shadow hover:bg-surface-container-high transition-colors" type="button">
+            Browse Files
+          </button>
+</div>
+</div>
+</div>
+</div>
+<!-- Forensic Verification Certificate Slide-Out / Modal -->
+<div class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden items-center justify-center p-md" id="cert-modal">
+<div class="bg-surface-container-lowest w-full max-w-2xl rounded-2xl shadow-2xl border border-outline-variant/30 overflow-hidden flex flex-col max-h-[921px]">
+<!-- Certificate Header -->
+<div class="p-lg bg-primary text-on-primary flex items-start justify-between">
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 rounded-xl bg-on-primary/10 flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined text-[28px]">verified_user</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md uppercase tracking-wider text-primary-fixed-dim">Forensic Chain of Custody</span>
+<span class="font-title-lg text-title-lg font-bold">Forensic Verification Certificate</span>
+<span class="font-mono-sm text-mono-sm text-primary-fixed-dim">Conforming to ISO/IEC 27037 • RFC 3161 Certified</span>
+</div>
+</div>
+<button class="p-xs rounded-full hover:bg-on-primary/10 text-on-primary transition-colors" onclick="closeCertificateModal()" type="button">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+<!-- Certificate Body -->
+<div class="p-lg overflow-y-auto flex flex-col gap-md">
+<!-- Top Details Box -->
+<div class="p-md rounded-xl bg-surface-container-low grid grid-cols-2 gap-sm">
+<div>
+<span class="font-label-md text-label-md text-on-surface-variant uppercase">Evidence ID</span>
+<p class="font-mono-sm text-mono-sm font-bold text-on-surface" id="cert-case-id">EVID-2025-9941X</p>
+</div>
+<div>
+<span class="font-label-md text-label-md text-on-surface-variant uppercase">Investigator in Charge</span>
+<p class="font-body-md text-body-md font-semibold text-on-surface" id="cert-investigator">Dr. A. Thorne</p>
+</div>
+<div class="col-span-2">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase">Analyzed Artifact</span>
+<p class="font-mono-sm text-mono-sm font-semibold text-primary truncate" id="cert-filename">press_conf_leak_4k.mp4</p>
+</div>
+</div>
+<!-- Consensus & Verdict Box -->
+<div class="p-md rounded-xl bg-surface-container-high/40 flex items-center justify-between">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase">Final Verdict &amp; Confidence</span>
+<div class="flex items-center gap-sm mt-xs">
+<span class="font-headline-md text-headline-md font-bold text-error" id="cert-verdict">DEEPFAKE</span>
+<span class="font-mono-sm text-mono-sm font-bold px-sm py-0.5 rounded bg-error text-on-error" id="cert-score">99.6%</span>
+</div>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant mt-xs" id="cert-consensus">5/5 Detection Ensembles Concurred</span>
+</div>
+<!-- Legal QR Code Mock SVG -->
+<div class="flex flex-col items-center">
+<div class="w-20 h-20 bg-white p-1 rounded-lg border border-outline-variant/40 flex items-center justify-center">
+<svg class="w-full h-full text-on-surface" fill="currentColor" viewbox="0 0 100 100">
+<!-- Outer Corners -->
+<rect fill="currentColor" height="28" width="28" x="5" y="5"></rect>
+<rect fill="white" height="20" width="20" x="9" y="9"></rect>
+<rect fill="currentColor" height="12" width="12" x="13" y="13"></rect>
+<rect fill="currentColor" height="28" width="28" x="67" y="5"></rect>
+<rect fill="white" height="20" width="20" x="71" y="9"></rect>
+<rect fill="currentColor" height="12" width="12" x="75" y="13"></rect>
+<rect fill="currentColor" height="28" width="28" x="5" y="67"></rect>
+<rect fill="white" height="20" width="20" x="9" y="71"></rect>
+<rect fill="currentColor" height="12" width="12" x="13" y="75"></rect>
+<!-- QR Noise Matrix Pattern -->
+<rect height="6" width="6" x="40" y="8"></rect>
+<rect height="6" width="6" x="50" y="16"></rect>
+<rect height="6" width="6" x="40" y="24"></rect>
+<rect height="6" width="6" x="54" y="28"></rect>
+<rect height="6" width="6" x="8" y="44"></rect>
+<rect height="6" width="6" x="18" y="40"></rect>
+<rect height="6" width="6" x="24" y="52"></rect>
+<rect height="16" width="16" x="42" y="42"></rect>
+<rect fill="white" height="8" width="8" x="46" y="46"></rect>
+<rect height="6" width="6" x="66" y="44"></rect>
+<rect height="6" width="6" x="78" y="40"></rect>
+<rect height="6" width="6" x="86" y="52"></rect>
+<rect height="6" width="6" x="44" y="70"></rect>
+<rect height="6" width="6" x="54" y="82"></rect>
+<rect height="6" width="6" x="68" y="72"></rect>
+<rect height="6" width="6" x="80" y="80"></rect>
+<rect height="6" width="6" x="72" y="88"></rect>
+</svg>
+</div>
+<span class="font-mono-sm text-[9px] text-on-surface-variant mt-1">SCAN TO AUDIT</span>
+</div>
+</div>
+<!-- Cryptographic Details Block -->
+<div class="flex flex-col gap-xs">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase">Evidence Cryptographic Hash (SHA-256)</span>
+<div class="p-sm bg-surface-container font-mono-sm text-mono-sm text-on-surface rounded select-all break-all">
+<span id="cert-hash">4a2b9f8de92bc7f81902ba7c6543b18d20e89190cde11e9a3c</span>
+</div>
+</div>
+<!-- Signature Block -->
+<div class="grid grid-cols-2 gap-md pt-md border-t border-outline-variant/30">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase">Cryptographic Authority</span>
+<span class="font-mono-sm text-mono-sm font-semibold text-on-surface mt-xs">Veritas Root TSA #8</span>
+<span class="font-mono-sm text-[10px] text-outline">Timestamp: 2026-03-30T08:41:22.819Z</span>
+<span class="font-mono-sm text-[10px] text-tertiary font-bold mt-xs">DIGITALLY SIGNED • SEAL VALID</span>
+</div>
+<div class="flex flex-col items-end">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase">Forensic Examiner Sign-Off</span>
+<div class="h-8 flex items-end">
+<span class="font-mono-sm text-mono-sm italic text-primary font-bold">Arthur C. Thorne, Ph.D.</span>
+</div>
+<span class="font-mono-sm text-[10px] text-outline">Badge: #US-LE-90412 • TruthScan SEC</span>
+</div>
+</div>
+</div>
+<!-- Modal Footer -->
+<div class="p-md bg-surface-container-low flex items-center justify-between border-t border-outline-variant/20">
+<button class="px-md py-xs rounded bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md" onclick="closeCertificateModal()" type="button">
+          Close Preview
+        </button>
+<div class="flex items-center gap-xs">
+<button class="flex items-center gap-xs px-md py-xs rounded bg-surface-container-high text-on-surface hover:bg-surface-container-highest transition-colors font-label-md text-label-md" type="button">
+<span class="material-symbols-outlined text-[16px]">print</span>
+            Print Formal Affidavit
+          </button>
+<button class="flex items-center gap-xs px-md py-xs rounded bg-primary text-on-primary hover:bg-primary-container transition-colors font-label-md text-label-md shadow-sm" type="button">
+<span class="material-symbols-outlined text-[16px]">file_download</span>
+            Download Cryptographic Package (.p7s)
+          </button>
+</div>
+</div>
+</div>
+</div>
+<!-- Inline Script for Interactivity -->
+
+</div></main></div>

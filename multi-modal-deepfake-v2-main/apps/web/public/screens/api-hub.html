@@ -1,0 +1,654 @@
+<header class="fixed top-0 left-0 right-0 z-50 bg-surface/90 backdrop-blur-xl border-b border-outline-variant/30 shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 w-full px-gutter flex items-center justify-between gap-md"><div class="flex items-center gap-md"><div class="flex items-center gap-sm"><div class="w-9 h-9 rounded-lg bg-primary flex items-center justify-center text-on-primary shadow-sm"><span class="material-symbols-outlined text-[20px]">verified_user</span></div><div class="flex flex-col"><span class="font-title-lg text-title-lg text-primary leading-tight tracking-tight">TruthScan</span><span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Veritas AI Forensics</span></div></div><div class="hidden xl:flex items-center gap-xs px-sm py-xs rounded-full bg-surface-container border border-outline-variant/40"><span class="w-2 h-2 rounded-full bg-tertiary-fixed-dim animate-pulse"></span><span class="font-mono-sm text-mono-sm text-on-surface font-medium">HF-Ensemble v4.2 • CUDA Active</span><span class="font-mono-sm text-mono-sm text-on-surface-variant">(42ms)</span></div></div><nav class="hidden lg:flex items-center gap-xs p-xs rounded-lg bg-surface-container-low" data-active-classes="bg-primary-container text-on-primary font-semibold shadow-sm"><a class="px-md py-xs rounded text-on-surface-variant font-label-md text-label-md transition-colors hover:text-on-surface hover:bg-surface-container-high" data-path="deepfake-analyzer" href="#">Deepfake Analyzer</a><a class="px-md py-xs rounded text-on-surface-variant font-label-md text-label-md transition-colors hover:text-on-surface hover:bg-surface-container-high" data-path="batch-queue-&amp;-ingestion" href="#">Batch Queue &amp; Ingestion</a><a class="px-md py-xs rounded text-on-surface-variant font-label-md text-label-md transition-colors hover:text-on-surface hover:bg-surface-container-high" data-path="scan-history-&amp;-audit" href="#">Scan History &amp; Audit</a><a class="px-md py-xs rounded text-on-surface-variant font-label-md text-label-md transition-colors hover:text-on-surface hover:bg-surface-container-high" data-path="threat-intelligence" href="#">Threat Intelligence</a><a aria-current="page" class="px-md py-xs rounded transition-colors bg-primary-container text-on-primary font-semibold shadow-sm" data-path="enterprise-api-&amp;-model-hub" href="#">Enterprise API &amp; Model Hub</a><a class="px-md py-xs rounded text-on-surface-variant font-label-md text-label-md transition-colors hover:text-on-surface hover:bg-surface-container-high" data-path="settings" href="#">Settings</a></nav><div class="flex items-center gap-sm"><button class="flex items-center gap-xs px-md py-xs rounded bg-surface-container-high text-on-surface hover:bg-surface-container-highest transition-colors font-label-md text-label-md" type="button"><span class="material-symbols-outlined text-[16px]">file_download</span><span class="hidden 2xl:inline">Export Forensic Report (PDF)</span></button><button class="flex items-center gap-xs px-md py-xs rounded bg-primary text-on-primary hover:bg-primary-container transition-colors font-label-md text-label-md shadow-sm" type="button"><span class="material-symbols-outlined text-[16px]">cloud_upload</span><span>Upload Media</span></button><div class="flex items-center gap-xs px-sm py-xs rounded bg-surface-container text-on-surface-variant" title="Telemetry / Core Cluster 99.98% Operational"><span class="material-symbols-outlined text-tertiary text-[18px]">shield_with_heart</span><span class="hidden sm:inline font-mono-sm text-mono-sm">HEALTHY</span></div><div class="flex items-center gap-sm pl-xs"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div><div class="hidden md:flex flex-col text-left"><span class="font-label-md text-label-md text-on-surface font-semibold leading-tight">Dr. A. Thorne</span><span class="font-label-md text-label-md text-on-surface-variant leading-tight">Sr. Forensic Lead</span></div></div></div></div></header><aside class="fixed left-0 top-16 bottom-0 w-64 bg-surface-container-lowest border-r border-outline-variant/30 flex flex-col justify-between py-md z-40"><div class="flex flex-col gap-md"><div class="px-md"><div class="flex items-center justify-between text-on-surface-variant font-label-md text-label-md uppercase tracking-wider mb-sm"><span>Forensic Operations</span><span class="material-symbols-outlined text-[16px]">security</span></div></div><nav class="flex flex-col gap-xs px-sm" data-active-classes="bg-surface-container-high text-primary font-semibold border-l-2 border-primary"><a class="flex items-center gap-sm px-md py-sm rounded text-on-surface-variant font-body-md text-body-md hover:bg-surface-container-low hover:text-on-surface transition-all" data-path="deepfake-analyzer" href="#"><span class="material-symbols-outlined text-[18px]">csv</span><span>Analyzer Console</span></a><a class="flex items-center gap-sm px-md py-sm rounded text-on-surface-variant font-body-md text-body-md hover:bg-surface-container-low hover:text-on-surface transition-all" data-path="batch-queue-&amp;-ingestion" href="#"><span class="material-symbols-outlined text-[18px]">view_list</span><span>Batch Pipeline</span></a><a class="flex items-center gap-sm px-md py-sm rounded text-on-surface-variant font-body-md text-body-md hover:bg-surface-container-low hover:text-on-surface transition-all" data-path="scan-history-&amp;-audit" href="#"><span class="material-symbols-outlined text-[18px]">history_toggle_off</span><span>Chain of Custody</span></a><a class="flex items-center gap-sm px-md py-sm rounded text-on-surface-variant font-body-md text-body-md hover:bg-surface-container-low hover:text-on-surface transition-all" data-path="threat-intelligence" href="#"><span class="material-symbols-outlined text-[18px]">radar</span><span>Threat Feeds</span></a><a aria-current="page" class="flex items-center gap-sm px-md py-sm rounded transition-all bg-surface-container-high text-primary font-semibold border-l-2 border-primary" data-path="enterprise-api-&amp;-model-hub" href="#"><span class="material-symbols-outlined text-[18px]">hub</span><span>Model Hub &amp; SDK</span></a><a class="flex items-center gap-sm px-md py-sm rounded text-on-surface-variant font-body-md text-body-md hover:bg-surface-container-low hover:text-on-surface transition-all" data-path="settings" href="#"><span class="material-symbols-outlined text-[18px]">tune</span><span>Engine Config</span></a></nav></div><div class="px-md flex flex-col gap-sm"><div class="p-sm rounded bg-surface-container-low border border-outline-variant/30"><div class="flex items-center justify-between text-on-surface-variant font-mono-sm text-mono-sm mb-xs"><span>CUDA VRAM</span><span>7.8 / 24 GB</span></div><div class="w-full h-1.5 bg-surface-container rounded-full overflow-hidden"><div class="bg-secondary h-full rounded-full w-1/3"></div></div></div><div class="flex items-center justify-between text-on-surface-variant font-mono-sm text-mono-sm pt-xs border-t border-outline-variant/20"><span>Cluster node-04</span><span class="flex items-center gap-xs"><span class="w-1.5 h-1.5 rounded-full bg-tertiary-fixed-dim"></span>Synced</span></div></div></aside><div class="pl-64"><main class="relative w-full pt-16 min-h-screen bg-background"><div class="flex flex-col w-full">
+<!-- Top Telemetry & Status Ribbon -->
+<section class="w-full px-gutter py-md bg-surface-container-low">
+<div class="max-w-7xl mx-auto flex flex-col xl:flex-row xl:items-center justify-between gap-md">
+<div class="flex flex-wrap items-center gap-sm">
+<div class="flex items-center gap-xs px-sm py-xs rounded bg-surface-container-highest">
+<span class="w-2 h-2 rounded-full bg-tertiary-fixed-dim"></span>
+<span class="font-mono-sm text-mono-sm font-semibold text-primary">REST &amp; WS GATEWAY</span>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant">| 99.99% Uptime</span>
+</div>
+<div class="flex items-center gap-xs px-sm py-xs rounded bg-surface-container">
+<span class="material-symbols-outlined text-[14px] text-on-surface-variant">dns</span>
+<span class="font-mono-sm text-mono-sm text-on-surface">Active Endpoint:</span>
+<span class="font-mono-sm text-mono-sm font-semibold text-secondary">v4.2-prod-us-east</span>
+</div>
+<div class="flex items-center gap-xs px-sm py-xs rounded bg-surface-container">
+<span class="material-symbols-outlined text-[14px] text-tertiary">public</span>
+<span class="font-mono-sm text-mono-sm text-on-surface">Global Edge Nodes:</span>
+<span class="font-mono-sm text-mono-sm font-bold text-on-surface">14 Active</span>
+</div>
+</div>
+<div class="flex items-center gap-sm">
+<div class="flex items-center gap-xs px-sm py-xs rounded bg-surface-container-lowest shadow-sm">
+<span class="font-mono-sm text-mono-sm text-on-surface-variant">Cluster P95:</span>
+<span class="font-mono-sm text-mono-sm font-bold text-primary">184ms</span>
+<span class="text-outline-variant font-mono-sm text-mono-sm">•</span>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant">Error Rate:</span>
+<span class="font-mono-sm text-mono-sm font-bold text-tertiary">&lt;0.01%</span>
+</div>
+<a class="px-md py-xs rounded bg-primary text-on-primary hover:bg-primary-container transition-colors font-label-md text-label-md shadow-sm flex items-center gap-xs" href="#playground">
+<span class="material-symbols-outlined text-[16px]">terminal</span>
+<span>Launch Playground</span>
+</a>
+</div>
+</div>
+</section>
+<!-- Main Grid Content Area -->
+<div class="w-full max-w-7xl mx-auto px-gutter py-xl space-y-xl">
+<!-- Section 1: API Key Hub & Live Telemetry Bento -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-lg">
+<!-- Key Management Card -->
+<div class="lg:col-span-5 bg-surface-container-lowest rounded-xl p-lg shadow-sm flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-sm">
+<span class="font-label-md text-label-md uppercase tracking-wider text-on-surface-variant font-semibold">Authentication &amp; Credentials</span>
+<span class="px-xs py-0.5 rounded bg-tertiary-fixed text-on-tertiary-fixed-variant font-mono-sm text-mono-sm font-medium">Production Key</span>
+</div>
+<h2 class="font-title-lg text-title-lg text-primary mb-xs">Enterprise API Secret</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mb-md">Use this key in the Authorization header as <code class="px-xs py-0.5 rounded bg-surface-container text-on-surface font-mono-sm text-mono-sm">Bearer &lt;token&gt;</code> for all forensic extraction calls.</p>
+<!-- Masked Key Field -->
+<div class="p-sm rounded-lg bg-surface-container-low flex items-center justify-between gap-sm mb-md">
+<div class="flex items-center gap-xs overflow-hidden">
+<span class="material-symbols-outlined text-[18px] text-outline">key</span>
+<span class="font-mono-sm text-mono-sm text-on-surface truncate" id="apiKeyText">ts_live_9482bf478a221f7c891e4e0984a921d</span>
+</div>
+<div class="flex items-center gap-xs shrink-0">
+<button class="p-xs rounded hover:bg-surface-container text-on-surface-variant" id="toggleKeyBtn" title="Reveal / Mask Key" type="button">
+<span class="material-symbols-outlined text-[18px]" id="toggleKeyIcon">visibility_off</span>
+</button>
+<button class="p-xs rounded hover:bg-surface-container text-primary font-medium flex items-center gap-0.5" id="copyKeyBtn" title="Copy to Clipboard" type="button">
+<span class="material-symbols-outlined text-[18px]">content_copy</span>
+</button>
+</div>
+</div>
+<div class="hidden text-tertiary font-mono-sm text-mono-sm mb-sm flex items-center gap-xs" id="copyToast">
+<span class="material-symbols-outlined text-[14px]">check_circle</span> Copied to clipboard!
+          </div>
+<!-- Quota & Rolling Limits -->
+<div class="space-y-sm pt-xs">
+<div class="flex items-center justify-between font-mono-sm text-mono-sm">
+<span class="text-on-surface-variant">Rolling Rate Limit (Hourly)</span>
+<span class="font-bold text-on-surface">4,280 / 10,000 req</span>
+</div>
+<div class="w-full h-2 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-secondary rounded-full" style="width: 42.8%;"></div>
+</div>
+<div class="flex justify-between items-center text-on-surface-variant font-mono-sm text-mono-sm">
+<span>Quota resets in 38m 12s</span>
+<span class="text-secondary font-semibold">Tier 4 Dedicated Node</span>
+</div>
+</div>
+</div>
+<div class="pt-lg flex items-center justify-between">
+<button class="px-md py-xs rounded bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-label-md text-label-md transition-colors flex items-center gap-xs" type="button">
+<span class="material-symbols-outlined text-[16px]">refresh</span>
+<span>Rotate Secret</span>
+</button>
+<a class="font-label-md text-label-md text-secondary hover:underline flex items-center gap-0.5 font-medium" href="#">
+<span>Read Auth Docs</span>
+<span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+</a>
+</div>
+</div>
+<!-- Live Usage Telemetry & Chart Bento -->
+<div class="lg:col-span-7 bg-surface-container-lowest rounded-xl p-lg shadow-sm flex flex-col justify-between">
+<div>
+<div class="flex flex-wrap items-center justify-between gap-sm mb-sm">
+<div>
+<span class="font-label-md text-label-md uppercase tracking-wider text-on-surface-variant font-semibold">Real-Time Throughput</span>
+<h3 class="font-title-lg text-title-lg text-primary">24h Ingestion Volume &amp; Latency Profile</h3>
+</div>
+<div class="flex items-center gap-xs p-xs rounded bg-surface-container">
+<button class="px-sm py-xs rounded bg-surface-container-lowest font-mono-sm text-mono-sm text-primary font-bold shadow-xs">24H</button>
+<button class="px-sm py-xs rounded text-on-surface-variant font-mono-sm text-mono-sm hover:text-on-surface">7D</button>
+<button class="px-sm py-xs rounded text-on-surface-variant font-mono-sm text-mono-sm hover:text-on-surface">30D</button>
+</div>
+</div>
+<!-- Inline SVG Visual Chart (Throughput + Latency Bars) -->
+<div class="w-full pt-xs">
+<div class="h-44 w-full relative flex items-end">
+<!-- SVG Visual Representation -->
+<svg class="w-full h-full overflow-visible" preserveaspectratio="none" viewbox="0 0 540 140">
+<defs>
+<lineargradient id="areaGradient" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#1e3a8a" stop-opacity="0.25"></stop>
+<stop offset="100%" stop-color="#1e3a8a" stop-opacity="0.0"></stop>
+</lineargradient>
+</defs>
+<!-- Reference grid horizontal bars -->
+<line stroke="#eaedff" stroke-dasharray="4 4" stroke-width="1" x1="0" x2="540" y1="20" y2="20"></line>
+<line stroke="#eaedff" stroke-dasharray="4 4" stroke-width="1" x1="0" x2="540" y1="60" y2="60"></line>
+<line stroke="#eaedff" stroke-dasharray="4 4" stroke-width="1" x1="0" x2="540" y1="100" y2="100"></line>
+<!-- Area Fill for Requests -->
+<polygon fill="url(#areaGradient)" points="0,110 30,95 60,105 90,80 120,70 150,85 180,60 210,50 240,40 270,65 300,30 330,45 360,25 390,38 420,20 450,30 480,15 510,25 540,10 540,140 0,140"></polygon>
+<!-- Primary Request Line -->
+<polyline fill="none" points="0,110 30,95 60,105 90,80 120,70 150,85 180,60 210,50 240,40 270,65 300,30 330,45 360,25 390,38 420,20 450,30 480,15 510,25 540,10" stroke="#00236f" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></polyline>
+<!-- Secondary Latency Marker Line -->
+<polyline fill="none" points="0,120 30,118 60,115 90,110 120,112 150,114 180,108 210,105 240,102 270,104 300,98 330,100 360,94 390,95 420,90 450,92 480,88 510,87 540,84" stroke="#4b41e1" stroke-dasharray="3 3" stroke-width="1.5"></polyline>
+</svg>
+</div>
+<div class="flex justify-between text-on-surface-variant font-mono-sm text-mono-sm pt-xs">
+<span>00:00 UTC</span>
+<span>06:00</span>
+<span>12:00</span>
+<span>18:00</span>
+<span>Live (Now)</span>
+</div>
+</div>
+</div>
+<!-- Latency Metrics Breakdown Row -->
+<div class="grid grid-cols-3 gap-sm pt-md mt-sm">
+<div class="p-sm rounded-lg bg-surface-container-low">
+<span class="font-mono-sm text-mono-sm text-on-surface-variant block">Single Frame / Img</span>
+<div class="flex items-baseline gap-xs mt-xs">
+<span class="font-headline-md text-headline-md font-bold text-primary">180</span>
+<span class="font-mono-sm text-mono-sm text-on-surface">ms avg</span>
+</div>
+<span class="font-mono-sm text-mono-sm text-tertiary">99.2% &lt;240ms</span>
+</div>
+<div class="p-sm rounded-lg bg-surface-container-low">
+<span class="font-mono-sm text-mono-sm text-on-surface-variant block">4K 60s Stream Batch</span>
+<div class="flex items-baseline gap-xs mt-xs">
+<span class="font-headline-md text-headline-md font-bold text-primary">1.4</span>
+<span class="font-mono-sm text-mono-sm text-on-surface">sec avg</span>
+</div>
+<span class="font-mono-sm text-mono-sm text-secondary">CUDA NVDEC Enabled</span>
+</div>
+<div class="p-sm rounded-lg bg-surface-container-low">
+<span class="font-mono-sm text-mono-sm text-on-surface-variant block">Failed Frames / Error</span>
+<div class="flex items-baseline gap-xs mt-xs">
+<span class="font-headline-md text-headline-md font-bold text-tertiary">0.008</span>
+<span class="font-mono-sm text-mono-sm text-on-surface">%</span>
+</div>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant">Zero dropped sockets</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Section 2: Interactive API Code Playground & Multi-Language Console -->
+<div class="bg-surface-container-lowest rounded-xl p-lg shadow-sm" id="playground">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-sm mb-lg">
+<div>
+<span class="font-label-md text-label-md uppercase tracking-wider text-secondary font-semibold">Developer Console</span>
+<h2 class="font-headline-lg text-headline-lg text-primary tracking-tight">API Request Playground &amp; SDK Explorer</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Send real-time forensic payloads against the high-frequency ensemble detection API endpoint.</p>
+</div>
+<div class="flex items-center gap-xs">
+<span class="px-sm py-xs rounded bg-surface-container font-mono-sm text-mono-sm font-semibold text-primary">POST /v1/detect/deepfake</span>
+<button class="px-md py-xs rounded bg-primary text-on-primary hover:bg-primary-container font-label-md text-label-md flex items-center gap-xs shadow-sm transition-all" id="runPlaygroundBtn" type="button">
+<span class="material-symbols-outlined text-[16px]">play_arrow</span>
+<span>Execute Request</span>
+</button>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-lg">
+<!-- Code snippet tabs and editor -->
+<div class="lg:col-span-7 flex flex-col bg-surface-container rounded-xl overflow-hidden shadow-inner">
+<div class="flex items-center justify-between px-md py-xs bg-surface-container-high">
+<div class="flex items-center gap-xs" id="langTabs">
+<button class="lang-tab px-sm py-xs rounded font-mono-sm text-mono-sm font-semibold bg-surface-container-lowest text-primary shadow-xs" data-lang="curl">cURL</button>
+<button class="lang-tab px-sm py-xs rounded font-mono-sm text-mono-sm font-semibold text-on-surface-variant hover:text-on-surface" data-lang="python">Python (SDK)</button>
+<button class="lang-tab px-sm py-xs rounded font-mono-sm text-mono-sm font-semibold text-on-surface-variant hover:text-on-surface" data-lang="nodejs">Node.js</button>
+<button class="lang-tab px-sm py-xs rounded font-mono-sm text-mono-sm font-semibold text-on-surface-variant hover:text-on-surface" data-lang="go">Go</button>
+</div>
+<button class="flex items-center gap-xs text-on-surface-variant hover:text-primary font-mono-sm text-mono-sm" id="copySnippetBtn">
+<span class="material-symbols-outlined text-[14px]">content_copy</span>
+<span>Copy</span>
+</button>
+</div>
+<div class="p-md font-mono-sm text-mono-sm overflow-x-auto text-on-surface leading-relaxed min-h-[360px]">
+<!-- cURL snippet -->
+<pre class="snippet-content text-on-surface" id="code-curl"><span class="text-secondary font-semibold">curl</span> -X POST https://api.veritas.ai/v1/detect/deepfake \
+  -H <span class="text-primary font-medium">"Authorization: Bearer ts_live_9482bf47..."</span> \
+  -H <span class="text-primary font-medium">"Content-Type: multipart/form-data"</span> \
+  -F <span class="text-on-surface-variant">"file=@investigation_evidence_04.mp4"</span> \
+  -F <span class="text-on-surface-variant">"modality=video_audio_fusion"</span> \
+  -F <span class="text-on-surface-variant">"biomarkers=true"</span> \
+  -F <span class="text-on-surface-variant">"ensemble_preset=forensic_maximum"</span> \
+  -F <span class="text-on-surface-variant">"webhook_notify=https://secops.acme.corp/webhook/v1"</span></pre>
+<!-- Python SDK snippet -->
+<pre class="snippet-content hidden text-on-surface" id="code-python"><span class="text-secondary font-semibold">from</span> truthscan <span class="text-secondary font-semibold">import</span> TruthScanClient, ForensicsPreset
+
+client = TruthScanClient(api_key=<span class="text-primary font-medium">"ts_live_9482bf47..."</span>)
+
+<span class="text-on-surface-variant"># Ingest suspicious stream or video payload</span>
+with open(<span class="text-primary font-medium">"investigation_evidence_04.mp4"</span>, <span class="text-primary font-medium">"rb"</span>) as media:
+    report = client.detect.analyze_media(
+        file=media,
+        modality=<span class="text-primary font-medium">"video_audio_fusion"</span>,
+        preset=ForensicsPreset.MAXIMUM_ENSEMBLE,
+        extract_biomarkers=True,
+        confidence_quarantine_threshold=0.85
+    )
+
+print(f<span class="text-primary font-medium">"Deepfake Synthetic Confidence: {report.confidence_score * 100:.2f}%"</span>)
+print(f<span class="text-primary font-medium">"Primary Inconsistency: {report.forensic_biomarkers.primary_anomaly}"</span>)</pre>
+<!-- Node.js snippet -->
+<pre class="snippet-content hidden text-on-surface" id="code-nodejs"><span class="text-secondary font-semibold">import</span> { TruthScan } <span class="text-secondary font-semibold">from</span> <span class="text-primary font-medium">'@truthscan/forensics-sdk'</span>;
+<span class="text-secondary font-semibold">import</span> fs <span class="text-secondary font-semibold">from</span> <span class="text-primary font-medium">'node:fs'</span>;
+
+<span class="text-secondary font-semibold">const</span> truthscan = <span class="text-secondary font-semibold">new</span> TruthScan({ apiKey: process.env.TRUTHSCAN_KEY });
+
+<span class="text-secondary font-semibold">const</span> analysis = <span class="text-secondary font-semibold">await</span> truthscan.detect({
+  media: fs.createReadStream(<span class="text-primary font-medium">'./investigation_evidence_04.mp4'</span>),
+  modalities: [<span class="text-primary font-medium">'video'</span>, <span class="text-primary font-medium">'audio'</span>],
+  biomarkers: <span class="text-secondary font-semibold">true</span>,
+  quarantineThreshold: 0.85
+});
+
+console.log(<span class="text-primary font-medium">'Hold Recommendation:'</span>, analysis.automated_hold);
+console.log(<span class="text-primary font-medium">'Modality Breakdown:'</span>, analysis.modality_breakdown);</pre>
+<!-- Go snippet -->
+<pre class="snippet-content hidden text-on-surface" id="code-go"><span class="text-secondary font-semibold">package</span> main
+
+<span class="text-secondary font-semibold">import</span> (
+  <span class="text-primary font-medium">"context"</span>
+  <span class="text-primary font-medium">"fmt"</span>
+  <span class="text-primary font-medium">"github.com/veritas-ai/truthscan-go"</span>
+)
+
+<span class="text-secondary font-semibold">func</span> main() {
+  client := truthscan.NewClient(<span class="text-primary font-medium">"ts_live_9482bf47..."</span>)
+  res, err := client.DetectMedia(context.Background(), &amp;truthscan.DetectParams{
+    FilePath:     <span class="text-primary font-medium">"investigation_evidence_04.mp4"</span>,
+    Modality:     truthscan.ModalityFullFusion,
+    Biomarkers:   <span class="text-secondary font-semibold">true</span>,
+  })
+  <span class="text-secondary font-semibold">if</span> err != nil { panic(err) }
+  fmt.Printf(<span class="text-primary font-medium">"Status: %s (Score: %.4f)\n"</span>, res.Classification, res.ConfidenceScore)
+}</pre>
+</div>
+</div>
+<!-- Real-Time JSON Output Inspector -->
+<div class="lg:col-span-5 flex flex-col bg-surface-container-lowest rounded-xl shadow-inner">
+<div class="flex items-center justify-between px-md py-xs bg-surface-container-low rounded-t-xl">
+<div class="flex items-center gap-xs">
+<span class="w-2 h-2 rounded-full bg-error animate-ping"></span>
+<span class="font-mono-sm text-mono-sm font-semibold text-primary">RESPONSE 200 OK • 164ms</span>
+</div>
+<span class="px-xs py-0.5 rounded bg-error-container text-on-error-container font-mono-sm text-mono-sm font-bold">SYNTHETIC DETECTED</span>
+</div>
+<div class="p-md font-mono-sm text-mono-sm text-on-surface leading-normal overflow-y-auto max-h-[360px] bg-surface-container-lowest">
+<pre class="whitespace-pre-wrap"><span class="text-on-surface-variant">{</span>
+  <span class="text-primary font-semibold">"scan_id"</span>: <span class="text-on-surface font-medium">"scn_88f912c_forensics"</span>,
+  <span class="text-primary font-semibold">"verdict"</span>: <span class="text-error font-bold">"MANIPULATED_DEEPFAKE"</span>,
+  <span class="text-primary font-semibold">"confidence_score"</span>: <span class="text-error font-bold">0.9782</span>,
+  <span class="text-primary font-semibold">"automated_quarantine"</span>: <span class="text-error font-bold">true</span>,
+  <span class="text-primary font-semibold">"timestamp"</span>: <span class="text-on-surface">"2026-03-29T14:18:22.041Z"</span>,
+  <span class="text-primary font-semibold">"modality_breakdown"</span>: <span class="text-on-surface-variant">{</span>
+    <span class="text-primary font-semibold">"spatial_artifacts_vit"</span>: <span class="text-on-surface">0.984</span>,
+    <span class="text-primary font-semibold">"temporal_flicker_meso"</span>: <span class="text-on-surface">0.961</span>,
+    <span class="text-primary font-semibold">"voice_synthesis_wavlm"</span>: <span class="text-on-surface">0.923</span>,
+    <span class="text-primary font-semibold">"error_level_analysis"</span>: <span class="text-on-surface">0.892</span>
+  <span class="text-on-surface-variant">}</span>,
+  <span class="text-primary font-semibold">"forensic_biomarkers"</span>: <span class="text-on-surface-variant">{</span>
+    <span class="text-primary font-semibold">"face_swap_identified"</span>: <span class="text-error font-semibold">true</span>,
+    <span class="text-primary font-semibold">"irregular_blink_rate_hz"</span>: <span class="text-on-surface">0.08</span>,
+    <span class="text-primary font-semibold">"pupil_boundary_jitter_px"</span>: <span class="text-on-surface">3.4</span>,
+    <span class="text-primary font-semibold">"lip_phoneme_desync_ms"</span>: <span class="text-on-surface">140</span>,
+    <span class="text-primary font-semibold">"synthetic_engine_sig"</span>: <span class="text-secondary font-semibold">"Sora-2 / FaceReenact-v3"</span>
+  <span class="text-on-surface-variant">}</span>,
+  <span class="text-primary font-semibold">"bounding_boxes"</span>: [
+    <span class="text-on-surface-variant">{</span>
+      <span class="text-primary font-semibold">"frame_idx"</span>: <span class="text-on-surface">142</span>,
+      <span class="text-primary font-semibold">"box"</span>: [<span class="text-on-surface">412, 180, 890, 720</span>],
+      <span class="text-primary font-semibold">"target_label"</span>: <span class="text-error font-medium">"Manipulated Face Mask"</span>
+    <span class="text-on-surface-variant">}</span>
+  ]
+<span class="text-on-surface-variant">}</span></pre>
+</div>
+</div>
+</div>
+</div>
+<!-- Section 3: Model Weight Selector & Ensemble Tuning Hub -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-lg">
+<!-- Ensemble Toggle Architecture Matrix -->
+<div class="lg:col-span-7 bg-surface-container-lowest rounded-xl p-lg shadow-sm">
+<div class="flex items-center justify-between mb-sm">
+<div>
+<span class="font-label-md text-label-md uppercase tracking-wider text-secondary font-semibold">Inference Pipeline</span>
+<h3 class="font-title-lg text-title-lg text-primary">Model Weight Ensemble Matrix</h3>
+</div>
+<span class="px-sm py-xs rounded bg-surface-container-high font-mono-sm text-mono-sm text-primary font-semibold">5 of 5 Online</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-md">Activate or prune neural backbone layers according to your cluster latency budget and sensitivity parameters.</p>
+<!-- Toggle List -->
+<div class="space-y-sm">
+<!-- MesoNet-v4 -->
+<div class="flex items-center justify-between p-sm rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors">
+<div class="flex items-start gap-sm">
+<span class="material-symbols-outlined text-[20px] text-primary mt-0.5">grid_view</span>
+<div>
+<div class="flex items-center gap-xs">
+<span class="font-body-lg text-body-lg font-semibold text-on-surface">MesoNet-v4 Temporal Classifier</span>
+<span class="px-xs py-0.5 rounded bg-surface-container-highest font-mono-sm text-mono-sm text-on-surface-variant">FP16 • 14ms</span>
+</div>
+<span class="font-body-md text-body-md text-on-surface-variant block">Analyzes microscopic inter-frame compression jitter and facial edge warp.</span>
+</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer shrink-0">
+<input checked="" class="sr-only peer model-toggle" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+<!-- ViT-Large Transformer -->
+<div class="flex items-center justify-between p-sm rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors">
+<div class="flex items-start gap-sm">
+<span class="material-symbols-outlined text-[20px] text-primary mt-0.5">neurology</span>
+<div>
+<div class="flex items-center gap-xs">
+<span class="font-body-lg text-body-lg font-semibold text-on-surface">ViT-Large Vision Transformer</span>
+<span class="px-xs py-0.5 rounded bg-surface-container-highest font-mono-sm text-mono-sm text-on-surface-variant">INT8 • 58ms</span>
+</div>
+<span class="font-body-md text-body-md text-on-surface-variant block">Detects diffusion grain anomalies from Sora, Kling, Runway, and Midjourney.</span>
+</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer shrink-0">
+<input checked="" class="sr-only peer model-toggle" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+<!-- WavLM Voice Forensic Core -->
+<div class="flex items-center justify-between p-sm rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors">
+<div class="flex items-start gap-sm">
+<span class="material-symbols-outlined text-[20px] text-primary mt-0.5">graphic_eq</span>
+<div>
+<div class="flex items-center gap-xs">
+<span class="font-body-lg text-body-lg font-semibold text-on-surface">WavLM Audio Forensic Core</span>
+<span class="px-xs py-0.5 rounded bg-surface-container-highest font-mono-sm text-mono-sm text-on-surface-variant">FP32 • 32ms</span>
+</div>
+<span class="font-body-md text-body-md text-on-surface-variant block">Voice clone frequency synthesis and synthetic harmonic resonance detector.</span>
+</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer shrink-0">
+<input checked="" class="sr-only peer model-toggle" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+<!-- ELA Spatial Heatmap -->
+<div class="flex items-center justify-between p-sm rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors">
+<div class="flex items-start gap-sm">
+<span class="material-symbols-outlined text-[20px] text-primary mt-0.5">gradient</span>
+<div>
+<div class="flex items-center gap-xs">
+<span class="font-body-lg text-body-lg font-semibold text-on-surface">ELA (Error Level Analysis) Heatmap</span>
+<span class="px-xs py-0.5 rounded bg-surface-container-highest font-mono-sm text-mono-sm text-on-surface-variant">CPU Fast • 8ms</span>
+</div>
+<span class="font-body-md text-body-md text-on-surface-variant block">Pinpoints compression gradient boundaries and splice seams on image documents.</span>
+</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer shrink-0">
+<input checked="" class="sr-only peer model-toggle" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+<!-- FaceLandmark Biometrics -->
+<div class="flex items-center justify-between p-sm rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors">
+<div class="flex items-start gap-sm">
+<span class="material-symbols-outlined text-[20px] text-primary mt-0.5">face_retouching_natural</span>
+<div>
+<div class="flex items-center gap-xs">
+<span class="font-body-lg text-body-lg font-semibold text-on-surface">468-Point FaceLandmark Biometric Mesh</span>
+<span class="px-xs py-0.5 rounded bg-surface-container-highest font-mono-sm text-mono-sm text-on-surface-variant">C++ Native • 12ms</span>
+</div>
+<span class="font-body-md text-body-md text-on-surface-variant block">Correlates ocular gaze alignment, corneal specular reflections, and jaw yaw rates.</span>
+</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer shrink-0">
+<input checked="" class="sr-only peer model-toggle" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+</div>
+</div>
+<!-- Decision Boundary & Threshold Sliders -->
+<div class="lg:col-span-5 bg-surface-container-lowest rounded-xl p-lg shadow-sm flex flex-col justify-between">
+<div>
+<div class="mb-sm">
+<span class="font-label-md text-label-md uppercase tracking-wider text-secondary font-semibold">Governance &amp; Policy</span>
+<h3 class="font-title-lg text-title-lg text-primary">Automated Action Thresholds</h3>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-lg">Calibrate the risk tolerances that trigger instant quarantine, human analyst escalations, or automated KYC approvals.</p>
+<!-- Slider 1: Quarantine Threshold -->
+<div class="p-md rounded-lg bg-surface-container-low mb-md">
+<div class="flex items-center justify-between mb-xs">
+<label class="font-body-md text-body-md font-semibold text-on-surface flex items-center gap-xs" for="holdRange">
+<span class="w-2 h-2 rounded-full bg-error"></span>
+<span>Automated Hold / Quarantine</span>
+</label>
+<span class="font-headline-md text-headline-md font-bold text-error" id="holdValue">85%</span>
+</div>
+<input class="w-full accent-primary cursor-pointer mb-xs" id="holdRange" max="99" min="50" type="range" value="85"/>
+<div class="flex justify-between font-mono-sm text-mono-sm text-on-surface-variant">
+<span>50% (Strict)</span>
+<span>Recommended: 85%</span>
+<span>99% (Relaxed)</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mt-xs">Payloads exceeding this confidence are immediately segregated from publishing workflows and saved to the Evidence Vault.</p>
+</div>
+<!-- Slider 2: Manual Review Threshold -->
+<div class="p-md rounded-lg bg-surface-container-low">
+<div class="flex items-center justify-between mb-xs">
+<label class="font-body-md text-body-md font-semibold text-on-surface flex items-center gap-xs" for="reviewRange">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span>High-Risk Manual Review</span>
+</label>
+<span class="font-headline-md text-headline-md font-bold text-secondary" id="reviewValue">50%</span>
+</div>
+<input class="w-full accent-secondary cursor-pointer mb-xs" id="reviewRange" max="80" min="20" type="range" value="50"/>
+<div class="flex justify-between font-mono-sm text-mono-sm text-on-surface-variant">
+<span>20% (Max Alerts)</span>
+<span>Recommended: 50%</span>
+<span>80% (Low Noise)</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mt-xs">Dispatches real-time webhooks to your Tier-2 human investigation queues with forensic timestamp markers.</p>
+</div>
+</div>
+<div class="pt-lg flex items-center justify-between">
+<button class="px-md py-xs rounded bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-label-md text-label-md transition-colors" type="button">Reset Defaults</button>
+<button class="px-md py-xs rounded bg-primary text-on-primary hover:bg-primary-container font-label-md text-label-md shadow-sm transition-colors flex items-center gap-xs" id="saveConfigBtn" type="button">
+<span class="material-symbols-outlined text-[16px]">save</span>
+<span>Deploy Weights to Cluster</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Section 4: Webhook & SIEM Integrations Suite -->
+<div class="bg-surface-container-lowest rounded-xl p-lg shadow-sm">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-sm mb-lg">
+<div>
+<span class="font-label-md text-label-md uppercase tracking-wider text-secondary font-semibold">Ecosystem Connectors</span>
+<h2 class="font-headline-lg text-headline-lg text-primary tracking-tight">SIEM, SOC &amp; Webhook Integration Hub</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Sync forensic alerts, audit events, and chain-of-custody tokens straight into your security incident toolchains.</p>
+</div>
+<button class="px-md py-xs rounded bg-surface-container-high hover:bg-surface-container-highest text-primary font-label-md text-label-md transition-colors flex items-center gap-xs self-start md:self-auto" type="button">
+<span class="material-symbols-outlined text-[16px]">add</span>
+<span>Add Custom Ingestion Endpoint</span>
+</button>
+</div>
+<!-- Connector Cards Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-md">
+<!-- Slack Alert Bot -->
+<div class="p-md rounded-xl bg-surface-container-low flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-container-lowest flex items-center justify-center text-primary shadow-xs">
+<span class="material-symbols-outlined text-[24px]">chat</span>
+</div>
+<span class="px-xs py-0.5 rounded bg-tertiary-fixed text-on-tertiary-fixed-variant font-mono-sm text-mono-sm font-semibold">Active • #secops-alerts</span>
+</div>
+<h3 class="font-title-lg text-title-lg text-on-surface mb-xs">Slack Trust &amp; Safety Bot</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-md">Pushes interactive message cards with frame previews and instant quarantine buttons to forensic channels.</p>
+</div>
+<div class="pt-sm flex items-center justify-between border-t-0">
+<span class="font-mono-sm text-mono-sm text-on-surface-variant">1,420 events sent today</span>
+<button class="text-secondary font-label-md text-label-md font-semibold hover:underline">Configure</button>
+</div>
+</div>
+<!-- Splunk SIEM Forwarder -->
+<div class="p-md rounded-xl bg-surface-container-low flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-container-lowest flex items-center justify-center text-primary shadow-xs">
+<span class="material-symbols-outlined text-[24px]">troubleshoot</span>
+</div>
+<span class="px-xs py-0.5 rounded bg-tertiary-fixed text-on-tertiary-fixed-variant font-mono-sm text-mono-sm font-semibold">Active • HEC v2</span>
+</div>
+<h3 class="font-title-lg text-title-lg text-on-surface mb-xs">Splunk Enterprise SIEM</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-md">Streams raw JSON forensic biomarkers, IP origins, and confidence vectors into indexer clusters for automated SOC correlation.</p>
+</div>
+<div class="pt-sm flex items-center justify-between">
+<span class="font-mono-sm text-mono-sm text-on-surface-variant">Zero dropped packets</span>
+<button class="text-secondary font-label-md text-label-md font-semibold hover:underline">Configure</button>
+</div>
+</div>
+<!-- Elastic Security -->
+<div class="p-md rounded-xl bg-surface-container-low flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-container-lowest flex items-center justify-center text-primary shadow-xs">
+<span class="material-symbols-outlined text-[24px]">manage_search</span>
+</div>
+<span class="px-xs py-0.5 rounded bg-tertiary-fixed text-on-tertiary-fixed-variant font-mono-sm text-mono-sm font-semibold">Active • Logstash Sync</span>
+</div>
+<h3 class="font-title-lg text-title-lg text-on-surface mb-xs">Elasticsearch &amp; Kibana</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-md">Pre-built Kibana visual dashboards for tracking campaign-scale disinformation assaults and synthetic avatar waves.</p>
+</div>
+<div class="pt-sm flex items-center justify-between">
+<span class="font-mono-sm text-mono-sm text-on-surface-variant">Index size: 42.1 GB</span>
+<button class="text-secondary font-label-md text-label-md font-semibold hover:underline">Configure</button>
+</div>
+</div>
+<!-- AWS S3 Evidence Vault -->
+<div class="p-md rounded-xl bg-surface-container-low flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-container-lowest flex items-center justify-center text-primary shadow-xs">
+<span class="material-symbols-outlined text-[24px]">cloud_sync</span>
+</div>
+<span class="px-xs py-0.5 rounded bg-tertiary-fixed text-on-tertiary-fixed-variant font-mono-sm text-mono-sm font-semibold">Encrypted (KMS)</span>
+</div>
+<h3 class="font-title-lg text-title-lg text-on-surface mb-xs">AWS S3 Evidence Vault</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-md">Immutable WORM (Write Once Read Many) compliant storage with cryptographic sha256 hashes for legal court admissibility.</p>
+</div>
+<div class="pt-sm flex items-center justify-between">
+<span class="font-mono-sm text-mono-sm text-on-surface-variant">Bucket: ts-evidence-prod</span>
+<button class="text-secondary font-label-md text-label-md font-semibold hover:underline">Configure</button>
+</div>
+</div>
+<!-- Discord Moderation Bot -->
+<div class="p-md rounded-xl bg-surface-container-low flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-container-lowest flex items-center justify-center text-primary shadow-xs">
+<span class="material-symbols-outlined text-[24px]">forum</span>
+</div>
+<span class="px-xs py-0.5 rounded bg-surface-container-highest text-on-surface-variant font-mono-sm text-mono-sm">Standby</span>
+</div>
+<h3 class="font-title-lg text-title-lg text-on-surface mb-xs">Discord Platform Bot</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-md">Automated channel guard verifying user-uploaded attachments against synthetic pornographic and impersonation models.</p>
+</div>
+<div class="pt-sm flex items-center justify-between">
+<span class="font-mono-sm text-mono-sm text-on-surface-variant">Auto-delete on &gt;90%</span>
+<button class="text-secondary font-label-md text-label-md font-semibold hover:underline">Connect</button>
+</div>
+</div>
+<!-- Custom REST Webhook with Retry Logs -->
+<div class="p-md rounded-xl bg-surface-container-low flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-container-lowest flex items-center justify-center text-primary shadow-xs">
+<span class="material-symbols-outlined text-[24px]">webhook</span>
+</div>
+<span class="px-xs py-0.5 rounded bg-tertiary-fixed text-on-tertiary-fixed-variant font-mono-sm text-mono-sm font-semibold">100% Deliverability</span>
+</div>
+<h3 class="font-title-lg text-title-lg text-on-surface mb-xs">Custom Webhook Dispatcher</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-md">Exponential backoff retry policy (5 attempts) with HMAC-SHA256 signature verification on every outbound dispatch.</p>
+</div>
+<div class="pt-sm flex items-center justify-between">
+<span class="font-mono-sm text-mono-sm text-on-surface-variant">Last ping: 2s ago</span>
+<button class="text-secondary font-label-md text-label-md font-semibold hover:underline">Test Ping</button>
+</div>
+</div>
+</div>
+<!-- Live Webhook Retry & Audit Log Table -->
+<div class="mt-xl p-md rounded-xl bg-surface-container-low">
+<div class="flex items-center justify-between mb-sm">
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-[18px] text-primary">history</span>
+<h4 class="font-title-lg text-title-lg text-primary">Outbound Webhook Delivery Log</h4>
+</div>
+<button class="font-mono-sm text-mono-sm text-secondary hover:underline flex items-center gap-xs" type="button">
+<span class="material-symbols-outlined text-[14px]">refresh</span>
+<span>Live Stream On</span>
+</button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left font-mono-sm text-mono-sm">
+<thead>
+<tr class="text-on-surface-variant border-b border-surface-container">
+<th class="py-xs pr-md">Timestamp</th>
+<th class="py-xs px-md">Event Type</th>
+<th class="py-xs px-md">Target URL</th>
+<th class="py-xs px-md">Status</th>
+<th class="py-xs px-md">Latency</th>
+<th class="py-xs pl-md text-right">Payload</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container text-on-surface">
+<tr>
+<td class="py-sm pr-md text-on-surface-variant">14:24:02 UTC</td>
+<td class="py-sm px-md font-semibold text-primary">media.quarantined</td>
+<td class="py-sm px-md truncate max-w-[200px]">https://secops.acme.corp/api/v1/alert</td>
+<td class="py-sm px-md"><span class="px-xs py-0.5 rounded bg-tertiary-fixed text-on-tertiary-fixed-variant font-bold">200 OK</span></td>
+<td class="py-sm px-md">48ms</td>
+<td class="py-sm pl-md text-right"><button class="text-secondary hover:underline font-medium">Inspect</button></td>
+</tr>
+<tr>
+<td class="py-sm pr-md text-on-surface-variant">14:23:51 UTC</td>
+<td class="py-sm px-md font-semibold text-primary">scan.completed</td>
+<td class="py-sm px-md truncate max-w-[200px]">https://hooks.slack.com/services/T00/B00/X</td>
+<td class="py-sm px-md"><span class="px-xs py-0.5 rounded bg-tertiary-fixed text-on-tertiary-fixed-variant font-bold">200 OK</span></td>
+<td class="py-sm px-md">62ms</td>
+<td class="py-sm pl-md text-right"><button class="text-secondary hover:underline font-medium">Inspect</button></td>
+</tr>
+<tr>
+<td class="py-sm pr-md text-on-surface-variant">14:21:18 UTC</td>
+<td class="py-sm px-md font-semibold text-primary">model.warning</td>
+<td class="py-sm px-md truncate max-w-[200px]">https://splunk-hec.prod.internal:8088</td>
+<td class="py-sm px-md"><span class="px-xs py-0.5 rounded bg-tertiary-fixed text-on-tertiary-fixed-variant font-bold">200 OK</span></td>
+<td class="py-sm px-md">112ms</td>
+<td class="py-sm pl-md text-right"><button class="text-secondary hover:underline font-medium">Inspect</button></td>
+</tr>
+<tr>
+<td class="py-sm pr-md text-on-surface-variant">14:19:04 UTC</td>
+<td class="py-sm px-md font-semibold text-primary">media.quarantined</td>
+<td class="py-sm px-md truncate max-w-[200px]">https://custom-siem.enterprise.net/ingest</td>
+<td class="py-sm px-md"><span class="px-xs py-0.5 rounded bg-surface-container-highest text-on-surface-variant font-bold">Retried (x2) 200</span></td>
+<td class="py-sm px-md">310ms</td>
+<td class="py-sm pl-md text-right"><button class="text-secondary hover:underline font-medium">Inspect</button></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<!-- Section 5: Enterprise SLA & Architecture Footnote -->
+<div class="p-lg rounded-xl bg-primary text-on-primary shadow-sm flex flex-col md:flex-row items-center justify-between gap-md">
+<div class="space-y-xs">
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-[20px] text-tertiary-fixed">verified_user</span>
+<span class="font-label-md text-label-md uppercase tracking-wider text-on-primary-container font-semibold">FedRAMP &amp; SOC2 Type II Certified</span>
+</div>
+<h3 class="font-headline-md text-headline-md font-bold">Need Dedicated Edge Cluster or On-Premise GPU Enclaves?</h3>
+<p class="font-body-md text-body-md text-surface-dim max-w-2xl">Deploy Veritas AI containerized microservices to your sovereign cloud, AWS GovCloud, or isolated SCIF environments with air-gapped model weight sync.</p>
+</div>
+<div class="flex items-center gap-sm shrink-0">
+<button class="px-md py-sm rounded bg-surface-container-lowest text-primary hover:bg-surface transition-colors font-label-md text-label-md font-semibold shadow-sm" type="button">Contact Infrastructure Sales</button>
+<button class="px-md py-sm rounded bg-primary-container text-on-primary hover:bg-on-primary-fixed-variant transition-colors font-label-md text-label-md" type="button">Download Helm Charts</button>
+</div>
+</div>
+</div>
+</div>
+</main></div>

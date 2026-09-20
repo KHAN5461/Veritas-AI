@@ -1,0 +1,146 @@
+@import "tailwindcss";
+
+@theme {
+  --animate-ripple: ripple 0.6s ease-out;
+  @keyframes ripple {
+    0% { transform: scale(0); opacity: 0.3; }
+    100% { transform: scale(200); opacity: 0; }
+  }
+}
+
+/* ========================================
+   MATERIAL DESIGN 3 — DUAL MODE TOKENS
+   ======================================== */
+
+/* ---------- DARK MODE (default) ---------- */
+:root, html.dark {
+  --md-sys-color-primary: #7dd3fc;
+  --md-sys-color-on-primary: #003354;
+  --md-sys-color-primary-container: #004a77;
+  --md-sys-color-on-primary-container: #c8e6ff;
+  --md-sys-color-secondary: #b8c8da;
+  --md-sys-color-on-secondary: #233240;
+  --md-sys-color-secondary-container: #394857;
+  --md-sys-color-on-secondary-container: #d4e4f6;
+  --md-sys-color-tertiary: #d0bcff;
+  --md-sys-color-on-tertiary: #381e72;
+  --md-sys-color-tertiary-container: #4f378b;
+  --md-sys-color-on-tertiary-container: #eaddff;
+  --md-sys-color-error: #ffb4ab;
+  --md-sys-color-on-error: #690005;
+  --md-sys-color-error-container: #93000a;
+  --md-sys-color-on-error-container: #ffdad6;
+  --md-sys-color-surface: #0f1419;
+  --md-sys-color-on-surface: #e1e3e5;
+  --md-sys-color-on-surface-variant: #c1c7ce;
+  --md-sys-color-surface-container-lowest: #0a0e12;
+  --md-sys-color-surface-container-low: #171c22;
+  --md-sys-color-surface-container: #1b2028;
+  --md-sys-color-surface-container-high: #252b33;
+  --md-sys-color-surface-container-highest: #30363e;
+  --md-sys-color-outline: #8b9198;
+  --md-sys-color-outline-variant: #41484d;
+  --md-sys-color-inverse-surface: #e1e3e5;
+  --md-sys-color-inverse-on-surface: #2e3134;
+  --md-sys-color-inverse-primary: #1a6dad;
+  --md-sys-color-surface-tint: #7dd3fc;
+  --md-sys-elevation-1: 0 1px 3px 1px rgba(0,0,0,0.30), 0 1px 2px 0 rgba(0,0,0,0.30);
+  --md-sys-elevation-2: 0 2px 6px 2px rgba(0,0,0,0.30), 0 1px 2px 0 rgba(0,0,0,0.30);
+  --md-sys-elevation-3: 0 4px 8px 3px rgba(0,0,0,0.30), 0 1px 3px 0 rgba(0,0,0,0.30);
+}
+
+/* ---------- LIGHT MODE ---------- */
+html.light {
+  --md-sys-color-primary: #1a6dad;
+  --md-sys-color-on-primary: #ffffff;
+  --md-sys-color-primary-container: #c8e6ff;
+  --md-sys-color-on-primary-container: #001e36;
+  --md-sys-color-secondary: #516170;
+  --md-sys-color-on-secondary: #ffffff;
+  --md-sys-color-secondary-container: #d4e4f6;
+  --md-sys-color-on-secondary-container: #0d1d2a;
+  --md-sys-color-tertiary: #6750a4;
+  --md-sys-color-on-tertiary: #ffffff;
+  --md-sys-color-tertiary-container: #eaddff;
+  --md-sys-color-on-tertiary-container: #21005d;
+  --md-sys-color-error: #ba1a1a;
+  --md-sys-color-on-error: #ffffff;
+  --md-sys-color-error-container: #ffdad6;
+  --md-sys-color-on-error-container: #410002;
+  --md-sys-color-surface: #f8fafb;
+  --md-sys-color-on-surface: #191c1e;
+  --md-sys-color-on-surface-variant: #41484d;
+  --md-sys-color-surface-container-lowest: #ffffff;
+  --md-sys-color-surface-container-low: #f0f4f8;
+  --md-sys-color-surface-container: #eaeef2;
+  --md-sys-color-surface-container-high: #e4e8ec;
+  --md-sys-color-surface-container-highest: #dfe3e7;
+  --md-sys-color-outline: #72787e;
+  --md-sys-color-outline-variant: #c1c7ce;
+  --md-sys-color-inverse-surface: #2e3134;
+  --md-sys-color-inverse-on-surface: #eff1f3;
+  --md-sys-color-inverse-primary: #91cef4;
+  --md-sys-color-surface-tint: #1a6dad;
+  --md-sys-elevation-1: 0 1px 3px 1px rgba(0,0,0,0.08), 0 1px 2px 0 rgba(0,0,0,0.10);
+  --md-sys-elevation-2: 0 2px 6px 2px rgba(0,0,0,0.08), 0 1px 2px 0 rgba(0,0,0,0.10);
+  --md-sys-elevation-3: 0 4px 8px 3px rgba(0,0,0,0.08), 0 1px 3px 0 rgba(0,0,0,0.10);
+}
+
+/* ---------- MAP TO TAILWIND ---------- */
+@theme inline {
+  --color-primary: var(--md-sys-color-primary);
+  --color-on-primary: var(--md-sys-color-on-primary);
+  --color-primary-container: var(--md-sys-color-primary-container);
+  --color-on-primary-container: var(--md-sys-color-on-primary-container);
+  --color-secondary: var(--md-sys-color-secondary);
+  --color-on-secondary: var(--md-sys-color-on-secondary);
+  --color-secondary-container: var(--md-sys-color-secondary-container);
+  --color-on-secondary-container: var(--md-sys-color-on-secondary-container);
+  --color-tertiary: var(--md-sys-color-tertiary);
+  --color-on-tertiary: var(--md-sys-color-on-tertiary);
+  --color-tertiary-container: var(--md-sys-color-tertiary-container);
+  --color-on-tertiary-container: var(--md-sys-color-on-tertiary-container);
+  --color-error: var(--md-sys-color-error);
+  --color-on-error: var(--md-sys-color-on-error);
+  --color-error-container: var(--md-sys-color-error-container);
+  --color-on-error-container: var(--md-sys-color-on-error-container);
+  --color-surface: var(--md-sys-color-surface);
+  --color-on-surface: var(--md-sys-color-on-surface);
+  --color-on-surface-variant: var(--md-sys-color-on-surface-variant);
+  --color-surface-container-lowest: var(--md-sys-color-surface-container-lowest);
+  --color-surface-container-low: var(--md-sys-color-surface-container-low);
+  --color-surface-container: var(--md-sys-color-surface-container);
+  --color-surface-container-high: var(--md-sys-color-surface-container-high);
+  --color-surface-container-highest: var(--md-sys-color-surface-container-highest);
+  --color-outline: var(--md-sys-color-outline);
+  --color-outline-variant: var(--md-sys-color-outline-variant);
+  --color-inverse-surface: var(--md-sys-color-inverse-surface);
+  --color-inverse-on-surface: var(--md-sys-color-inverse-on-surface);
+  --color-inverse-primary: var(--md-sys-color-inverse-primary);
+  --color-surface-tint: var(--md-sys-color-surface-tint);
+}
+
+/* ---------- BASE RESETS ---------- */
+@layer base {
+  html, body { margin: 0; padding: 0; }
+  body { overscroll-behavior: none; font-family: 'Inter', system-ui, sans-serif; }
+}
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--md-sys-color-outline-variant); border-radius: 999px; }
+
+/* ---------- M3 SHAPE SCALE ---------- */
+@theme inline {
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 28px;
+  --radius-full: 9999px;
+}
+
+/* ---------- RESPONSIVE ---------- */
+@media (max-width: 768px) {
+  .grid { grid-template-columns: 1fr !important; }
+}

@@ -1,0 +1,7 @@
+﻿html = open('index.html', 'r', encoding='utf-8').read()
+html = html.replace('href="/_next/', 'href="https://deepfakedetection.io/_next/')
+html = html.replace('src="/_next/', 'src="https://deepfakedetection.io/_next/')
+html = html.replace('imageSrcSet="/_next/', 'imageSrcSet="https://deepfakedetection.io/_next/')
+html = html.replace('href="/images/', 'href="https://deepfakedetection.io/images/')
+html = html.replace('src="/images/', 'src="https://deepfakedetection.io/images/')
+open('index.html', 'w', encoding='utf-8').write(html)

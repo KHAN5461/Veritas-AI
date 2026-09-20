@@ -1,0 +1,1 @@
+export const CircularProgress = () => <div className="w-8 h-8 rounded-full border-4 border-primary border-t-transparent animate-spin" />;

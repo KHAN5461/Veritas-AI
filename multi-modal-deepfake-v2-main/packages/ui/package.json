@@ -1,0 +1,17 @@
+{
+  "name": "@repo/ui",
+  "version": "1.0.0",
+  "main": "src/index.tsx",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "framer-motion": "^13.4.0",
+    "lucide-react": "^1.47.0",
+    "sonner": "^2.0.8"
+  }
+}
