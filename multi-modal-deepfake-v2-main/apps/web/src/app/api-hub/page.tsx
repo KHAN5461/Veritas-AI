@@ -16,6 +16,14 @@ export default function ApiHubPage() {
         <Button onClick={() => window.location.assign('/settings')}>Generate API Key</Button>
       </div>
 
+      <div className="bg-primary-container text-on-primary-container p-4 rounded-xl flex items-center gap-3">
+        <span className="material-symbols-outlined">info</span>
+        <div>
+          <h4 className="font-semibold text-sm">Feature in Preview</h4>
+          <p className="text-xs">Self-serve API key generation will be available in the upcoming release.</p>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="flex flex-col gap-4">
           <div className="flex items-center justify-between">

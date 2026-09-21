@@ -3,11 +3,14 @@
 import React, { useState } from 'react';
 import { toast } from 'sonner';
 import { Dropzone, ForensicCard, Button, Chip, Card, LinearProgress } from '@repo/ui';
+import { useAuth } from '../../context/AuthContext';
 
 export default function BatchPage() {
   const [queue, setQueue] = useState<any[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
 
+  const { user } = useAuth();
+  
   const handleDrop = (file: File) => {
     toast.success("Added " + file.name + " to batch queue.");
     setQueue(prev => [{ id: Math.random().toString(), name: file.name, score: 0, verdict: 'PENDING', desc: 'Awaiting pipeline execution...', file }, ...prev]);
@@ -24,10 +27,26 @@ export default function BatchPage() {
       try {
         const formData = new FormData();
         formData.append('file', item.file);
+        
+        // Calculate hash
+        let hash = 'Unavailable';
+        try {
+          const buffer = await item.file.arrayBuffer();
+          const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+          hash = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+        } catch(e) {}
+
         const response = await fetch('https://upside-shower-handling.ngrok-free.dev/detect', { method: 'POST', body: formData });
         if (!response.ok) throw new Error('API Error');
         const data = await response.json();
-        setQueue(prev => prev.map(q => q.id === item.id ? { ...q, score: data.confidence, verdict: data.is_fake ? 'MANIPULATED' : 'AUTHENTIC', desc: "Visual: " + (data.breakdown.visual_score * 100).toFixed(1) + "%" } : q));
+        
+        let reportId = '';
+        if (user) {
+          const { saveScanResult } = await import('../../lib/scans');
+          reportId = await saveScanResult(user.uid, { name: item.file.name, type: item.file.type, size: item.file.size }, data, hash);
+        }
+
+        setQueue(prev => prev.map(q => q.id === item.id ? { ...q, score: data.confidence, verdict: data.is_fake ? 'MANIPULATED' : 'AUTHENTIC', desc: reportId ? "Saved as ID: " + reportId.substring(0, 8) : "Visual: " + (data.breakdown.visual_score * 100).toFixed(1) + "%" } : q));
       } catch (err) {
         toast.error("Failed: " + item.name);
         setQueue(prev => prev.map(q => q.id === item.id ? { ...q, verdict: 'ERROR', desc: 'Backend unreachable.' } : q));

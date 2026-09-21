@@ -21,7 +21,7 @@ export default function Home() {
   }, [user]);
 
   const totalScans = scans.length; // In a real app, use an aggregation query
-  const deepfakes = scans.filter(h => h.score > 0.5).length;
+  const deepfakes = scans.filter(h => h.is_fake).length;
 
   return (
     <div className="p-8 max-w-6xl mx-auto flex flex-col gap-8 w-full">
@@ -53,8 +53,11 @@ export default function Home() {
         {scans.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {scans.map(item => (
-              <ForensicCard key={item.id} title={item.name} score={item.score} verdict={item.verdict}>
-                Processed via ensemble pipeline.
+              <ForensicCard key={item.id} title={item.fileName} score={item.confidence} verdict={item.is_fake ? 'AI-Generated' : 'Authentic'}>
+                <div className="flex justify-between items-center text-xs mt-2 text-on-surface-variant">
+                  <span>Processed via ensemble</span>
+                  <a href={`/report/${item.id}`} className="cursor-pointer hover:text-primary underline">View Report</a>
+                </div>
               </ForensicCard>
             ))}
           </div>

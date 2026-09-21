@@ -19,6 +19,14 @@ export default function ThreatIntelPage() {
         <p className="text-on-surface-variant">Real-time monitoring of emerging synthetic media threat actors.</p>
       </div>
 
+      <div className="bg-primary-container text-on-primary-container p-4 rounded-xl flex items-center gap-3">
+        <span className="material-symbols-outlined">info</span>
+        <div>
+          <h4 className="font-semibold text-sm">Feature in Preview</h4>
+          <p className="text-xs">This data is currently populated with static demo information. Real-time global telemetry will be available in v3.0.</p>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card><StatWidget title="Global Threat Level" value="ELEVATED" isError icon="public" /></Card>
         <Card><StatWidget title="New Modalities" value="3" label="Last 24 hours" icon="new_releases" /></Card>

@@ -25,16 +25,16 @@ export default function HistoryPage() {
   }, [user]);
 
   const filtered = scans.filter(item => {
-    const matchesSearch = search === '' || item.name.toLowerCase().includes(search.toLowerCase()) || item.id.includes(search);
+    const matchesSearch = search === '' || item.fileName?.toLowerCase().includes(search.toLowerCase()) || item.id.includes(search);
     let matchesFilter = true;
-    if (activeFilter === 'high_risk') matchesFilter = item.score > 0.8;
-    if (activeFilter === 'authentic') matchesFilter = item.score < 0.3;
-    if (activeFilter === 'audio') matchesFilter = item.modality === 'audio';
+    if (activeFilter === 'high_risk') matchesFilter = item.confidence > 0.8;
+    if (activeFilter === 'authentic') matchesFilter = item.confidence < 0.3;
+    if (activeFilter === 'audio') matchesFilter = item.fileType?.startsWith('audio/');
     return matchesSearch && matchesFilter;
   });
 
   const totalScans = scans.length;
-  const deepfakes = scans.filter(h => h.score > 0.5).length;
+  const deepfakes = scans.filter(h => h.is_fake).length;
 
   return (
     <div className="p-8 max-w-6xl mx-auto flex flex-col gap-8 w-full">
@@ -74,10 +74,10 @@ export default function HistoryPage() {
       {filtered.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map(item => (
-            <ForensicCard key={item.id} title={item.name} score={item.score} verdict={item.verdict}>
+            <ForensicCard key={item.id} title={item.fileName} score={item.confidence} verdict={item.is_fake ? 'AI-Generated' : 'Authentic'}>
               <div className="flex justify-between items-center text-xs mt-2 text-on-surface-variant">
                 <span>{item.date || new Date(item.createdAt?.toDate?.() || Date.now()).toLocaleString()}</span>
-                <span className="cursor-pointer hover:text-primary underline">View Report</span>
+                <a href={`/report/${item.id}`} className="cursor-pointer hover:text-primary underline">View Report</a>
               </div>
             </ForensicCard>
           ))}

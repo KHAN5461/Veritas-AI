@@ -4,7 +4,14 @@ const nextConfig: NextConfig = {
   output: "export",
   typescript: {
     ignoreBuildErrors: true
-  }
+  },
+  webpack: (config) => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      html2canvas: false,
+    };
+    return config;
+  },
 };
 
 export default nextConfig;

@@ -33,8 +33,19 @@ export default function SettingsPage() {
   return (
     <div className="p-8 max-w-3xl mx-auto flex flex-col gap-8 w-full">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-on-surface mb-1">Settings</h1>
-        <p className="text-on-surface-variant">Manage API keys, thresholds, and system preferences.</p>
+        <h1 className="text-3xl font-bold tracking-tight text-on-surface mb-1 flex items-center gap-3">
+          <span className="material-symbols-outlined text-[32px]">settings</span>
+          Settings
+        </h1>
+        <p className="text-on-surface-variant">Configure detection thresholds and API access.</p>
+      </div>
+
+      <div className="bg-primary-container text-on-primary-container p-4 rounded-xl flex items-center gap-3">
+        <span className="material-symbols-outlined">info</span>
+        <div>
+          <h4 className="font-semibold text-sm">Feature in Preview</h4>
+          <p className="text-xs">Settings modifications are currently local-only and will not persist to the database until v3.0.</p>
+        </div>
       </div>
 
       <Card>
