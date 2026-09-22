@@ -36,7 +36,7 @@ export default function BatchPage() {
           hash = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
         } catch(e) {}
 
-        const response = await fetch('https://upside-shower-handling.ngrok-free.dev/detect', { method: 'POST', body: formData });
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://upside-shower-handling.ngrok-free.dev'}/detect`, { method: 'POST', body: formData });
         if (!response.ok) throw new Error('API Error');
         const data = await response.json();
         
@@ -47,13 +47,24 @@ export default function BatchPage() {
         }
 
         setQueue(prev => prev.map(q => q.id === item.id ? { ...q, score: data.confidence, verdict: data.is_fake ? 'MANIPULATED' : 'AUTHENTIC', desc: reportId ? "Saved as ID: " + reportId.substring(0, 8) : "Visual: " + (data.breakdown.visual_score * 100).toFixed(1) + "%" } : q));
-      } catch (err) {
-        toast.error("Failed: " + item.name);
-        setQueue(prev => prev.map(q => q.id === item.id ? { ...q, verdict: 'ERROR', desc: 'Backend unreachable.' } : q));
+      } catch (err: any) {
+        const errorMessage = err?.message || String(err);
+        let userDesc = "Analysis failed.";
+        
+        if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError')) {
+          userDesc = "Engine waking up / disconnected.";
+        } else if (errorMessage.includes('413') || errorMessage.includes('Payload Too Large')) {
+          userDesc = "File too large to process.";
+        } else {
+          userDesc = "Unsupported or corrupted format.";
+        }
+        
+        toast.error(`Failed to analyze ${item.name}. ${userDesc}`);
+        setQueue(prev => prev.map(q => q.id === item.id ? { ...q, verdict: 'ERROR', desc: userDesc } : q));
       }
     }
     setIsProcessing(false);
-    toast.success('Batch complete!');
+    toast.success('Batch processing finished!');
   };
 
   const clearDone = () => {
@@ -68,8 +79,8 @@ export default function BatchPage() {
     <div className="p-8 max-w-6xl mx-auto flex flex-col gap-8 w-full">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-on-surface mb-1">Batch Queue</h1>
-          <p className="text-on-surface-variant">Process hundreds of files simultaneously.</p>
+          <h1 className="text-3xl font-bold tracking-tight text-on-surface mb-1">Analyze Multiple Files</h1>
+          <p className="text-on-surface-variant">Upload and analyze multiple videos or audio clips at once.</p>
         </div>
         <div className="flex gap-2">
           {doneCount > 0 && <Button variant="outlined" onClick={clearDone}>Clear Done</Button>}
@@ -109,8 +120,8 @@ export default function BatchPage() {
       ) : (
         <Card className="flex flex-col items-center justify-center py-12">
           <span className="material-symbols-outlined text-[48px] text-on-surface-variant mb-3">inbox</span>
-          <h3 className="text-lg font-medium text-on-surface">Queue is empty</h3>
-          <p className="text-sm text-on-surface-variant">Drop files above to start building your batch.</p>
+          <h3 className="text-lg font-medium text-on-surface">Nothing here yet</h3>
+          <p className="text-sm text-on-surface-variant">Drop your files above to start adding them to the list.</p>
         </Card>
       )}
     </div>

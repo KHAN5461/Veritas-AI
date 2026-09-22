@@ -6,7 +6,7 @@ import { Button, LinearProgress } from '@repo/ui';
 import { ForensicReport } from '../../components/ForensicReport';
 import { useAuth } from '../../context/AuthContext';
 import { saveScanResult } from '../../lib/scans';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 async function calculateSHA256(file: File) {
   try {
@@ -19,9 +19,10 @@ async function calculateSHA256(file: File) {
   }
 }
 
-export default function AnalyzePage() {
+function AnalyzeContent() {
   const { user } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   
   const [isDragging, setIsDragging] = useState(false);
   const [file, setFile] = useState<File | null>(null);
@@ -31,6 +32,37 @@ export default function AnalyzePage() {
   const [result, setResult] = useState<any>(null);
   const [timestamp, setTimestamp] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  React.useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'VERITAS_LOAD_REPORT') {
+        const payload = event.data.payload;
+        const mockFile = new File([], payload.name || "Extension Scan", { type: "video/mp4" });
+        setFile(mockFile);
+        setFileUrl(payload.url);
+        setResult(payload.result);
+        setFileHash("ext-scan-complete");
+        setTimestamp(new Date().toLocaleString());
+        toast.success("Loaded report instantly from extension!");
+      }
+    };
+    window.addEventListener('message', handleMessage);
+
+    const url = searchParams.get('url');
+    if (url && !file && !isLoading && searchParams.get('from_ext') !== 'true') {
+      // Auto analyze the URL
+      fetch(url).then(r => r.blob()).then(blob => {
+        const ext = url.split('.').pop()?.split('?')[0] || 'mp4';
+        const name = url.split('/').pop()?.split('?')[0] || `media.${ext}`;
+        const newFile = new File([blob], name, { type: blob.type });
+        analyzeFile(newFile);
+      }).catch(err => {
+        toast.error("Failed to load media from URL");
+      });
+    }
+
+    return () => window.removeEventListener('message', handleMessage);
+  }, [searchParams]);
 
   const analyzeFile = async (targetFile: File) => {
     setFile(targetFile);
@@ -47,27 +79,39 @@ export default function AnalyzePage() {
     try {
       const formData = new FormData();
       formData.append('file', targetFile);
-      const response = await fetch('https://upside-shower-handling.ngrok-free.dev/detect', { method: 'POST', body: formData });
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://upside-shower-handling.ngrok-free.dev'}/detect`, { method: 'POST', body: formData });
       if (!response.ok) throw new Error('API Error');
       const data = await response.json();
       setResult(data);
       toast.success('Analysis complete!');
 
       if (user) {
-        // Save to Firestore
+        // Save to Firestore non-blocking
         const fileData = {
           name: targetFile.name,
           type: targetFile.type,
           size: targetFile.size,
         };
-        const scanId = await saveScanResult(user.uid, fileData, data, hash);
-        toast.success(`Report permanently saved (ID: ${scanId.substring(0,6)}...)`);
-        
-        // Optional: Redirect to the dedicated report page right after saving
-        // router.push(`/report/${scanId}`);
+        saveScanResult(user.uid, fileData, data, hash)
+          .then(scanId => {
+            toast.success(`Report permanently saved (ID: ${scanId.substring(0,6)}...)`);
+          })
+          .catch(e => {
+            console.error("Failed to save to Firestore:", e);
+            // Don't toast error so we don't annoy the user if they haven't set up Firebase
+          });
       }
-    } catch (err) {
-      toast.error('Failed to analyze media. Is the backend running?');
+    } catch (err: any) {
+      const errorMessage = err?.message || String(err);
+      
+      if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError')) {
+        toast.error("We're having trouble connecting to our analysis engine right now. It might be waking up—please give it a minute and try again!");
+      } else if (errorMessage.includes('413') || errorMessage.includes('Payload Too Large')) {
+        toast.error("This file is a bit too large for us to process right now. Please try a shorter clip.");
+      } else {
+        toast.error("We couldn't analyze this file. It might be corrupted or in an unsupported format.");
+      }
+      setFile(null); // Reset file so they can try again
     } finally {
       setIsLoading(false);
     }
@@ -124,8 +168,8 @@ export default function AnalyzePage() {
           <div className={"w-16 h-16 rounded-2xl flex items-center justify-center mb-4 " + (isDragging ? "bg-primary/16" : "bg-surface-container-high")}>
             <span className={"material-symbols-outlined text-[32px] " + (isDragging ? "text-primary" : "text-on-surface-variant")}>upload_file</span>
           </div>
-          <h3 className="text-xl font-medium text-on-surface mb-1">Drag and drop evidence</h3>
-          <p className="text-sm text-on-surface-variant mb-6">Supports MP4, AVI, WAV, MP3, JPG, PNG</p>
+          <h3 className="text-xl font-medium text-on-surface mb-1">Drag and drop a file to begin</h3>
+          <p className="text-sm text-on-surface-variant mb-6">We support MP4, AVI, WAV, MP3, JPG, and PNG formats.</p>
           <Button variant="tonal" onClick={handleBrowse}>Browse Local Files</Button>
         </div>
       ) : (
@@ -154,5 +198,13 @@ export default function AnalyzePage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function AnalyzePage() {
+  return (
+    <React.Suspense fallback={<div className="p-8 text-center">Loading...</div>}>
+      <AnalyzeContent />
+    </React.Suspense>
   );
 }

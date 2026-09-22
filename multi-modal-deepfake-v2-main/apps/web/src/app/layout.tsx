@@ -16,41 +16,6 @@ const NAV_ITEMS = [
   { href: "/api-hub", icon: "api", label: "API Hub" },
 ];
 
-function BackendHealthCheck() {
-  const [isOffline, setIsOffline] = useState(false);
-
-  useEffect(() => {
-    const checkHealth = async () => {
-      try {
-        const res = await fetch('https://upside-shower-handling.ngrok-free.dev/health');
-        if (!res.ok) throw new Error();
-        setIsOffline(false);
-      } catch (err) {
-        setIsOffline(true);
-      }
-    };
-    checkHealth();
-    const interval = setInterval(checkHealth, 10000);
-    return () => clearInterval(interval);
-  }, []);
-
-  if (!isOffline) return null;
-
-  return (
-    <div className="w-full shrink-0 animate-in slide-in-from-top-4 fade-in duration-300">
-      <Banner 
-        icon="wifi_off" 
-        title="ML Backend Offline" 
-        isError 
-        actionLabel="Retry Connection" 
-        onAction={() => window.location.reload()}
-      >
-        The FastAPI inference server is unreachable. Analysis features are currently disabled. Please run <code>python app.py</code> in the backend directory.
-      </Banner>
-    </div>
-  );
-}
-
 function GlobalDropzoneOverlay() {
   const [isDragging, setIsDragging] = useState(false);
   const router = useRouter();
@@ -235,7 +200,7 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
       </head>
-      <body className="bg-surface text-on-surface flex h-screen overflow-hidden font-[Inter,system-ui,sans-serif]">
+      <body suppressHydrationWarning className="bg-surface text-on-surface flex h-screen overflow-hidden font-[Inter,system-ui,sans-serif]">
         <AuthProvider>
           <AuthGuard>
             {isAuthPage ? (
@@ -248,7 +213,6 @@ export default function RootLayout({
                 <NavRail />
                 <div className="flex-1 flex flex-col h-full overflow-hidden pb-16 md:pb-0">
                   <TopAppBar />
-                  <BackendHealthCheck />
                   <main className="flex-1 overflow-y-auto bg-surface-container-lowest relative z-0">
                     {children}
                   </main>
