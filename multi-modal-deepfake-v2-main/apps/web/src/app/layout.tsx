@@ -76,6 +76,46 @@ function GlobalDropzoneOverlay() {
   );
 }
 
+function MobileInstallPrompt() {
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+
+  useEffect(() => {
+    const handler = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  if (!deferredPrompt) return null;
+
+  const handleInstall = () => {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then((choiceResult: any) => {
+      if (choiceResult.outcome === 'accepted') {
+        console.log('User accepted the install prompt');
+      }
+      setDeferredPrompt(null);
+    });
+  };
+
+  return (
+    <div className="md:hidden fixed top-16 left-0 right-0 z-40 p-2 bg-primary-container text-on-primary-container flex items-center justify-between shadow-md border-b border-outline/20">
+      <div className="flex items-center gap-2 overflow-hidden">
+        <img src="/favicon.svg" alt="App Icon" className="w-8 h-8 object-contain shrink-0" />
+        <div className="truncate">
+          <p className="text-sm font-bold truncate">Install Veritas AI</p>
+          <p className="text-[10px] opacity-80 truncate">Scan media directly from other apps</p>
+        </div>
+      </div>
+      <button onClick={handleInstall} className="shrink-0 bg-primary text-on-primary text-xs font-bold py-1.5 px-3 rounded-full hover:opacity-90">
+        Install
+      </button>
+    </div>
+  );
+}
+
 function NavRail() {
   const pathname = usePathname();
 
@@ -83,7 +123,7 @@ function NavRail() {
     <>
       <aside className="hidden md:flex w-20 bg-surface-container flex-col items-center h-full shrink-0 py-3 gap-1 z-50">
         <div className="w-14 h-14 rounded-2xl bg-primary-container flex items-center justify-center mb-4">
-          <span className="material-symbols-outlined text-on-primary-container text-[28px]">shield</span>
+          <img src="/favicon.svg" className="w-8 h-8 object-contain" alt="Veritas Logo" />
         </div>
 
         <nav className="flex-1 flex flex-col gap-1 items-center w-full">
@@ -109,7 +149,7 @@ function NavRail() {
       </aside>
 
       <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-surface-container flex items-center justify-around z-50 border-t border-outline-variant/20 px-2 pb-safe">
-        {[...NAV_ITEMS.slice(0, 4), { href: '/settings', icon: 'settings', label: 'Settings' }].map(item => {
+        {NAV_ITEMS.slice(0, 5).map(item => {
           const isActive = pathname === item.href;
           return (
             <Link key={item.href} href={item.href} className="flex flex-col items-center justify-center h-full min-w-[64px]">
@@ -152,7 +192,7 @@ function TopAppBar() {
   return (
     <header className="h-16 bg-surface flex items-center px-4 md:px-6 justify-between shrink-0">
       <div className="flex items-center gap-2">
-        <span className="material-symbols-outlined text-primary md:hidden text-[28px] mr-1">shield</span>
+        <img src="/favicon.svg" className="w-6 h-6 object-contain md:hidden" alt="Veritas Logo" />
         <span className="text-lg font-semibold text-on-surface tracking-tight truncate">Veritas AI</span>
         <span className="text-sm text-on-surface-variant ml-2 hidden md:inline truncate">Multimodal Deepfake Detection</span>
       </div>
@@ -195,6 +235,17 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function PwaInit() {
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(err => {
+        console.error('Service Worker registration failed:', err);
+      });
+    }
+  }, []);
+  return null;
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -206,11 +257,14 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
       <head>
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <link rel="manifest" href="/manifest.json" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
       </head>
       <body suppressHydrationWarning className="bg-surface text-on-surface flex h-screen overflow-hidden font-[Inter,system-ui,sans-serif]">
+        <PwaInit />
         <AuthProvider>
           <AuthGuard>
             {isAuthPage ? (
@@ -221,8 +275,9 @@ export default function RootLayout({
               <>
                 <GlobalDropzoneOverlay />
                 <NavRail />
-                <div className="flex-1 flex flex-col h-full overflow-hidden pb-16 md:pb-0">
+                <div className="flex-1 flex flex-col h-full overflow-hidden pb-16 md:pb-0 relative">
                   <TopAppBar />
+                  <MobileInstallPrompt />
                   <main className="flex-1 overflow-y-auto bg-surface-container-lowest relative z-0">
                     {children}
                   </main>
