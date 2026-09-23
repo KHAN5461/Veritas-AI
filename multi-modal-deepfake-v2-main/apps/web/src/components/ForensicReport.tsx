@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
-import { Card, Skeleton } from '@repo/ui';
+import { Card, Skeleton, CircularProgress } from '@repo/ui';
+import { SpyglassViewer } from './SpyglassViewer';
+import { AudioWaveform } from './AudioWaveform';
 
 interface ForensicReportProps {
   isLoading: boolean;
@@ -118,31 +120,46 @@ export function ForensicReport({ isLoading, result, fileData, fileHash, timestam
         
         {isLoading || !result ? <Skeleton className="h-64 w-full" /> : (
           <div className="flex flex-col gap-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-              <div>
-                <div className="text-sm text-on-surface-variant mb-2 font-medium print:text-gray-600">Original Upload</div>
-                {fileData.type.startsWith('image/') ? (
-                  <img src={fileData.url} className="w-full h-auto max-h-[400px] object-contain rounded-xl bg-surface-container-highest print:bg-gray-100" alt="Original Upload" />
-                ) : fileData.type.startsWith('video/') ? (
-                  <video src={fileData.url} controls className="w-full h-auto max-h-[400px] bg-black rounded-xl" />
-                ) : (
-                  <div className="w-full h-48 bg-surface-container-highest rounded-xl flex items-center justify-center print:bg-gray-100 print:text-black">
-                    <span className="material-symbols-outlined text-[48px] opacity-50">audio_file</span>
-                  </div>
-                )}
+            {fileData.type.startsWith('image/') && result.heatmap ? (
+              <div className="w-full">
+                <div className="text-sm text-on-surface-variant mb-2 font-medium print:text-gray-600">Interactive Forensic Spyglass</div>
+                <SpyglassViewer 
+                  originalSrc={fileData.url} 
+                  heatmapSrc={"data:image/png;base64," + result.heatmap} 
+                />
               </div>
+            ) : fileData.type.startsWith('audio/') ? (
+              <div className="w-full">
+                <div className="text-sm text-on-surface-variant mb-2 font-medium print:text-gray-600">Acoustic Artifact Analysis</div>
+                <AudioWaveform url={fileData.url} isFake={result.is_fake} />
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                <div>
+                  <div className="text-sm text-on-surface-variant mb-2 font-medium print:text-gray-600">Original Upload</div>
+                  {fileData.type.startsWith('image/') ? (
+                    <img src={fileData.url} className="w-full h-auto max-h-[400px] object-contain rounded-xl bg-surface-container-highest print:bg-gray-100" alt="Original Upload" />
+                  ) : fileData.type.startsWith('video/') ? (
+                    <video src={fileData.url} controls className="w-full h-auto max-h-[400px] bg-black rounded-xl" />
+                  ) : (
+                    <div className="w-full h-48 bg-surface-container-highest rounded-xl flex items-center justify-center print:bg-gray-100 print:text-black">
+                      <span className="material-symbols-outlined text-[48px] opacity-50">description</span>
+                    </div>
+                  )}
+                </div>
 
-              <div>
-                <div className="text-sm text-on-surface-variant mb-2 font-medium print:text-gray-600">Manipulation Highlights</div>
-                {result.heatmap ? (
-                  <img src={"data:image/png;base64," + result.heatmap} className="w-full h-auto max-h-[400px] object-contain rounded-xl bg-surface-container-highest print:bg-gray-100" alt="Manipulation Highlights" />
-                ) : (
-                  <div className="w-full h-48 bg-surface-container-highest rounded-xl flex items-center justify-center text-sm text-on-surface-variant print:bg-gray-100 print:text-black">
-                    No visual highlights available
-                  </div>
-                )}
+                <div>
+                  <div className="text-sm text-on-surface-variant mb-2 font-medium print:text-gray-600">Manipulation Highlights</div>
+                  {result.heatmap ? (
+                    <img src={"data:image/png;base64," + result.heatmap} className="w-full h-auto max-h-[400px] object-contain rounded-xl bg-surface-container-highest print:bg-gray-100" alt="Manipulation Highlights" />
+                  ) : (
+                    <div className="w-full h-48 bg-surface-container-highest rounded-xl flex items-center justify-center text-sm text-on-surface-variant print:bg-gray-100 print:text-black">
+                      No visual highlights available
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
             
             <div className="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant/30 print:border-black/20 print:bg-transparent">
               <p className="text-sm text-on-surface print:text-black">

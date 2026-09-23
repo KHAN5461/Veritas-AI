@@ -8,6 +8,7 @@
     "sidePanel",
     "activeTab",
     "storage",
+    "unlimitedStorage",
     "scripting"
   ],
   "host_permissions": [

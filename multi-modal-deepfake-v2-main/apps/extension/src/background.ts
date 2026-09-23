@@ -75,7 +75,7 @@ chrome.runtime.onMessage.addListener((message: any, sender: any, sendResponse: a
   if (message.action === "forward_save_scan") {
     chrome.tabs.query({ url: "*://localhost/*" }, (tabs: any) => {
       tabs.forEach((tab: any) => {
-        chrome.tabs.sendMessage(tab.id, { action: "save_scan", payload: message.payload });
+        chrome.tabs.sendMessage(tab.id, { action: "save_scan", payload: message.payload }).catch(() => {});
       });
     });
   }

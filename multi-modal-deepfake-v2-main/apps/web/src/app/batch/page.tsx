@@ -1,19 +1,47 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { toast } from 'sonner';
-import { Dropzone, ForensicCard, Button, Chip, Card, LinearProgress } from '@repo/ui';
+import { Dropzone, Button, Chip, Card, LinearProgress } from '@repo/ui';
 import { useAuth } from '../../context/AuthContext';
 
 export default function BatchPage() {
   const [queue, setQueue] = useState<any[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const addCountRef = useRef(0);
+  const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const { user } = useAuth();
   
   const handleDrop = (file: File) => {
-    toast.success("Added " + file.name + " to batch queue.");
+    addCountRef.current += 1;
     setQueue(prev => [{ id: Math.random().toString(), name: file.name, score: 0, verdict: 'PENDING', desc: 'Awaiting pipeline execution...', file }, ...prev]);
+    
+    // Debounce the toast so it doesn't spam for 100 files
+    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+    toastTimeoutRef.current = setTimeout(() => {
+      toast.success(`Added ${addCountRef.current} files to batch queue.`);
+      addCountRef.current = 0;
+    }, 100);
+  };
+
+  const exportCSV = () => {
+    if (queue.length === 0) return;
+    const headers = ['File Name', 'Verdict', 'Confidence', 'Description'];
+    const rows = queue.map(q => [
+      `"${q.name}"`,
+      `"${q.verdict}"`,
+      `"${q.score ? (q.score * 100).toFixed(1) + '%' : 'N/A'}"`,
+      `"${q.desc}"`
+    ]);
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `veritas_batch_report_${new Date().getTime()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success('CSV exported successfully!');
   };
 
   const processQueue = async () => {
@@ -22,13 +50,15 @@ export default function BatchPage() {
     setIsProcessing(true);
     toast.info("Processing " + pendingItems.length + " files...");
 
-    for (const item of pendingItems) {
+    const MAX_CONCURRENT = 3;
+    let index = 0;
+
+    const processItem = async (item: any) => {
       setQueue(prev => prev.map(q => q.id === item.id ? { ...q, verdict: 'PROCESSING' } : q));
       try {
         const formData = new FormData();
         formData.append('file', item.file);
         
-        // Calculate hash
         let hash = 'Unavailable';
         try {
           const buffer = await item.file.arrayBuffer();
@@ -59,10 +89,24 @@ export default function BatchPage() {
           userDesc = "Unsupported or corrupted format.";
         }
         
-        toast.error(`Failed to analyze ${item.name}. ${userDesc}`);
         setQueue(prev => prev.map(q => q.id === item.id ? { ...q, verdict: 'ERROR', desc: userDesc } : q));
       }
+    };
+
+    const runWorker = async () => {
+      while (index < pendingItems.length) {
+        const item = pendingItems[index++];
+        await processItem(item);
+      }
+    };
+
+    const workers = [];
+    for (let i = 0; i < Math.min(MAX_CONCURRENT, pendingItems.length); i++) {
+      workers.push(runWorker());
     }
+
+    await Promise.all(workers);
+
     setIsProcessing(false);
     toast.success('Batch processing finished!');
   };
@@ -76,16 +120,17 @@ export default function BatchPage() {
   const doneCount = queue.filter(q => q.verdict !== 'PENDING' && q.verdict !== 'PROCESSING').length;
 
   return (
-    <div className="p-8 max-w-6xl mx-auto flex flex-col gap-8 w-full">
+    <div className="p-8 max-w-6xl mx-auto flex flex-col gap-8 w-full pb-24">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-on-surface mb-1">Analyze Multiple Files</h1>
           <p className="text-on-surface-variant">Upload and analyze multiple videos or audio clips at once.</p>
         </div>
         <div className="flex gap-2">
+          {queue.length > 0 && <Button variant="outlined" onClick={exportCSV} className="text-primary border-primary hover:bg-primary-container"><span className="material-symbols-outlined mr-2">download</span> Export CSV</Button>}
           {doneCount > 0 && <Button variant="outlined" onClick={clearDone}>Clear Done</Button>}
           <Button onClick={processQueue} className={isProcessing ? 'opacity-50 pointer-events-none' : ''}>
-            <span className={"material-symbols-outlined text-[18px] " + (isProcessing ? "animate-spin" : "")}>{isProcessing ? 'sync' : 'play_arrow'}</span>
+            <span className={"material-symbols-outlined mr-2 text-[18px] " + (isProcessing ? "animate-spin" : "")}>{isProcessing ? 'sync' : 'play_arrow'}</span>
             {isProcessing ? 'Processing...' : 'Run All (' + pendingCount + ')'}
           </Button>
         </div>
@@ -94,29 +139,53 @@ export default function BatchPage() {
       <Dropzone onFileDrop={handleDrop} multiple title="Add to Batch Queue" subtitle="Drop files or click to browse" />
 
       {queue.length > 0 ? (
-        <div>
-          <div className="flex items-center gap-3 mb-4">
-            <h2 className="text-xl font-semibold text-on-surface">Queue</h2>
-            <Chip label={queue.length + " items"} variant="filter" />
-            {pendingCount > 0 && <Chip label={pendingCount + " pending"} variant="assist" />}
-          </div>
-          {isProcessing && (
-            <div className="mb-4" aria-live="polite" aria-atomic="true">
-              <div className="flex justify-between text-xs text-on-surface-variant mb-1">
-                <span>Processing Batch...</span>
-                <span>{doneCount} / {queue.length} ({Math.round((doneCount / queue.length) * 100)}%)</span>
-              </div>
-              <LinearProgress value={(doneCount / queue.length) * 100} />
+        <Card className="p-0 overflow-hidden">
+          <div className="px-6 py-4 bg-surface-container-high flex flex-col gap-3">
+            <div className="flex items-center gap-3">
+              <h2 className="text-lg font-semibold text-on-surface">Queue</h2>
+              <Chip label={queue.length + " items"} variant="filter" />
+              {pendingCount > 0 && <Chip label={pendingCount + " pending"} variant="assist" />}
             </div>
-          )}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {queue.map(item => (
-              <ForensicCard key={item.id} title={item.name} score={item.score} verdict={item.verdict}>
-                {item.desc}
-              </ForensicCard>
-            ))}
+            {isProcessing && (
+              <div aria-live="polite" aria-atomic="true">
+                <div className="flex justify-between text-xs text-on-surface-variant mb-1">
+                  <span>Processing Batch...</span>
+                  <span>{doneCount} / {queue.length} ({Math.round((doneCount / queue.length) * 100)}%)</span>
+                </div>
+                <LinearProgress value={(doneCount / queue.length) * 100} />
+              </div>
+            )}
           </div>
-        </div>
+          
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm whitespace-nowrap">
+              <thead className="bg-surface-container-highest text-on-surface-variant text-xs uppercase">
+                <tr>
+                  <th className="px-6 py-3 font-medium">File Name</th>
+                  <th className="px-6 py-3 font-medium">Status</th>
+                  <th className="px-6 py-3 font-medium">Confidence</th>
+                  <th className="px-6 py-3 font-medium">Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                {queue.map((item) => (
+                  <tr key={item.id} className="border-b border-outline-variant/30 hover:bg-surface-container transition-colors">
+                    <td className="px-6 py-4 font-medium text-on-surface max-w-[200px] truncate" title={item.name}>{item.name}</td>
+                    <td className="px-6 py-4">
+                      {item.verdict === 'PENDING' && <Chip label="Pending" />}
+                      {item.verdict === 'PROCESSING' && <Chip label="Processing" variant="assist" className="animate-pulse" />}
+                      {item.verdict === 'AUTHENTIC' && <Chip label="Authentic" variant="filter" className="!bg-emerald-500/20 !text-emerald-500" />}
+                      {item.verdict === 'MANIPULATED' && <Chip label="Manipulated" variant="filter" className="!bg-error-container !text-on-error-container" />}
+                      {item.verdict === 'ERROR' && <Chip label="Error" variant="filter" className="!bg-orange-500/20 !text-orange-500" />}
+                    </td>
+                    <td className="px-6 py-4 font-mono">{item.score ? (item.score * 100).toFixed(1) + '%' : '--'}</td>
+                    <td className="px-6 py-4 text-on-surface-variant max-w-[300px] truncate" title={item.desc}>{item.desc}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
       ) : (
         <Card className="flex flex-col items-center justify-center py-12">
           <span className="material-symbols-outlined text-[48px] text-on-surface-variant mb-3">inbox</span>

@@ -19,7 +19,9 @@
     "postcss": "^8.5.28",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "sonner": "^2.0.8"
+    "recharts": "^3.10.1",
+    "sonner": "^2.0.8",
+    "wavesurfer.js": "^7.12.12"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

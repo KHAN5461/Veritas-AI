@@ -57,7 +57,6 @@ function SidepanelApp() {
   const [status, setStatus] = useState<'idle' | 'processing' | 'done' | 'error' | 'settings'>('idle');
   const [currentScan, setCurrentScan] = useState<{ name: string; file: File | null; url: string | null } | null>(null);
   const [result, setResult] = useState<any>(null);
-  const [overlayMode, setOverlayMode] = useState<'fab' | 'in-video'>('in-video');
   const [scanText, setScanText] = useState('Initializing scan...');
 
   useEffect(() => {
@@ -65,10 +64,6 @@ function SidepanelApp() {
     const saved = localStorage.getItem("theme");
     if (saved === "light") document.documentElement.classList.replace("dark", "light");
     else document.documentElement.classList.add("dark");
-
-    chrome.storage?.local.get(['overlayMode'], (res: any) => {
-      if (res.overlayMode) setOverlayMode(res.overlayMode);
-    });
 
     // Listen to background tasks
     if (typeof chrome !== 'undefined' && chrome.storage) {
@@ -89,11 +84,6 @@ function SidepanelApp() {
       });
     }
   }, []);
-
-  const saveOverlayMode = (mode: 'fab' | 'in-video') => {
-    setOverlayMode(mode);
-    chrome.storage?.local.set({ overlayMode: mode });
-  };
 
   const startAnalysis = async (scan: { name: string; file: File | null; url: string | null }) => {
     setCurrentScan(scan);
@@ -156,9 +146,42 @@ function SidepanelApp() {
     localStorage.setItem("theme", next);
   };
 
-  const viewWebReport = () => {
+  const viewWebReport = async () => {
     if (!currentScan) return;
-    chrome.storage.local.set({ pending_web_report: { url: currentScan.url, result: currentScan.result, name: currentScan.name } }, () => {
+    
+    let base64Data = null;
+    let mimeType = null;
+    
+    // If the user dropped a file locally, we need to convert it to base64 so the web app can access it
+    if (currentScan.file) {
+      base64Data = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.readAsDataURL(currentScan.file!);
+      });
+      mimeType = currentScan.file.type;
+    }
+    // If we only have a public URL, we pass that.
+    
+    chrome.storage.local.set({ 
+      pending_web_report: { 
+        url: currentScan.url, 
+        base64: base64Data,
+        mimeType: mimeType,
+        result: currentScan.result, 
+        name: currentScan.name 
+      } 
+    }, () => {
+        if (chrome.runtime.lastError) {
+          console.error("Storage Error:", chrome.runtime.lastError);
+          // Fallback: just open without base64 if it's too large
+          chrome.storage.local.set({ 
+            pending_web_report: { url: currentScan.url, result: currentScan.result, name: currentScan.name } 
+          }, () => {
+            chrome.tabs.create({ url: `http://localhost:3000/analyze?from_ext=true` });
+          });
+          return;
+        }
         chrome.tabs.create({ url: `http://localhost:3000/analyze?from_ext=true` });
     });
   };
@@ -198,26 +221,6 @@ function SidepanelApp() {
               <div>
                 <h2 className="text-lg font-semibold mb-1">Preferences</h2>
                 <p className="text-xs text-on-surface-variant">Customize how Veritas AI integrates with the web.</p>
-              </div>
-              
-              <div className="flex flex-col gap-3">
-                <label className="text-sm font-medium">Web Overlay Style</label>
-                
-                <div onClick={() => saveOverlayMode('in-video')} className={`p-4 border rounded-xl cursor-pointer transition-all ${overlayMode === 'in-video' ? 'border-primary bg-primary/10' : 'border-outline-variant hover:border-on-surface/30'}`}>
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="font-semibold text-sm">In-Video Overlay</span>
-                    {overlayMode === 'in-video' && <span className="material-symbols-outlined text-primary text-[18px]">check_circle</span>}
-                  </div>
-                  <p className="text-xs text-on-surface-variant">Attaches directly to video players (Twitter, YouTube). Best for social media.</p>
-                </div>
-                
-                <div onClick={() => saveOverlayMode('fab')} className={`p-4 border rounded-xl cursor-pointer transition-all ${overlayMode === 'fab' ? 'border-primary bg-primary/10' : 'border-outline-variant hover:border-on-surface/30'}`}>
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="font-semibold text-sm">Floating Action Button</span>
-                    {overlayMode === 'fab' && <span className="material-symbols-outlined text-primary text-[18px]">check_circle</span>}
-                  </div>
-                  <p className="text-xs text-on-surface-variant">A persistent floating button on the edge of your screen. Works on any page.</p>
-                </div>
               </div>
               
               <Button variant="filled" onClick={() => setStatus('idle')} className="mt-4">Save & Close</Button>

@@ -34,12 +34,36 @@ function AnalyzeContent() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
+    // We use a mutable flag inside the effect to safely deduplicate synchronous messages
+    let isProcessing = false;
+    let intervalId: NodeJS.Timeout | null = null;
+    
     const handleMessage = (event: MessageEvent) => {
       if (event.data?.type === 'VERITAS_LOAD_REPORT') {
+        if (isProcessing) return; // Prevent duplicate toasts
+        isProcessing = true;
+        
+        if (intervalId) clearInterval(intervalId);
+        
+        console.log("[Web App] Received VERITAS_LOAD_REPORT", event.data.payload ? "with payload" : "without payload");
         const payload = event.data.payload;
-        const mockFile = new File([], payload.name || "Extension Scan", { type: "video/mp4" });
+        
+        let finalUrl = payload.url;
+        let mime = "video/mp4";
+        
+        // If the extension passed a base64 payload (for local files dropped in sidepanel)
+        if (payload.base64) {
+          finalUrl = payload.base64;
+          mime = payload.mimeType || "video/mp4";
+        } else if (payload.name) {
+          // Guess mime from name
+          if (payload.name.match(/\.(jpg|jpeg|png|webp|gif)$/i)) mime = "image/jpeg";
+          if (payload.name.match(/\.(mp3|wav|m4a)$/i)) mime = "audio/mpeg";
+        }
+        
+        const mockFile = new File([], payload.name || "Extension Scan", { type: mime });
         setFile(mockFile);
-        setFileUrl(payload.url);
+        setFileUrl(finalUrl);
         setResult(payload.result);
         setFileHash("ext-scan-complete");
         setTimestamp(new Date().toLocaleString());
@@ -47,6 +71,20 @@ function AnalyzeContent() {
       }
     };
     window.addEventListener('message', handleMessage);
+    
+    // Tell the extension we are ready to receive the report
+    if (searchParams.get('from_ext') === 'true' && !result) {
+      console.log("[Web App] Sending VERITAS_READY to Extension!");
+      window.postMessage({ type: 'VERITAS_READY' }, '*');
+      
+      // Poll just in case the content script injected late
+      intervalId = setInterval(() => {
+        if (!result) {
+          console.log("[Web App] Polling VERITAS_READY...");
+          window.postMessage({ type: 'VERITAS_READY' }, '*');
+        }
+      }, 500);
+    }
 
     const url = searchParams.get('url');
     if (url && !file && !isLoading && searchParams.get('from_ext') !== 'true') {
@@ -57,29 +95,61 @@ function AnalyzeContent() {
         const newFile = new File([blob], name, { type: blob.type });
         analyzeFile(newFile);
       }).catch(err => {
-        toast.error("Failed to load media from URL");
       });
     }
 
-    return () => window.removeEventListener('message', handleMessage);
-  }, [searchParams]);
+    return () => {
+      window.removeEventListener('message', handleMessage);
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [searchParams, result]);
 
   const analyzeFile = async (targetFile: File) => {
     setFile(targetFile);
     setIsLoading(true);
+    setProgress(0);
+    setLoadingText('Uploading media securely...');
     setResult(null);
     setFileUrl(URL.createObjectURL(targetFile));
     const now = new Date().toLocaleString();
     setTimestamp(now);
     
+    // Simulate progress
+    const loadingMessages = [
+      "Extracting multi-modal features...",
+      "Running Vision Transformer (ViT)...",
+      "Analyzing facial landmarks...",
+      "Performing frequency domain analysis...",
+      "Cross-referencing audio-visual sync...",
+      "Finalizing forensic report..."
+    ];
+    
+    let currentProgress = 0;
+    let messageIndex = 0;
+    const progressInterval = setInterval(() => {
+      currentProgress += Math.random() * 8 + 2; // Add 2-10%
+      if (currentProgress > 95) currentProgress = 95; // Cap at 95% until complete
+      setProgress(currentProgress);
+      
+      // Update text every ~15% progress
+      if (currentProgress > (messageIndex + 1) * 15 && messageIndex < loadingMessages.length - 1) {
+        messageIndex++;
+        setLoadingText(loadingMessages[messageIndex]);
+      }
+    }, 600);
+
     const hash = await calculateSHA256(targetFile);
     setFileHash(hash);
 
-    toast.success("Loaded " + targetFile.name + " for deep analysis.");
     try {
       const formData = new FormData();
       formData.append('file', targetFile);
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://upside-shower-handling.ngrok-free.dev'}/detect`, { method: 'POST', body: formData });
+      
+      clearInterval(progressInterval);
+      setProgress(100);
+      setLoadingText('Complete!');
+      
       if (!response.ok) throw new Error('API Error');
       const data = await response.json();
       setResult(data);
@@ -95,13 +165,15 @@ function AnalyzeContent() {
         saveScanResult(user.uid, fileData, data, hash)
           .then(scanId => {
             toast.success(`Report permanently saved (ID: ${scanId.substring(0,6)}...)`);
+            chrome.runtime?.sendMessage({ action: "scan_completed" }).catch(() => {});
           })
           .catch(e => {
             console.error("Failed to save to Firestore:", e);
-            // Don't toast error so we don't annoy the user if they haven't set up Firebase
           });
       }
     } catch (err: any) {
+      clearInterval(progressInterval);
+      setProgress(0);
       const errorMessage = err?.message || String(err);
       
       if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError')) {
@@ -154,7 +226,12 @@ function AnalyzeContent() {
         </div>
       )}
 
-      {isLoading && <LinearProgress />}
+      {isLoading && (
+        <div className="mb-8">
+          <LinearProgress value={progress} />
+          <div className="text-center mt-2 text-sm text-primary font-mono">{loadingText} {Math.floor(progress)}%</div>
+        </div>
+      )}
 
       <input ref={fileInputRef} type="file" className="hidden" accept="image/*,video/*,audio/*" onChange={handleFileInput} />
 

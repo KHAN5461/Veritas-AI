@@ -127,6 +127,8 @@ function NavRail() {
 
 function TopAppBar() {
   const [isDark, setIsDark] = useState(true);
+  const { user } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
     const saved = localStorage.getItem("theme");
@@ -156,10 +158,18 @@ function TopAppBar() {
       </div>
       <div className="flex items-center gap-1 shrink-0">
         <IconButton icon={isDark ? "light_mode" : "dark_mode"} onClick={toggleTheme} />
-        <IconButton icon="logout" onClick={handleLogout} />
-        <div className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-bold text-sm ml-1 md:ml-2">
-          V
-        </div>
+        
+        <button 
+          onClick={() => router.push('/settings')} 
+          className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-bold text-sm ml-1 md:ml-2 overflow-hidden hover:opacity-90 transition-opacity cursor-pointer border-2 border-transparent hover:border-primary"
+          title="Go to Profile"
+        >
+          {user?.photoURL ? (
+            <img src={user.photoURL} alt="Avatar" className="w-full h-full object-cover" />
+          ) : (
+            user?.email?.[0]?.toUpperCase() || 'U'
+          )}
+        </button>
       </div>
     </header>
   );
