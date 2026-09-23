@@ -101,15 +101,15 @@ function MobileInstallPrompt() {
   };
 
   return (
-    <div className="md:hidden fixed top-16 left-0 right-0 z-40 p-2 bg-primary-container text-on-primary-container flex items-center justify-between shadow-md border-b border-outline/20">
-      <div className="flex items-center gap-2 overflow-hidden">
-        <img src="/favicon.svg" alt="App Icon" className="w-8 h-8 object-contain shrink-0" />
-        <div className="truncate">
-          <p className="text-sm font-bold truncate">Install Veritas AI</p>
-          <p className="text-[10px] opacity-80 truncate">Scan media directly from other apps</p>
+    <div className="md:hidden flex-none w-full p-3 bg-primary-container text-on-primary-container flex items-center justify-between shadow-sm border-b border-outline/20 animate-in slide-in-from-top-4 fade-in duration-300">
+      <div className="flex items-center gap-3 overflow-hidden">
+        <img src="/favicon.svg" alt="App Icon" className="w-9 h-9 object-contain shrink-0 drop-shadow-sm" />
+        <div className="flex flex-col justify-center">
+          <p className="text-sm font-bold tracking-tight">Install Veritas AI</p>
+          <p className="text-[11px] opacity-90 truncate">Scan media directly from other apps</p>
         </div>
       </div>
-      <button onClick={handleInstall} className="shrink-0 bg-primary text-on-primary text-xs font-bold py-1.5 px-3 rounded-full hover:opacity-90">
+      <button onClick={handleInstall} className="shrink-0 bg-primary text-on-primary text-xs font-bold py-2 px-4 rounded-full shadow-sm hover:opacity-90 transition-opacity active:scale-95">
         Install
       </button>
     </div>
