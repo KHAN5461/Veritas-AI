@@ -1,4 +1,4 @@
-// sw.js (v2 share fix) (Service Worker)
+// sw.js (v3 nextjs slash fix) (Service Worker)
 self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
@@ -11,7 +11,7 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
   // Match the action defined in manifest.json
-  if (event.request.method === 'POST' && url.pathname.includes('/share-target')) {
+  if (event.request.method === 'POST' && url.pathname.includes('/_share-target')) {
     event.respondWith((async () => {
       try {
         const formData = await event.request.formData();
@@ -51,7 +51,7 @@ self.addEventListener('fetch', (event) => {
         return Response.redirect('/', 303);
       } catch (err) {
         console.error('Error handling share target:', err);
-        return Response.redirect('/?error=share_failed', 303);
+        return new Response('<html><head><meta name="viewport" content="width=device-width, initial-scale=1"></head><body style="font-family:sans-serif;text-align:center;padding:2rem;background:#000;color:#fff;"><h2>Share Failed</h2><p>Could not process the shared file. Please force-close the app and try again.</p><button onclick="window.location.href='/?ref=fail'" style="padding:10px 20px;border-radius:8px;background:#ff3366;color:white;border:none;margin-top:20px;">Go to App</button></body></html>', { status: 200, headers: { 'Content-Type': 'text/html' } });
       }
     })());
     return;
