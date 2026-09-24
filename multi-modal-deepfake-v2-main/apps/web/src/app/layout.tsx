@@ -78,8 +78,20 @@ function GlobalDropzoneOverlay() {
 
 function MobileInstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isIOS, setIsIOS] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(true); // Default true to prevent flash
 
   useEffect(() => {
+    // Check if already installed (standalone mode)
+    const isStandaloneMode = window.matchMedia('(display-mode: standalone)').matches || 
+                             (window.navigator as any).standalone === true;
+    setIsStandalone(isStandaloneMode);
+
+    // Detect iOS
+    const userAgent = window.navigator.userAgent.toLowerCase();
+    const isIosDevice = /iphone|ipad|ipod/.test(userAgent);
+    setIsIOS(isIosDevice);
+
     const handler = (e: any) => {
       e.preventDefault();
       setDeferredPrompt(e);
@@ -88,16 +100,24 @@ function MobileInstallPrompt() {
     return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []);
 
-  if (!deferredPrompt) return null;
+  if (isStandalone) return null;
+  if (!deferredPrompt && !isIOS) return null; // If not iOS and no prompt, don't show
 
   const handleInstall = () => {
-    deferredPrompt.prompt();
-    deferredPrompt.userChoice.then((choiceResult: any) => {
-      if (choiceResult.outcome === 'accepted') {
-        console.log('User accepted the install prompt');
-      }
-      setDeferredPrompt(null);
-    });
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then((choiceResult: any) => {
+        if (choiceResult.outcome === 'accepted') {
+          console.log('User accepted the install prompt');
+        }
+        setDeferredPrompt(null);
+      });
+    } else if (isIOS) {
+      toast('Tap the Share icon, then "Add to Home Screen" to install.', {
+        icon: '📱',
+        duration: 5000,
+      });
+    }
   };
 
   return (
@@ -110,7 +130,7 @@ function MobileInstallPrompt() {
         </div>
       </div>
       <button onClick={handleInstall} className="shrink-0 bg-primary text-on-primary text-xs font-bold py-2 px-4 rounded-full shadow-sm hover:opacity-90 transition-opacity active:scale-95">
-        Install
+        {isIOS ? 'How to Install' : 'Install'}
       </button>
     </div>
   );
@@ -121,40 +141,39 @@ function NavRail() {
 
   return (
     <>
-      <aside className="hidden md:flex w-20 bg-surface-container flex-col items-center h-full shrink-0 py-3 gap-1 z-50">
-        <div className="w-14 h-14 rounded-2xl bg-primary-container flex items-center justify-center mb-4">
-          <img src="/favicon.svg" className="w-8 h-8 object-contain" alt="Veritas Logo" />
+      <aside className="hidden md:flex w-20 hover:w-64 transition-all duration-300 bg-surface-container flex-col items-center hover:items-start h-full shrink-0 py-3 gap-1 z-50 group border-r border-outline-variant/20 shadow-xl overflow-hidden">
+        <div className="w-full flex justify-center group-hover:justify-start px-6 mb-4 h-14 items-center">
+          <img src="/favicon.svg" className="w-8 h-8 object-contain shrink-0 drop-shadow-md" alt="Veritas Logo" />
+          <span className="ml-4 font-bold text-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap text-primary tracking-tight">Veritas AI</span>
         </div>
 
-        <nav className="flex-1 flex flex-col gap-1 items-center w-full">
+        <nav className="flex-1 flex flex-col gap-2 items-center group-hover:items-start w-full px-3">
           {NAV_ITEMS.map(item => {
             const isActive = pathname === item.href;
             return (
-              <Link key={item.href} href={item.href} className="flex flex-col items-center gap-0.5 w-full py-1 group">
-                <div className={"w-14 h-8 rounded-full flex items-center justify-center transition-colors " + (isActive ? "bg-secondary-container" : "group-hover:bg-on-surface/8")}>
-                  <span className={"material-symbols-outlined text-[24px] " + (isActive ? "text-on-secondary-container" : "text-on-surface-variant")}>{item.icon}</span>
-                </div>
-                <span className={"text-[11px] font-medium " + (isActive ? "text-on-surface" : "text-on-surface-variant")}>{item.label}</span>
+              <Link key={item.href} href={item.href} className={"flex items-center gap-4 w-full h-12 rounded-full px-3 transition-colors active:scale-95 " + (isActive ? "bg-secondary-container" : "hover:bg-on-surface/8")}>
+                <span className={"material-symbols-outlined text-[24px] shrink-0 " + (isActive ? "text-on-secondary-container" : "text-on-surface-variant")}>{item.icon}</span>
+                <span className={"font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap " + (isActive ? "text-on-surface" : "text-on-surface-variant")}>{item.label}</span>
               </Link>
             );
           })}
         </nav>
 
-        <Link href="/settings" className="flex flex-col items-center gap-0.5 mb-2 group w-full">
-          <div className={"w-14 h-8 rounded-full flex items-center justify-center transition-colors " + (pathname === "/settings" ? "bg-secondary-container" : "group-hover:bg-on-surface/8")}>
-            <span className={"material-symbols-outlined text-[24px] " + (pathname === "/settings" ? "text-on-secondary-container" : "text-on-surface-variant")}>settings</span>
-          </div>
-          <span className={"text-[11px] font-medium " + (pathname === "/settings" ? "text-on-surface" : "text-on-surface-variant")}>Settings</span>
-        </Link>
+        <div className="w-full px-3 mb-2">
+          <Link href="/settings" className={"flex items-center gap-4 w-full h-12 rounded-full px-3 transition-colors active:scale-95 " + (pathname === "/settings" ? "bg-secondary-container" : "hover:bg-on-surface/8")}>
+            <span className={"material-symbols-outlined text-[24px] shrink-0 " + (pathname === "/settings" ? "text-on-secondary-container" : "text-on-surface-variant")}>settings</span>
+            <span className={"font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap " + (pathname === "/settings" ? "text-on-surface" : "text-on-surface-variant")}>Settings</span>
+          </Link>
+        </div>
       </aside>
 
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-surface-container flex items-center justify-around z-50 border-t border-outline-variant/20 px-2 pb-safe">
+      <nav className="md:hidden fixed bottom-4 left-4 right-4 h-16 bg-surface-container-highest/80 backdrop-blur-xl rounded-2xl flex items-center justify-around z-50 shadow-2xl shadow-black/40 px-2 border border-white/10 animate-in slide-in-from-bottom-8 duration-500">
         {NAV_ITEMS.slice(0, 5).map(item => {
           const isActive = pathname === item.href;
           return (
-            <Link key={item.href} href={item.href} className="flex flex-col items-center justify-center h-full min-w-[64px]">
-              <div className={"w-12 h-7 rounded-full flex items-center justify-center mb-1 transition-colors " + (isActive ? "bg-secondary-container" : "transparent")}>
-                <span className={"material-symbols-outlined text-[22px] " + (isActive ? "text-on-secondary-container" : "text-on-surface-variant")}>{item.icon}</span>
+            <Link key={item.href} href={item.href} className="flex flex-col items-center justify-center h-full w-14 active:scale-90 transition-transform">
+              <div className={"w-12 h-7 rounded-full flex items-center justify-center mb-0.5 transition-colors " + (isActive ? "bg-secondary-container" : "transparent")}>
+                <span className={"material-symbols-outlined text-[22px] " + (isActive ? "text-on-secondary-container drop-shadow-sm" : "text-on-surface-variant")}>{item.icon}</span>
               </div>
               <span className={"text-[10px] font-medium " + (isActive ? "text-on-surface" : "text-on-surface-variant")}>{item.label}</span>
             </Link>

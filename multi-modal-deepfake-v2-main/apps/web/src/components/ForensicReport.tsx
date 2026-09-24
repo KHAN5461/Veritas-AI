@@ -26,7 +26,7 @@ export function ForensicReport({ isLoading, result, fileData, fileHash, timestam
         <div className="uppercase tracking-widest text-xs font-bold text-primary mb-4 print:text-black">CONFIDENTIAL FORENSIC REPORT</div>
         <h1 className="text-4xl font-bold mb-6 text-on-surface print:text-black">Deepfake Analysis Findings</h1>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
           <div>
             <div className="text-sm text-on-surface-variant mb-1 print:text-gray-600">Final Verdict</div>
             {isLoading || !result ? <Skeleton className="h-10 w-48" /> : (

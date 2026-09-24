@@ -34,7 +34,7 @@ export const Button = ({ children, className, onClick, variant = 'filled', type 
   const { addRipple, RippleElements } = useRipple();
   const base = "relative overflow-hidden inline-flex items-center justify-center gap-2 h-10 px-6 rounded-full font-medium text-sm transition-all duration-200 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface ";
   const variants: Record<string, string> = {
-    filled: "bg-primary text-on-primary hover:shadow-[var(--md-sys-elevation-1)] active:scale-[0.98]",
+    filled: "bg-primary text-on-primary hover:shadow-[var(--md-sys-elevation-1)] active:scale-95",
     tonal: "bg-secondary-container text-on-secondary-container hover:shadow-[var(--md-sys-elevation-1)]",
     outlined: "border border-outline text-primary hover:bg-primary/8",
     text: "text-primary hover:bg-primary/8",
@@ -66,7 +66,7 @@ export const Card = ({ children, className, onClick, variant = 'elevated' }: any
   const variants: Record<string, string> = {
     elevated: "bg-surface-container-low shadow-[var(--md-sys-elevation-1)] hover:shadow-[var(--md-sys-elevation-2)]",
     filled: "bg-surface-container-highest hover:shadow-[var(--md-sys-elevation-1)]",
-    outlined: "bg-surface border border-outline-variant hover:shadow-[var(--md-sys-elevation-1)]"
+    outlined: "bg-surface border border-outline-variant hover:shadow-[var(--md-sys-elevation-1)]", glass: "bg-surface/30 backdrop-blur-xl border border-white/10 shadow-[var(--md-sys-elevation-1)]"
   };
 
   return (
