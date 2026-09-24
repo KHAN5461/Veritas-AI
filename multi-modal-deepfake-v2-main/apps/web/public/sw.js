@@ -11,7 +11,7 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
   // Match the action defined in manifest.json
-  if (event.request.method === 'POST' && url.pathname === '/share-target/') {
+  if (event.request.method === 'POST' && url.pathname.includes('/share-target')) {
     event.respondWith((async () => {
       try {
         const formData = await event.request.formData();
@@ -28,12 +28,18 @@ self.addEventListener('fetch', (event) => {
           // Clear any old shared files just in case
           await cache.delete('/shared-file');
           
+          let fileName = file.name || 'shared-media';
+          if (!fileName.includes('.')) {
+            const ext = file.type.split('/')[1] || 'jpg';
+            fileName = `${fileName}.${ext}`;
+          }
+
           // Put the new file in cache
           await cache.put('/shared-file', new Response(file, {
             headers: {
               'Content-Type': file.type,
               'Content-Length': file.size.toString(),
-              'X-Original-Name': file.name
+              'X-Original-Name': fileName
             }
           }));
 

@@ -34,6 +34,24 @@ function AnalyzeContent() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
+    if (searchParams.get('shared') === '1') {
+      caches.open('veritas-shared-media').then(cache => {
+        cache.match('/shared-file').then(response => {
+          if (response) {
+            response.blob().then(blob => {
+              let fileName = response.headers.get('X-Original-Name'); if (!fileName || fileName === 'null') { const ext = blob.type.split('/')[1] || 'jpg'; fileName = 'shared-media.' + ext; }
+              const fileObj = new File([blob], fileName, { type: blob.type });
+              // Clear URL to prevent infinite loop on refresh
+              router.replace('/analyze');
+              toast.success('Received shared media file');
+              analyzeFile(fileObj);
+              cache.delete('/shared-file');
+            });
+          }
+        });
+      });
+    }
+
     // We use a mutable flag inside the effect to safely deduplicate synchronous messages
     let isProcessing = false;
     let intervalId: NodeJS.Timeout | null = null;
