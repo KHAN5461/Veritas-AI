@@ -34,7 +34,7 @@ function AnalyzeContent() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
-    if (searchParams.get('shared') === '1') {
+    if (searchParams.get('shared') === 'true') {
       caches.open('veritas-shared-media').then(cache => {
         cache.match('/shared-file').then(response => {
           if (response) {

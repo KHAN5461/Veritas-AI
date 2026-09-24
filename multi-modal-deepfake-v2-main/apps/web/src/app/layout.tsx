@@ -143,7 +143,7 @@ function NavRail() {
     <>
       <aside className="hidden md:flex w-20 hover:w-64 transition-all duration-300 bg-surface-container flex-col items-center hover:items-start h-full shrink-0 py-3 gap-1 z-50 group border-r border-outline-variant/20 shadow-xl overflow-hidden">
         <div className="w-full h-16 relative flex items-center justify-center group-hover:justify-start group-hover:px-5 mb-4 mt-2 transition-all duration-300">
-          <img src="/logo.png" className="w-14 h-14 object-contain shrink-0 drop-shadow-md" alt="Veritas Logo" />
+          <img src="/logo.png" className="w-10 h-10 object-contain shrink-0 drop-shadow-md scale-110" alt="Veritas Logo" />
           <span className="absolute left-[76px] font-bold text-xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap text-on-surface tracking-tight pointer-events-none">Veritas AI</span>
         </div>
 

@@ -1,4 +1,4 @@
-// sw.js (Service Worker)
+// sw.js (v2 share fix) (Service Worker)
 self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
@@ -44,7 +44,7 @@ self.addEventListener('fetch', (event) => {
           }));
 
           // 2. Redirect the user to the destination page inside the app
-          return Response.redirect('/analyze?shared=1', 303);
+          return Response.redirect('/analyze?shared=true', 303);
         }
         
         // If no files, just redirect to home
