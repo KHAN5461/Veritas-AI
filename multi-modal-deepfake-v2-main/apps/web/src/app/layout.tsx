@@ -123,7 +123,7 @@ function MobileInstallPrompt() {
   return (
     <div className="md:hidden flex-none w-full p-3 bg-primary-container text-on-primary-container flex items-center justify-between shadow-sm border-b border-outline/20 animate-in slide-in-from-top-4 fade-in duration-300">
       <div className="flex items-center gap-3 overflow-hidden">
-        <img src="/favicon.svg" alt="App Icon" className="w-9 h-9 object-contain shrink-0 drop-shadow-sm" />
+        <img src="/logo.png" alt="App Icon" className="w-9 h-9 object-contain shrink-0 drop-shadow-sm" />
         <div className="flex flex-col justify-center">
           <p className="text-sm font-bold tracking-tight">Install Veritas AI</p>
           <p className="text-[11px] opacity-90 truncate">Scan media directly from other apps</p>
@@ -142,9 +142,11 @@ function NavRail() {
   return (
     <>
       <aside className="hidden md:flex w-20 hover:w-64 transition-all duration-300 bg-surface-container flex-col items-center hover:items-start h-full shrink-0 py-3 gap-1 z-50 group border-r border-outline-variant/20 shadow-xl overflow-hidden">
-        <div className="w-full flex justify-center group-hover:justify-start px-6 mb-4 h-14 items-center">
-          <img src="/favicon.svg" className="w-8 h-8 object-contain shrink-0 drop-shadow-md" alt="Veritas Logo" />
-          <span className="ml-4 font-bold text-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap text-primary tracking-tight">Veritas AI</span>
+        <div className="w-full h-16 relative flex items-center mb-4 mt-2">
+          <div className="absolute left-1/2 -translate-x-1/2 group-hover:left-6 group-hover:translate-x-0 transition-all duration-300 flex items-center">
+            <img src="/logo.png" className="w-10 h-10 object-contain shrink-0 drop-shadow-md" alt="Veritas Logo" />
+            <span className="ml-4 font-bold text-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap text-on-surface tracking-tight">Veritas AI</span>
+          </div>
         </div>
 
         <nav className="flex-1 flex flex-col gap-2 items-center group-hover:items-start w-full px-3">
@@ -211,7 +213,7 @@ function TopAppBar() {
   return (
     <header className="h-16 bg-surface flex items-center px-4 md:px-6 justify-between shrink-0">
       <div className="flex items-center gap-2">
-        <img src="/favicon.svg" className="w-6 h-6 object-contain md:hidden" alt="Veritas Logo" />
+        <img src="/logo.png" className="w-6 h-6 object-contain md:hidden" alt="Veritas Logo" />
         <span className="text-lg font-semibold text-on-surface tracking-tight truncate">Veritas AI</span>
         <span className="text-sm text-on-surface-variant ml-2 hidden md:inline truncate">Multimodal Deepfake Detection</span>
       </div>
@@ -276,7 +278,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
       <head>
-        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <link rel="icon" type="image/png" href="/logo.png" />
         <link rel="manifest" href="/manifest.json" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet" />

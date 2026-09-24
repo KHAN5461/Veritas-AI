@@ -30,7 +30,8 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-surface text-on-surface p-4">
       <Card variant="elevated" className="w-full max-w-md !p-8 flex flex-col gap-6 text-center">
-        <div>
+        <div className="flex flex-col items-center">
+          <img src="/logo.png" alt="Veritas Logo" className="w-16 h-16 object-contain mb-4" />
           <h1 className="text-3xl font-bold tracking-tight text-primary mb-2">VERITAS AI</h1>
           <p className="text-on-surface-variant">Sign in to access your multimodal deepfake detection workspace.</p>
         </div>
