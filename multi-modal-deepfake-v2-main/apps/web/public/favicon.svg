@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b82f6" stop-opacity="1" />
+      <stop offset="100%" stop-color="#a855f7" stop-opacity="1" />
+    </linearGradient>
+    
+    <linearGradient id="gradDark" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#1e3a8a" stop-opacity="1" />
+      <stop offset="100%" stop-color="#581c87" stop-opacity="1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Inverse Gravity/Antigravity Concept -->
+  <!-- Main inverted geometric structure (representing grounded truth) -->
+  <path d="M 256 420 L 80 120 L 432 120 Z" fill="url(#grad)" rx="16" />
+  
+  <!-- Levitating inner core (representing AI/Antigravity) -->
+  <path d="M 256 180 L 160 350 L 352 350 Z" fill="#ffffff" opacity="0.9" />
+  
+  <!-- Central node -->
+  <circle cx="256" cy="290" r="30" fill="url(#gradDark)" />
+</svg>
