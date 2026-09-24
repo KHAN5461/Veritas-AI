@@ -1,4 +1,4 @@
-// sw.js (v4 backwards compat fix) (Service Worker)
+// sw.js v5 — Veritas AI Service Worker
 self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
