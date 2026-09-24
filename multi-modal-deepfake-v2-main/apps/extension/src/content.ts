@@ -1,3 +1,9 @@
+if (!document.querySelector('meta[name="veritas-extension-installed"]')) {
+  const meta = document.createElement('meta');
+  meta.name = 'veritas-extension-installed';
+  meta.content = 'true';
+  document.head.appendChild(meta);
+}
 const injectVeritasUI = () => {
   try {
     chrome.runtime.getManifest(); // Ensure context is valid
