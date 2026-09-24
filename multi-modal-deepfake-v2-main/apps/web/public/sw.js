@@ -1,4 +1,4 @@
-// sw.js (v3 nextjs slash fix) (Service Worker)
+// sw.js (v4 backwards compat fix) (Service Worker)
 self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
@@ -11,7 +11,7 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
   // Match the action defined in manifest.json
-  if (event.request.method === 'POST' && url.pathname.includes('/_share-target')) {
+  if (event.request.method === 'POST' && url.pathname.includes('share-target')) {
     event.respondWith((async () => {
       try {
         const formData = await event.request.formData();
