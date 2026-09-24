@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
-  return new NextResponse('<html><body><h2>Service Worker not ready!</h2><p>Please completely force-close the Veritas app from your phone\'s app switcher, then try sharing the file again. The app needs to wake up properly to receive files.</p></body></html>', { status: 200, headers: { 'Content-Type': 'text/html' } });
+  // Fallback if SW didn't intercept: redirect to analyze page
+  return NextResponse.redirect(new URL('/analyze', request.url), 303);
 }
 
 export async function GET(request: Request) {
-  return new NextResponse('<html><body><h2>Service Worker not ready!</h2><p>Please completely force-close the Veritas app from your phone\'s app switcher, then try sharing the file again.</p></body></html>', { status: 200, headers: { 'Content-Type': 'text/html' } });
+  return NextResponse.redirect(new URL('/analyze', request.url), 303);
 }
-

@@ -31,6 +31,8 @@ function AnalyzeContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [timestamp, setTimestamp] = useState<string>('');
+  const [progress, setProgress] = useState(0);
+  const [loadingText, setLoadingText] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
