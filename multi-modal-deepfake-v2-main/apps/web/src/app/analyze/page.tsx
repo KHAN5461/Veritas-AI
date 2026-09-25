@@ -36,19 +36,33 @@ function AnalyzeContent() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
+    // Handle share error (SW couldn't process the file)
+    if (searchParams.get('share_error') === '1') {
+      toast.error('Could not receive the shared file. Please try uploading directly.');
+      router.replace('/analyze');
+    }
+
+    // Handle shared file from SW cache
     if (searchParams.get('shared') === 'true') {
       caches.open('veritas-shared-media').then(cache => {
         cache.match('/shared-file').then(response => {
           if (response) {
             response.blob().then(blob => {
-              let fileName = response.headers.get('X-Original-Name'); if (!fileName || fileName === 'null') { const ext = blob.type.split('/')[1] || 'jpg'; fileName = 'shared-media.' + ext; }
+              let fileName = response.headers.get('X-Original-Name');
+              if (fileName) fileName = decodeURIComponent(fileName);
+              if (!fileName || fileName === 'null') {
+                const ext = blob.type.split('/')[1] || 'jpg';
+                fileName = 'shared-media.' + ext;
+              }
               const fileObj = new File([blob], fileName, { type: blob.type });
-              // Clear URL to prevent infinite loop on refresh
               router.replace('/analyze');
               toast.success('Received shared media file');
               analyzeFile(fileObj);
               cache.delete('/shared-file');
             });
+          } else {
+            toast.error('Shared file not found in cache. Please try uploading directly.');
+            router.replace('/analyze');
           }
         });
       });

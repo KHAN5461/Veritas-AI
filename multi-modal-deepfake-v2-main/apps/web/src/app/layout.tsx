@@ -257,13 +257,16 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 function PwaInit() {
   useEffect(() => {
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js?v=5', { updateViaCache: 'none' })
+      navigator.serviceWorker.register('/sw.js?v=6', {
+        scope: '/',
+        updateViaCache: 'none'
+      })
         .then(reg => {
-          // Force the new SW to activate immediately
+          console.log('[PwaInit] SW registered, scope:', reg.scope);
           reg.update();
         })
         .catch(err => {
-          console.error('Service Worker registration failed:', err);
+          console.error('[PwaInit] SW registration failed:', err);
         });
     }
   }, []);
