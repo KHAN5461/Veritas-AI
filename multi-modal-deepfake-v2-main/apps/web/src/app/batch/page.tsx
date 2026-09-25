@@ -3,6 +3,7 @@ import React, { useState, useRef } from 'react';
 import { toast } from 'sonner';
 import { Dropzone, Button, Chip, Card, LinearProgress } from '@repo/ui';
 import { useAuth } from '../../context/AuthContext';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function BatchPage() {
   const [queue, setQueue] = useState<any[]>([]);
@@ -118,6 +119,7 @@ export default function BatchPage() {
 
   const pendingCount = queue.filter(q => q.verdict === 'PENDING').length;
   const doneCount = queue.filter(q => q.verdict !== 'PENDING' && q.verdict !== 'PROCESSING').length;
+  const threatsCount = queue.filter(q => q.verdict === 'MANIPULATED').length;
 
   return (
     <div className="p-8 max-w-6xl mx-auto flex flex-col gap-8 w-full pb-24">
@@ -135,6 +137,21 @@ export default function BatchPage() {
           </Button>
         </div>
       </div>
+
+      {queue.length > 0 && (
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="bg-surface-container rounded-xl p-4 flex items-center justify-between border border-outline-variant/50">
+          <div className="flex items-center gap-2 text-sm">
+            <span className="material-symbols-outlined text-primary">data_usage</span>
+            <span className="font-semibold text-on-surface">{doneCount}/{queue.length} complete</span>
+            <span className="text-on-surface-variant mx-2">•</span>
+            {threatsCount > 0 ? (
+              <span className="text-error font-medium flex items-center gap-1"><span className="material-symbols-outlined text-[16px]">warning</span> {threatsCount} threats detected</span>
+            ) : (
+              <span className="text-emerald-500 font-medium flex items-center gap-1"><span className="material-symbols-outlined text-[16px]">check_circle</span> No threats detected yet</span>
+            )}
+          </div>
+        </motion.div>
+      )}
 
       <Dropzone onFileDrop={handleDrop} multiple title="Add to Batch Queue" subtitle="Drop files or click to browse" />
 
@@ -158,7 +175,7 @@ export default function BatchPage() {
           </div>
           
           <div className="overflow-x-auto">
-                        {/* Desktop Table */}
+            {/* Desktop Table */}
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left text-sm whitespace-nowrap">
                 <thead className="bg-surface-container-highest text-on-surface-variant text-xs uppercase">
@@ -170,55 +187,93 @@ export default function BatchPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {queue.map((item) => (
-                    <tr key={item.id} className="border-b border-outline-variant/30 hover:bg-surface-container transition-colors">
-                      <td className="px-6 py-4 font-medium text-on-surface max-w-[200px] truncate" title={item.name}>{item.name}</td>
-                      <td className="px-6 py-4">
-                        {item.verdict === 'PENDING' && <Chip label="Pending" />}
-                        {item.verdict === 'PROCESSING' && <Chip label="Processing" variant="assist" className="animate-pulse" />}
-                        {item.verdict === 'AUTHENTIC' && <Chip label="Authentic" variant="filter" className="!bg-emerald-500/20 !text-emerald-500" />}
-                        {item.verdict === 'MANIPULATED' && <Chip label="Manipulated" variant="filter" className="!bg-error-container !text-on-error-container" />}
-                        {item.verdict === 'ERROR' && <Chip label="Error" variant="filter" className="!bg-orange-500/20 !text-orange-500" />}
-                      </td>
-                      <td className="px-6 py-4 font-mono">{item.score ? (item.score * 100).toFixed(1) + '%' : '--'}</td>
-                      <td className="px-6 py-4 text-on-surface-variant max-w-[300px] truncate" title={item.desc}>{item.desc}</td>
-                    </tr>
-                  ))}
+                  <AnimatePresence>
+                    {queue.map((item) => {
+                      let bgClass = "bg-transparent hover:bg-surface-container";
+                      if (item.verdict === 'AUTHENTIC') bgClass = "bg-emerald-500/5 hover:bg-emerald-500/10";
+                      else if (item.verdict === 'MANIPULATED') bgClass = "bg-error-container/20 hover:bg-error-container/30";
+                      else if (item.verdict === 'PENDING') bgClass = "bg-surface-container-lowest hover:bg-surface-container-low";
+                      
+                      return (
+                        <motion.tr 
+                          layout
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, height: 0 }}
+                          key={item.id} 
+                          className={`border-b border-outline-variant/30 transition-colors ${bgClass}`}
+                        >
+                          <td className="px-6 py-4 font-medium text-on-surface max-w-[200px] truncate" title={item.name}>{item.name}</td>
+                          <td className="px-6 py-4">
+                            {item.verdict === 'PENDING' && <Chip label="Pending" />}
+                            {item.verdict === 'PROCESSING' && <Chip label="Processing" variant="assist" className="animate-pulse" />}
+                            {item.verdict === 'AUTHENTIC' && <Chip label="Authentic" variant="filter" className="!bg-emerald-500/20 !text-emerald-500" />}
+                            {item.verdict === 'MANIPULATED' && <Chip label="Manipulated" variant="filter" className="!bg-error-container !text-on-error-container" />}
+                            {item.verdict === 'ERROR' && <Chip label="Error" variant="filter" className="!bg-orange-500/20 !text-orange-500" />}
+                          </td>
+                          <td className="px-6 py-4 font-mono">{item.score ? (item.score * 100).toFixed(1) + '%' : '--'}</td>
+                          <td className="px-6 py-4 text-on-surface-variant max-w-[300px] truncate" title={item.desc}>{item.desc}</td>
+                        </motion.tr>
+                      );
+                    })}
+                  </AnimatePresence>
                 </tbody>
               </table>
             </div>
             
             {/* Mobile Card List */}
             <div className="md:hidden flex flex-col divide-y divide-outline-variant/30">
-              {queue.map((item) => (
-                <div key={item.id} className="p-4 flex flex-col gap-3 hover:bg-surface-container transition-colors">
-                  <div className="flex justify-between items-start">
-                    <span className="font-medium text-on-surface truncate pr-4" title={item.name}>{item.name}</span>
-                    <span className="shrink-0">
-                      {item.verdict === 'PENDING' && <Chip label="Pending" />}
-                      {item.verdict === 'PROCESSING' && <Chip label="Processing" variant="assist" className="animate-pulse" />}
-                      {item.verdict === 'AUTHENTIC' && <Chip label="Authentic" variant="filter" className="!bg-emerald-500/20 !text-emerald-500" />}
-                      {item.verdict === 'MANIPULATED' && <Chip label="Manipulated" variant="filter" className="!bg-error-container !text-on-error-container" />}
-                      {item.verdict === 'ERROR' && <Chip label="Error" variant="filter" className="!bg-orange-500/20 !text-orange-500" />}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm text-on-surface-variant">
-                    <span className="font-mono">{item.score ? 'Confidence: ' + (item.score * 100).toFixed(1) + '%' : 'Awaiting analysis'}</span>
-                  </div>
-                  {item.desc && (
-                    <div className="text-sm text-on-surface-variant line-clamp-2">{item.desc}</div>
-                  )}
-                </div>
-              ))}
+              <AnimatePresence>
+                {queue.map((item) => {
+                  let bgClass = "bg-transparent hover:bg-surface-container";
+                  if (item.verdict === 'AUTHENTIC') bgClass = "bg-emerald-500/5 hover:bg-emerald-500/10";
+                  else if (item.verdict === 'MANIPULATED') bgClass = "bg-error-container/20 hover:bg-error-container/30";
+                  else if (item.verdict === 'PENDING') bgClass = "bg-surface-container-lowest hover:bg-surface-container-low";
+                  
+                  return (
+                    <motion.div 
+                      layout
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, height: 0 }}
+                      key={item.id} 
+                      className={`p-4 flex flex-col gap-3 transition-colors ${bgClass}`}
+                    >
+                      <div className="flex justify-between items-start">
+                        <span className="font-medium text-on-surface truncate pr-4" title={item.name}>{item.name}</span>
+                        <span className="shrink-0">
+                          {item.verdict === 'PENDING' && <Chip label="Pending" />}
+                          {item.verdict === 'PROCESSING' && <Chip label="Processing" variant="assist" className="animate-pulse" />}
+                          {item.verdict === 'AUTHENTIC' && <Chip label="Authentic" variant="filter" className="!bg-emerald-500/20 !text-emerald-500" />}
+                          {item.verdict === 'MANIPULATED' && <Chip label="Manipulated" variant="filter" className="!bg-error-container !text-on-error-container" />}
+                          {item.verdict === 'ERROR' && <Chip label="Error" variant="filter" className="!bg-orange-500/20 !text-orange-500" />}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm text-on-surface-variant">
+                        <span className="font-mono">{item.score ? 'Confidence: ' + (item.score * 100).toFixed(1) + '%' : 'Awaiting analysis'}</span>
+                      </div>
+                      {item.desc && (
+                        <div className="text-sm text-on-surface-variant line-clamp-2">{item.desc}</div>
+                      )}
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
             </div>
           </div>
         </Card>
       ) : (
-        <Card className="flex flex-col items-center justify-center py-12">
-          <span className="material-symbols-outlined text-[48px] text-on-surface-variant mb-3">inbox</span>
-          <h3 className="text-lg font-medium text-on-surface">Nothing here yet</h3>
-          <p className="text-sm text-on-surface-variant">Drop your files above to start adding them to the list.</p>
-        </Card>
+        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: 'spring', damping: 20 }}>
+          <Card className="flex flex-col items-center justify-center py-20 text-center border-dashed border-2 border-outline-variant/50 bg-surface/50">
+            <div className="w-24 h-24 bg-surface-container rounded-full flex items-center justify-center mb-6 shadow-sm">
+              <span className="material-symbols-outlined text-[56px] text-primary">topic</span>
+            </div>
+            <h3 className="text-2xl font-bold text-on-surface mb-2">Queue is Empty</h3>
+            <p className="text-base text-on-surface-variant max-w-md">
+              Drag and drop your media files above, or click to browse. You can analyze dozens of files simultaneously.
+            </p>
+          </Card>
+        </motion.div>
       )}
     </div>
   );
