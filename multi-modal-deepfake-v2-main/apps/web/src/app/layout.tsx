@@ -167,15 +167,22 @@ function NavRail() {
         </div>
       </aside>
 
-      <nav className="md:hidden fixed bottom-4 left-4 right-4 h-16 bg-surface-container-highest/80 backdrop-blur-xl rounded-2xl flex items-center justify-around z-50 shadow-2xl shadow-black/40 px-2 border border-white/10 animate-in slide-in-from-bottom-8 duration-500">
-        {NAV_ITEMS.slice(0, 5).map(item => {
+      <nav className="md:hidden fixed bottom-3 left-3 right-3 h-16 bg-surface-container-highest/90 backdrop-blur-xl rounded-2xl flex items-center justify-around z-50 shadow-2xl shadow-black/50 px-1 border border-white/10 animate-in slide-in-from-bottom-8 duration-500">
+        {[
+          { href: "/", icon: "dashboard", label: "Home" },
+          { href: "/analyze", icon: "troubleshoot", label: "Analyze" },
+          { href: "/batch", icon: "queue", label: "Batch" },
+          { href: "/history", icon: "history", label: "History" },
+          { href: "/threat-intel", icon: "radar", label: "Threats" },
+          { href: "/api-hub", icon: "api", label: "API" },
+        ].map(item => {
           const isActive = pathname === item.href;
           return (
-            <Link key={item.href} href={item.href} className="flex flex-col items-center justify-center h-full w-14 active:scale-90 transition-transform">
-              <div className={"w-12 h-7 rounded-full flex items-center justify-center mb-0.5 transition-colors " + (isActive ? "bg-secondary-container" : "transparent")}>
-                <span className={"material-symbols-outlined text-[22px] " + (isActive ? "text-on-secondary-container drop-shadow-sm" : "text-on-surface-variant")}>{item.icon}</span>
+            <Link key={item.href} href={item.href} className="flex flex-col items-center justify-center h-full flex-1 active:scale-95 transition-transform">
+              <div className={"w-10 h-7 rounded-full flex items-center justify-center mb-0.5 transition-all " + (isActive ? "bg-secondary-container shadow-sm" : "transparent")}>
+                <span className={"material-symbols-outlined text-[20px] " + (isActive ? "text-on-secondary-container" : "text-on-surface-variant")}>{item.icon}</span>
               </div>
-              <span className={"text-[10px] font-medium " + (isActive ? "text-on-surface" : "text-on-surface-variant")}>{item.label}</span>
+              <span className={"text-[9px] font-semibold tracking-tight " + (isActive ? "text-primary font-bold" : "text-on-surface-variant")}>{item.label}</span>
             </Link>
           );
         })}

@@ -321,7 +321,7 @@ function AnalyzeContent() {
             ))}
             {/* Connecting line */}
             <div className="absolute top-4 left-[10%] right-[10%] h-[2px] bg-surface-container-high -z-0">
-               <div className="h-full bg-primary transition-all duration-500 ease-out" style={{ width: \`\${(currentStep / (STEPS.length - 1)) * 100}%\` }} />
+               <div className="h-full bg-primary transition-all duration-500 ease-out" style={{ width: `${(currentStep / (STEPS.length - 1)) * 100}%` }} />
             </div>
           </div>
           <LinearProgress value={progress} />
