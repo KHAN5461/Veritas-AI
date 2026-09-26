@@ -120,6 +120,7 @@ async function retrieveSharedMediaWithRetry(maxAttempts = 10, intervalMs = 250):
 }
 
 function AnalyzeContent() {
+  const router = useRouter();
   const { user } = useAuth();
   const searchParams = useSearchParams();
 
@@ -277,7 +278,7 @@ function AnalyzeContent() {
       window.removeEventListener('message', handleMessage);
       if (intervalId) clearInterval(intervalId);
     };
-  }, [router, searchParams]);
+  }, [searchParams]);
 
   // Unified Drop / Upload Handler
   const handleFilesIngest = async (filesList: FileList | File[]) => {
