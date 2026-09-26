@@ -375,9 +375,9 @@ function PwaInit() {
   useEffect(() => {
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker
-        .register("/sw.js?v=9", { scope: "/", updateViaCache: "none" })
+        .register("/sw.js?v=10", { scope: "/", updateViaCache: "none" })
         .then((reg) => {
-          console.log("[PwaInit] SW registered v9, scope:", reg.scope);
+          console.log("[PwaInit] SW registered v10, scope:", reg.scope);
           reg.update();
         })
         .catch((err) => {

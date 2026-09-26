@@ -3,6 +3,7 @@
   "short_name": "Veritas",
   "description": "AI-powered deepfake detection and media authentication platform. Detect manipulated images, videos and audio in seconds.",
   "start_url": "/?source=pwa",
+  "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#0f1419",

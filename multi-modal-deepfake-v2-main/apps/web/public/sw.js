@@ -1,6 +1,6 @@
-// Veritas AI Service Worker v9
-const SW_VERSION = 'v9';
-const OFFLINE_CACHE = 'veritas-offline-v9';
+// Veritas AI Service Worker v10
+const SW_VERSION = 'v10';
+const OFFLINE_CACHE = 'veritas-offline-v10';
 const OFFLINE_URL = '/offline';
 
 self.addEventListener('install', (event) => {
@@ -17,18 +17,21 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('activate', (event) => {
-  console.log('[SW ' + SW_VERSION + '] Activating...');
+  console.log('[SW ' + SW_VERSION + '] Activating immediately...');
   event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys.map((key) => {
-          if (key !== OFFLINE_CACHE && key !== 'veritas-shared-media') {
-            console.log('[SW ' + SW_VERSION + '] Cleaning old cache:', key);
-            return caches.delete(key);
-          }
-        })
-      );
-    }).then(() => self.clients.claim())
+    Promise.all([
+      self.clients.claim(),
+      caches.keys().then((keys) => {
+        return Promise.all(
+          keys.map((key) => {
+            if (key !== OFFLINE_CACHE && key !== 'veritas-shared-media') {
+              console.log('[SW ' + SW_VERSION + '] Cleaning old cache:', key);
+              return caches.delete(key);
+            }
+          })
+        );
+      })
+    ])
   );
 });
 
