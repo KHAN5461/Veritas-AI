@@ -21,6 +21,23 @@ export function ForensicReport({ isLoading, result, fileData, fileHash, timestam
   return (
     <div className="bg-surface rounded-none print:shadow-none print:border-none flex flex-col gap-10">
       
+      {/* Print-ready Header */}
+      <div className="hidden print:block mb-8 pb-4 border-b border-gray-300">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <img src="/logo.png" className="w-8 h-8" alt="Veritas AI" />
+            <div>
+              <h1 className="text-xl font-bold">Veritas AI Forensic Report</h1>
+              <p className="text-sm text-gray-600">Confidential — For authorized use only</p>
+            </div>
+          </div>
+          <div className="text-right text-sm text-gray-600">
+            <p>Generated: {timestamp}</p>
+            <p>Report ID: {fileHash?.substring(0, 16)}...</p>
+          </div>
+        </div>
+      </div>
+
       {/* Header / Executive Summary */}
       <header className="border-b-2 border-outline-variant/30 pb-8 print:border-black/20">
         <div className="uppercase tracking-widest text-xs font-bold text-primary mb-4 print:text-black">CONFIDENTIAL FORENSIC REPORT</div>
@@ -30,7 +47,7 @@ export function ForensicReport({ isLoading, result, fileData, fileHash, timestam
           <div>
             <div className="text-sm text-on-surface-variant mb-1 print:text-gray-600">Final Verdict</div>
             {isLoading || !result ? <Skeleton className="h-10 w-48" /> : (
-              <div className={"inline-flex items-center gap-2 px-4 py-2 rounded-xl text-lg font-bold border-2 " + (result.is_fake ? "bg-error/10 text-error border-error/20 print:border-black print:text-black" : "bg-primary/10 text-primary border-primary/20 print:border-black print:text-black")}>
+              <div className={"inline-flex items-center gap-2 px-4 py-2 rounded-xl text-lg font-bold border-2 " + (result.is_fake ? "bg-error/10 text-error border-error/20 border-l-4 border-l-red-500 print:border-black print:text-black" : "bg-primary/10 text-primary border-primary/20 border-l-4 border-l-emerald-500 print:border-black print:text-black")}>
                 <span className="material-symbols-outlined">{result.is_fake ? 'warning' : 'verified_user'}</span>
                 {result.is_fake ? 'Highly Likely AI-Generated' : 'Likely Authentic'}
               </div>
@@ -92,7 +109,7 @@ export function ForensicReport({ isLoading, result, fileData, fileHash, timestam
               <div className="text-2xl font-mono text-on-surface print:text-black">
                 {(result.breakdown?.visual_score * 100).toFixed(1)}% <span className="text-sm font-sans text-on-surface-variant ml-1 print:text-gray-600">Altered</span>
               </div>
-              <p className="text-xs text-on-surface-variant mt-2 print:text-gray-600">We check the pixels to ensure the visual hasn't been AI-generated.</p>
+              <p className="text-xs text-on-surface-variant mt-2 print:text-gray-600">We check the pixels to ensure the visual hasn&apos;t been AI-generated.</p>
             </Card>
             
             <Card className={"bg-surface-container-lowest border border-outline-variant/30 print:border-black/20 print:bg-transparent print:shadow-none " + (result.breakdown?.audio_score != null ? "" : "opacity-50")}>
@@ -180,7 +197,7 @@ export function ForensicReport({ isLoading, result, fileData, fileHash, timestam
           <Card className="bg-surface-container-lowest border border-outline-variant/30 print:border-black/20 print:bg-transparent print:shadow-none">
             <div className="text-sm font-semibold mb-2 text-on-surface print:text-black">Content Credentials</div>
             <div className="text-sm text-on-surface-variant font-mono print:text-gray-600">Status: No signature found</div>
-            <p className="text-xs text-on-surface-variant mt-2 print:text-gray-600">This file doesn't have a secure digital signature (like Adobe Content Authenticity) attached to it.</p>
+            <p className="text-xs text-on-surface-variant mt-2 print:text-gray-600">This file doesn&apos;t have a secure digital signature (like Adobe Content Authenticity) attached to it.</p>
           </Card>
           <Card className="bg-surface-container-lowest border border-outline-variant/30 print:border-black/20 print:bg-transparent print:shadow-none">
             <div className="text-sm font-semibold mb-2 text-on-surface print:text-black">Camera Metadata</div>

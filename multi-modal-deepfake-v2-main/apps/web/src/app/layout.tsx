@@ -6,6 +6,10 @@ import { useState, useEffect } from "react";
 import "./globals.css";
 import { Toaster, toast } from "sonner";
 import { IconButton, Banner } from "@repo/ui";
+import { motion } from "framer-motion";
+import { ScrollToTop } from "../components/ScrollToTop";
+import { AuthProvider, useAuth } from "../context/AuthContext";
+import { auth } from "../lib/firebase";
 
 const NAV_ITEMS = [
   { href: "/", icon: "dashboard", label: "Dashboard" },
@@ -79,15 +83,13 @@ function GlobalDropzoneOverlay() {
 function MobileInstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isIOS, setIsIOS] = useState(false);
-  const [isStandalone, setIsStandalone] = useState(true); // Default true to prevent flash
+  const [isStandalone, setIsStandalone] = useState(true);
 
   useEffect(() => {
-    // Check if already installed (standalone mode)
     const isStandaloneMode = window.matchMedia('(display-mode: standalone)').matches || 
                              (window.navigator as any).standalone === true;
     setIsStandalone(isStandaloneMode);
 
-    // Detect iOS
     const userAgent = window.navigator.userAgent.toLowerCase();
     const isIosDevice = /iphone|ipad|ipod/.test(userAgent);
     setIsIOS(isIosDevice);
@@ -101,7 +103,7 @@ function MobileInstallPrompt() {
   }, []);
 
   if (isStandalone) return null;
-  if (!deferredPrompt && !isIOS) return null; // If not iOS and no prompt, don't show
+  if (!deferredPrompt && !isIOS) return null;
 
   const handleInstall = () => {
     if (deferredPrompt) {
@@ -123,7 +125,7 @@ function MobileInstallPrompt() {
   return (
     <div className="md:hidden flex-none w-full p-3 bg-primary-container text-on-primary-container flex items-center justify-between shadow-sm border-b border-outline/20 animate-in slide-in-from-top-4 fade-in duration-300">
       <div className="flex items-center gap-3 overflow-hidden">
-        <img src="/logo.png" alt="App Icon" className="w-16 h-16 object-contain shrink-0 drop-shadow-sm" />
+        <img src="/logo.png" alt="App Icon" className="w-10 h-10 object-contain shrink-0 drop-shadow-sm" />
         <div className="flex flex-col justify-center">
           <p className="text-sm font-bold tracking-tight">Install Veritas AI</p>
           <p className="text-[11px] opacity-90 truncate">Scan media directly from other apps</p>
@@ -138,11 +140,13 @@ function MobileInstallPrompt() {
 
 function NavRail() {
   const pathname = usePathname();
+  const { user } = useAuth();
+  const router = useRouter();
 
   return (
     <>
-      <aside className="hidden md:flex w-20 hover:w-64 transition-all duration-300 bg-surface-container flex-col items-center hover:items-start h-full shrink-0 py-3 gap-1 z-50 group border-r border-outline-variant/20 shadow-xl overflow-hidden">
-        <div className="w-full h-16 relative flex items-center justify-center group-hover:justify-start group-hover:px-5 mb-4 mt-2 transition-all duration-300">
+      <aside className="hidden md:flex w-20 hover:w-64 transition-all duration-300 ease-in-out bg-surface-container flex-col items-center hover:items-start h-full shrink-0 py-3 gap-1 z-50 group border-r border-outline-variant/20 shadow-xl overflow-hidden relative">
+        <div className="w-full h-16 relative flex items-center justify-center group-hover:justify-start group-hover:px-5 mb-4 mt-2 transition-all duration-300 ease-in-out">
           <img src="/logo.png" className="w-10 h-10 object-contain shrink-0 drop-shadow-md scale-110" alt="Veritas Logo" />
           <span className="absolute left-[76px] font-bold text-xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap text-on-surface tracking-tight pointer-events-none">Veritas AI</span>
         </div>
@@ -151,7 +155,8 @@ function NavRail() {
           {NAV_ITEMS.map(item => {
             const isActive = pathname === item.href;
             return (
-              <Link key={item.href} href={item.href} className={"flex items-center gap-4 w-full h-12 rounded-full px-3 transition-colors active:scale-95 " + (isActive ? "bg-secondary-container" : "hover:bg-on-surface/8")}>
+              <Link key={item.href} href={item.href} title={item.label} className={"group/link relative flex items-center gap-4 w-full h-12 rounded-full px-3 transition-colors active:scale-95 " + (isActive ? "bg-secondary-container" : "hover:bg-on-surface/8")}>
+                {isActive && <motion.div layoutId="navIndicator" className="absolute left-0 w-1 h-8 bg-primary rounded-r-full" />}
                 <span className={"material-symbols-outlined text-[24px] shrink-0 " + (isActive ? "text-on-secondary-container" : "text-on-surface-variant")}>{item.icon}</span>
                 <span className={"font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap " + (isActive ? "text-on-surface" : "text-on-surface-variant")}>{item.label}</span>
               </Link>
@@ -159,8 +164,26 @@ function NavRail() {
           })}
         </nav>
 
-        <div className="w-full px-3 mb-2">
-          <Link href="/settings" className={"flex items-center gap-4 w-full h-12 rounded-full px-3 transition-colors active:scale-95 " + (pathname === "/settings" ? "bg-secondary-container" : "hover:bg-on-surface/8")}>
+        <div className="w-full px-3 mb-2 flex flex-col gap-2">
+          <button 
+            onClick={() => router.push('/settings')} 
+            className="flex items-center gap-4 w-full h-12 rounded-full px-3 transition-colors active:scale-95 hover:bg-on-surface/8 group/link"
+            title="User Profile"
+          >
+            <div className="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-bold text-sm shrink-0 overflow-hidden border-2 border-transparent hover:border-primary transition-all">
+              {user?.photoURL ? (
+                <img src={user.photoURL} alt="Avatar" className="w-full h-full object-cover" />
+              ) : (
+                user?.email?.[0]?.toUpperCase() || 'U'
+              )}
+            </div>
+            <span className="font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap text-on-surface-variant text-sm truncate pr-2">
+              {user?.email || 'Profile'}
+            </span>
+          </button>
+
+          <Link href="/settings" title="Settings" className={"group/link relative flex items-center gap-4 w-full h-12 rounded-full px-3 transition-colors active:scale-95 " + (pathname === "/settings" ? "bg-secondary-container" : "hover:bg-on-surface/8")}>
+            {pathname === "/settings" && <motion.div layoutId="navIndicator" className="absolute left-0 w-1 h-8 bg-primary rounded-r-full" />}
             <span className={"material-symbols-outlined text-[24px] shrink-0 " + (pathname === "/settings" ? "text-on-secondary-container" : "text-on-surface-variant")}>settings</span>
             <span className={"font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap " + (pathname === "/settings" ? "text-on-surface" : "text-on-surface-variant")}>Settings</span>
           </Link>
@@ -179,7 +202,7 @@ function NavRail() {
           const isActive = pathname === item.href;
           return (
             <Link key={item.href} href={item.href} className="flex flex-col items-center justify-center h-full flex-1 active:scale-95 transition-transform">
-              <div className={"w-10 h-7 rounded-full flex items-center justify-center mb-0.5 transition-all " + (isActive ? "bg-secondary-container shadow-sm" : "transparent")}>
+              <div className={"w-10 h-7 rounded-full flex items-center justify-center mb-0.5 transition-all relative " + (isActive ? "bg-secondary-container shadow-sm" : "transparent")}>
                 <span className={"material-symbols-outlined text-[20px] " + (isActive ? "text-on-secondary-container" : "text-on-surface-variant")}>{item.icon}</span>
               </div>
               <span className={"text-[9px] font-semibold tracking-tight " + (isActive ? "text-primary font-bold" : "text-on-surface-variant")}>{item.label}</span>
@@ -217,9 +240,9 @@ function TopAppBar() {
 
   return (
     <header className="h-16 bg-surface flex items-center px-4 md:px-6 justify-between shrink-0">
-      <div className="flex items-center gap-2">
-        <img src="/logo.png" className="w-14 h-14 object-contain md:hidden scale-110" alt="Veritas Logo" />
-        <span className="text-lg font-semibold text-on-surface tracking-tight truncate">Veritas AI</span>
+      <div className="flex items-center gap-2 overflow-hidden">
+        <img src="/logo.png" className="w-8 h-8 md:w-14 md:h-14 object-contain md:hidden scale-110 shrink-0" alt="Veritas Logo" />
+        <span className="text-lg font-semibold text-on-surface tracking-tight truncate hidden sm:inline md:hidden lg:inline">Veritas AI</span>
         <span className="text-sm text-on-surface-variant ml-2 hidden md:inline truncate">Multimodal Deepfake Detection</span>
       </div>
       <div className="flex items-center gap-1 shrink-0">
@@ -241,9 +264,6 @@ function TopAppBar() {
   );
 }
 
-import { AuthProvider, useAuth } from "../context/AuthContext";
-import { auth } from "../lib/firebase";
-
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const pathname = usePathname();
@@ -255,7 +275,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     }
   }, [user, loading, pathname, router]);
 
-  if (loading) return null; // or a full-screen spinner
+  if (loading) return null;
   if (!user && pathname !== '/login') return null;
 
   return <>{children}</>;
@@ -308,11 +328,12 @@ export default function RootLayout({
             ) : (
               <>
                 <GlobalDropzoneOverlay />
+                <ScrollToTop />
                 <NavRail />
-                <div className="flex-1 flex flex-col h-full overflow-hidden pb-16 md:pb-0 relative">
+                <div className="flex-1 flex flex-col h-full overflow-hidden relative">
                   <TopAppBar />
                   <MobileInstallPrompt />
-                  <main className="flex-1 overflow-y-auto bg-surface-container-lowest relative z-0">
+                  <main className="flex-1 overflow-y-auto bg-surface-container-lowest relative z-0 pb-24 md:pb-0">
                     {children}
                   </main>
                 </div>
