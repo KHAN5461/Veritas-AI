@@ -1,11 +1,14 @@
 {
   "name": "Veritas AI",
   "short_name": "Veritas",
-  "description": "Deepfake detection and media authentication platform.",
-  "start_url": "/",
+  "description": "AI-powered deepfake detection and media authentication platform. Detect manipulated images, videos and audio in seconds.",
+  "start_url": "/?source=pwa",
   "display": "standalone",
-  "background_color": "#000000",
-  "theme_color": "#000000",
+  "orientation": "portrait-primary",
+  "background_color": "#0f1419",
+  "theme_color": "#0f1419",
+  "categories": ["productivity", "utilities"],
+  "lang": "en",
   "icons": [
     {
       "src": "/icon-192.png",
@@ -30,6 +33,29 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "New Scan",
+      "short_name": "Scan",
+      "description": "Analyze a media file for deepfakes",
+      "url": "/analyze?source=shortcut",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "View History",
+      "short_name": "History",
+      "description": "Browse past analysis results",
+      "url": "/history?source=shortcut",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Batch Analysis",
+      "short_name": "Batch",
+      "description": "Process multiple files at once",
+      "url": "/batch?source=shortcut",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     }
   ],
   "share_target": {

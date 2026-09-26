@@ -6,7 +6,7 @@ import { Card, StatWidget, ForensicCard, Button, Chip } from '@repo/ui';
 import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAuth } from '../context/AuthContext';
-import { ExtensionPromo } from '../components/ExtensionPromo';
+// ExtensionPromo moved to InstallBanner in layout.tsx
 
 const getGreeting = () => {
   const hour = new Date().getHours();
@@ -120,7 +120,7 @@ export default function Home() {
         </div>
       </Card>
 
-      <ExtensionPromo />
+
 
       {/* Quick Action Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">

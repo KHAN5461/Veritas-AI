@@ -16,6 +16,8 @@ export default function SettingsPage() {
   const [threshold, setThreshold] = useState(85);
   const [truthscanKey, setTruthscanKey] = useState('');
   const [hfToken, setHfToken] = useState('');
+  const [extensionInstalled, setExtensionInstalled] = useState(false);
+  const [isPwaInstalled, setIsPwaInstalled] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem('veritas-settings');
@@ -30,6 +32,14 @@ export default function SettingsPage() {
         setHfToken(parsed.hfToken ?? '');
       } catch {}
     }
+    // Detect extension
+    const hasExt = !!document.querySelector('meta[name="veritas-extension-installed"]') ||
+      !!(window as any).__VERITAS_EXTENSION__;
+    setExtensionInstalled(hasExt);
+    // Detect PWA standalone
+    const isPwa = window.matchMedia('(display-mode: standalone)').matches ||
+      (window.navigator as any).standalone === true;
+    setIsPwaInstalled(isPwa);
   }, []);
 
   const saveSettings = () => {
@@ -79,6 +89,53 @@ export default function SettingsPage() {
                 <h3 className="text-2xl font-semibold text-on-surface">{user?.displayName || 'Veritas Analyst'}</h3>
                 <p className="text-on-surface-variant mb-4">{user?.email || 'Not signed in'}</p>
                 <Button variant="outlined" onClick={() => toast.info('Profile editing coming soon.')}>Edit Profile</Button>
+              </div>
+            </div>
+          </Card>
+        </section>
+
+        {/* Connected Apps Section */}
+        <section>
+          <div className="flex items-center gap-3 mb-4">
+            <span className="material-symbols-outlined text-primary text-[24px]">hub</span>
+            <h2 className="text-xl font-bold text-on-surface">Connected Apps</h2>
+          </div>
+          <Card>
+            <div className="flex flex-col divide-y divide-outline-variant/30">
+              <div className="flex items-center justify-between py-3">
+                <div className="flex items-center gap-3">
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${isPwaInstalled ? 'bg-emerald-500/20 text-emerald-400' : 'bg-surface-container-high text-on-surface-variant'}`}>
+                    <span className="material-symbols-outlined text-[20px]">phone_android</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-on-surface">Veritas AI PWA</p>
+                    <p className="text-xs text-on-surface-variant">Installed app with share target</p>
+                  </div>
+                </div>
+                <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${isPwaInstalled ? 'bg-emerald-500/20 text-emerald-400' : 'bg-surface-container-highest text-on-surface-variant'}`}>
+                  {isPwaInstalled ? '✓ Installed' : 'Not Installed'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between py-3">
+                <div className="flex items-center gap-3">
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${extensionInstalled ? 'bg-emerald-500/20 text-emerald-400' : 'bg-surface-container-high text-on-surface-variant'}`}>
+                    <span className="material-symbols-outlined text-[20px]">extension</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-on-surface">Chrome Extension</p>
+                    <p className="text-xs text-on-surface-variant">In-browser deepfake detection</p>
+                  </div>
+                </div>
+                {extensionInstalled ? (
+                  <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-400">✓ Connected</span>
+                ) : (
+                  <button
+                    onClick={() => alert('To install: Open chrome://extensions, enable Developer Mode, then Load Unpacked from apps/extension/dist')}
+                    className="text-xs font-bold px-3 py-1.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/30"
+                  >
+                    Install
+                  </button>
+                )}
               </div>
             </div>
           </Card>
