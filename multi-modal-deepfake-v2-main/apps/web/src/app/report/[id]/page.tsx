@@ -50,7 +50,12 @@ export default function ReportPage() {
     setIsDownloading(true);
     toast.info('Generating high-resolution forensic PDF...');
     import('../../../lib/pdf').then(({ downloadPDF }) => {
-      downloadPDF('forensic-report-content', `Veritas_Forensic_Report_${id}.pdf`);
+      downloadPDF('forensic-report-content', `Veritas_Forensic_Report_${id}.pdf`, {
+        result: report,
+        fileData,
+        fileHash: report.fileHash || 'N/A',
+        timestamp
+      });
       setIsDownloading(false);
       toast.success('PDF report downloaded successfully!');
     }).catch(() => {

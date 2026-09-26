@@ -788,7 +788,12 @@ function AnalyzeContent() {
                         variant="filled"
                         onClick={() => {
                           import('../../lib/pdf').then(({ downloadPDF }) => {
-                            downloadPDF('forensic-report-content', `Veritas_${file.name}.pdf`);
+                            downloadPDF('forensic-report-content', `Veritas_${file.name}.pdf`, {
+                              result,
+                              fileData: { name: file.name, type: file.type, size: file.size, url: fileUrl },
+                              fileHash,
+                              timestamp
+                            });
                           });
                         }}
                         className="text-xs"
