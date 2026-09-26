@@ -7,29 +7,60 @@ const A4_PX_W = 794;
 const A4_PT_W = 595;
 const A4_PT_H = 842;
 
+/** Wait for all <img> tags inside an element to complete loading/decoding */
+async function waitForImages(el: HTMLElement): Promise<void> {
+  const images = Array.from(el.querySelectorAll('img'));
+  await Promise.all(
+    images.map(img => {
+      if (img.complete && img.naturalWidth !== 0) return Promise.resolve();
+      return new Promise<void>(resolve => {
+        const timeout = setTimeout(() => resolve(), 1000); // 1s safety timeout
+        img.onload = () => { clearTimeout(timeout); resolve(); };
+        img.onerror = () => { clearTimeout(timeout); resolve(); };
+      });
+    })
+  );
+}
+
 /** Capture a DOM node at exactly A4 width and return a PNG data URL */
 async function captureSection(el: HTMLElement): Promise<string> {
+  await waitForImages(el);
+  const height = el.offsetHeight || 1123;
   return domToImage.toPng(el, {
     bgcolor: '#ffffff',
     width: A4_PX_W,
+    height: height,
     style: {
-      transform: `scale(1)`,
-      transformOrigin: 'top left',
+      position: 'relative',
+      top: '0',
+      left: '0',
+      margin: '0',
+      opacity: '1',
+      transform: 'none',
     },
   });
 }
 
-/** Build and append a temporary hidden container to <body>, return it + cleanup fn */
+/** Build and append a temporary container positioned at top:0 left:0 behind main UI */
 function mountHidden(): [HTMLDivElement, () => void] {
   const wrap = document.createElement('div');
   wrap.style.cssText = `
-    position:fixed; top:-99999px; left:-99999px;
-    width:${A4_PX_W}px; z-index:-1;
-    font-family:'Google Sans','Roboto',system-ui,sans-serif;
-    background:#fff; color:#111; line-height:1.5;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: ${A4_PX_W}px;
+    z-index: -9999;
+    opacity: 1;
+    pointer-events: none;
+    font-family: 'Google Sans', 'Roboto', system-ui, -apple-system, sans-serif;
+    background: #ffffff;
+    color: #111111;
+    line-height: 1.5;
   `;
   document.body.appendChild(wrap);
-  return [wrap, () => document.body.removeChild(wrap)];
+  return [wrap, () => {
+    if (wrap.parentNode) wrap.parentNode.removeChild(wrap);
+  }];
 }
 
 function bar(pct: number, color: string): string {
@@ -77,7 +108,7 @@ function buildPage1(data: PdfReportData): HTMLElement {
       <div style="display:flex;align-items:center;gap:12px">
         <div style="width:36px;height:36px;background:#1a1a2e;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:14px">V</div>
         <div>
-          <div style="font-size:16px;font-weight:800;letter-spacing:-0.3px">Veritas AI</div>
+          <div style="font-size:16px;font-weight:800;letter-spacing:-0.3px;color:#111">Veritas AI</div>
           <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:1px">Forensic Examination Report</div>
         </div>
       </div>
@@ -85,7 +116,7 @@ function buildPage1(data: PdfReportData): HTMLElement {
         <div>Generated: ${timestamp}</div>
         <div>Report ID: ${fileHash?.substring(0, 16) ?? 'VERITAS-' + Date.now()}…</div>
         <div>Engine: Veritas-ViT-Fusion v2.4</div>
-        <div style="margin-top:4px;font-size:9px;background:#f3f4f6;padding:2px 6px;border-radius:4px">PAGE 1 OF 3 — EXECUTIVE SUMMARY</div>
+        <div style="margin-top:4px;font-size:9px;background:#f3f4f6;padding:2px 6px;border-radius:4px;color:#374151">PAGE 1 OF 3 — EXECUTIVE SUMMARY</div>
       </div>
     </div>
 
@@ -111,11 +142,11 @@ function buildPage1(data: PdfReportData): HTMLElement {
     <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:16px;margin-bottom:20px">
       <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#6b7280;margin-bottom:12px">⛓ Chain of Custody &amp; File Attributes</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:11px">
-        <div><span style="color:#6b7280">File Name:</span><br><span style="font-weight:600;font-family:monospace;word-break:break-all">${fileData.name}</span></div>
-        <div><span style="color:#6b7280">File Type:</span><br><span style="font-weight:600;font-family:monospace">${fileData.type || '—'}</span></div>
-        <div><span style="color:#6b7280">File Size:</span><br><span style="font-weight:600;font-family:monospace">${(fileData.size / 1024 / 1024).toFixed(3)} MB (${fileData.size.toLocaleString()} bytes)</span></div>
-        <div><span style="color:#6b7280">Analysis Timestamp:</span><br><span style="font-weight:600;font-family:monospace">${timestamp}</span></div>
-        <div style="grid-column:1/-1"><span style="color:#6b7280">SHA-256 Cryptographic Fingerprint:</span><br><span style="font-weight:600;font-family:monospace;font-size:10px;word-break:break-all;letter-spacing:1px">${hashBlocks(fileHash)}</span></div>
+        <div><span style="color:#6b7280">File Name:</span><br><span style="font-weight:600;font-family:monospace;color:#111;word-break:break-all">${fileData.name}</span></div>
+        <div><span style="color:#6b7280">File Type:</span><br><span style="font-weight:600;font-family:monospace;color:#111">${fileData.type || '—'}</span></div>
+        <div><span style="color:#6b7280">File Size:</span><br><span style="font-weight:600;font-family:monospace;color:#111">${(fileData.size / 1024 / 1024).toFixed(3)} MB (${fileData.size.toLocaleString()} bytes)</span></div>
+        <div><span style="color:#6b7280">Analysis Timestamp:</span><br><span style="font-weight:600;font-family:monospace;color:#111">${timestamp}</span></div>
+        <div style="grid-column:1/-1"><span style="color:#6b7280">SHA-256 Cryptographic Fingerprint:</span><br><span style="font-weight:600;font-family:monospace;font-size:10px;color:#111;word-break:break-all;letter-spacing:1px">${hashBlocks(fileHash)}</span></div>
       </div>
     </div>
 
@@ -124,7 +155,7 @@ function buildPage1(data: PdfReportData): HTMLElement {
       <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#6b7280;margin-bottom:12px">◈ Multi-Modal Neural Inference Matrix</div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
         <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px">
-          <div style="font-size:10px;font-weight:700;margin-bottom:2px;display:flex;justify-content:space-between">
+          <div style="font-size:10px;font-weight:700;color:#111;margin-bottom:2px;display:flex;justify-content:space-between">
             <span>👁 Visual Pixel Analysis</span>
             <span style="color:${scoreColor(visualPct)}">${visualPct.toFixed(1)}%</span>
           </div>
@@ -132,7 +163,7 @@ function buildPage1(data: PdfReportData): HTMLElement {
           <div style="font-size:9px;color:#6b7280;margin-top:6px">Facial texture, boundary blending, generative artifacts</div>
         </div>
         <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px">
-          <div style="font-size:10px;font-weight:700;margin-bottom:2px;display:flex;justify-content:space-between">
+          <div style="font-size:10px;font-weight:700;color:#111;margin-bottom:2px;display:flex;justify-content:space-between">
             <span>🎤 Acoustic Biometrics</span>
             <span style="color:${audioPct != null ? scoreColor(audioPct) : '#9ca3af'}">${audioPct != null ? audioPct.toFixed(1) + '%' : 'N/A'}</span>
           </div>
@@ -140,7 +171,7 @@ function buildPage1(data: PdfReportData): HTMLElement {
           <div style="font-size:9px;color:#6b7280;margin-top:6px">Vocal tract physics, harmonics, cloning signatures</div>
         </div>
         <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px">
-          <div style="font-size:10px;font-weight:700;margin-bottom:2px;display:flex;justify-content:space-between">
+          <div style="font-size:10px;font-weight:700;color:#111;margin-bottom:2px;display:flex;justify-content:space-between">
             <span>🔄 AV Sync Check</span>
             <span style="color:${lipPct != null ? scoreColor(lipPct) : '#9ca3af'}">${lipPct != null ? lipPct.toFixed(1) + '%' : 'N/A'}</span>
           </div>
@@ -156,27 +187,27 @@ function buildPage1(data: PdfReportData): HTMLElement {
       <table style="width:100%;font-size:11px;border-collapse:collapse">
         <thead>
           <tr style="background:#e5e7eb">
-            <th style="text-align:left;padding:6px 8px;border-radius:4px 0 0 4px">Signal Domain</th>
-            <th style="text-align:center;padding:6px 8px">Score</th>
-            <th style="text-align:center;padding:6px 8px">Risk Level</th>
-            <th style="text-align:left;padding:6px 8px;border-radius:0 4px 4px 0">Finding</th>
+            <th style="text-align:left;padding:6px 8px;border-radius:4px 0 0 4px;color:#374151">Signal Domain</th>
+            <th style="text-align:center;padding:6px 8px;color:#374151">Score</th>
+            <th style="text-align:center;padding:6px 8px;color:#374151">Risk Level</th>
+            <th style="text-align:left;padding:6px 8px;border-radius:0 4px 4px 0;color:#374151">Finding</th>
           </tr>
         </thead>
         <tbody>
           <tr style="border-bottom:1px solid #f3f4f6">
-            <td style="padding:7px 8px">Visual / Pixel</td>
+            <td style="padding:7px 8px;color:#111">Visual / Pixel</td>
             <td style="text-align:center;font-family:monospace;padding:7px 8px;color:${scoreColor(visualPct)};font-weight:700">${visualPct.toFixed(1)}%</td>
             <td style="text-align:center;padding:7px 8px"><span style="background:${visualPct > 50 ? '#fef2f2' : '#f0fdf4'};color:${scoreColor(visualPct)};padding:2px 8px;border-radius:4px;font-size:9px;font-weight:700">${visualPct > 70 ? 'HIGH' : visualPct > 35 ? 'MEDIUM' : 'LOW'}</span></td>
             <td style="padding:7px 8px;color:#374151">${visualPct > 50 ? 'Synthetic synthesis artifacts detected' : 'No visual anomalies found'}</td>
           </tr>
           <tr style="border-bottom:1px solid #f3f4f6">
-            <td style="padding:7px 8px">Audio / Acoustic</td>
+            <td style="padding:7px 8px;color:#111">Audio / Acoustic</td>
             <td style="text-align:center;font-family:monospace;padding:7px 8px;color:${audioPct != null ? scoreColor(audioPct) : '#9ca3af'};font-weight:700">${audioPct != null ? audioPct.toFixed(1) + '%' : '—'}</td>
             <td style="text-align:center;padding:7px 8px"><span style="background:#f3f4f6;color:#6b7280;padding:2px 8px;border-radius:4px;font-size:9px;font-weight:700">${audioPct != null ? (audioPct > 70 ? 'HIGH' : audioPct > 35 ? 'MEDIUM' : 'LOW') : 'N/A'}</span></td>
             <td style="padding:7px 8px;color:#374151">${audioPct != null ? (audioPct > 50 ? 'Voice cloning signatures present' : 'Acoustic pattern authentic') : 'No audio track analyzed'}</td>
           </tr>
           <tr>
-            <td style="padding:7px 8px">Audio-Visual Sync</td>
+            <td style="padding:7px 8px;color:#111">Audio-Visual Sync</td>
             <td style="text-align:center;font-family:monospace;padding:7px 8px;color:${lipPct != null ? scoreColor(lipPct) : '#9ca3af'};font-weight:700">${lipPct != null ? lipPct.toFixed(1) + '%' : '—'}</td>
             <td style="text-align:center;padding:7px 8px"><span style="background:#f3f4f6;color:#6b7280;padding:2px 8px;border-radius:4px;font-size:9px;font-weight:700">${lipPct != null ? (lipPct > 70 ? 'HIGH' : lipPct > 35 ? 'MEDIUM' : 'LOW') : 'N/A'}</span></td>
             <td style="padding:7px 8px;color:#374151">${lipPct != null ? (lipPct > 50 ? 'Lip sync desync detected — potential dubbing' : 'Phoneme sync within tolerance') : 'No AV pair to compare'}</td>
@@ -196,7 +227,6 @@ function buildPage1(data: PdfReportData): HTMLElement {
 /** ─── PAGE 2: Deep Artifact Inspector ───────────────────────────────────── */
 function buildPage2(data: PdfReportData): HTMLElement {
   const { result, fileData, fileHash, timestamp } = data;
-  const pct = result ? (result.confidence > 1 ? result.confidence : result.confidence * 100) : 0;
   const isFake = result?.is_fake ?? false;
   const verdictColor = isFake ? '#dc2626' : '#059669';
 
@@ -210,11 +240,11 @@ function buildPage2(data: PdfReportData): HTMLElement {
     <div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:12px;border-bottom:2px solid #e5e7eb;margin-bottom:20px">
       <div style="display:flex;align-items:center;gap:10px">
         <div style="width:28px;height:28px;background:#1a1a2e;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:12px">V</div>
-        <span style="font-size:13px;font-weight:800">Veritas AI — Deep Artifact Inspector</span>
+        <span style="font-size:13px;font-weight:800;color:#111">Veritas AI — Deep Artifact Inspector</span>
       </div>
       <div style="text-align:right;font-size:9px;color:#6b7280;font-family:monospace">
         <div>${timestamp} | ID: ${fileHash?.substring(0, 12) ?? '—'}…</div>
-        <div style="margin-top:2px;background:#f3f4f6;padding:2px 6px;border-radius:4px">PAGE 2 OF 3 — ARTIFACT EVIDENCE</div>
+        <div style="margin-top:2px;background:#f3f4f6;padding:2px 6px;border-radius:4px;color:#374151">PAGE 2 OF 3 — ARTIFACT EVIDENCE</div>
       </div>
     </div>
 
@@ -322,11 +352,11 @@ function buildPage3(data: PdfReportData): HTMLElement {
     <div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:12px;border-bottom:2px solid #e5e7eb;margin-bottom:20px">
       <div style="display:flex;align-items:center;gap:10px">
         <div style="width:28px;height:28px;background:#1a1a2e;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:12px">V</div>
-        <span style="font-size:13px;font-weight:800">Veritas AI — Provenance &amp; Legal Admissibility</span>
+        <span style="font-size:13px;font-weight:800;color:#111">Veritas AI — Provenance &amp; Legal Admissibility</span>
       </div>
       <div style="text-align:right;font-size:9px;color:#6b7280;font-family:monospace">
         <div>${timestamp} | ID: ${fileHash?.substring(0, 12) ?? '—'}…</div>
-        <div style="margin-top:2px;background:#f3f4f6;padding:2px 6px;border-radius:4px">PAGE 3 OF 3 — PROVENANCE LEDGER</div>
+        <div style="margin-top:2px;background:#f3f4f6;padding:2px 6px;border-radius:4px;color:#374151">PAGE 3 OF 3 — PROVENANCE LEDGER</div>
       </div>
     </div>
 
@@ -400,7 +430,7 @@ function buildPage3(data: PdfReportData): HTMLElement {
         <div style="font-size:9px;color:#9ca3af;margin-top:4px">Report generated and sealed at: ${timestamp}</div>
       </div>
       <div style="text-align:right">
-        <div style="font-size:9px;color:#6b7280">Verify at:</div>
+        <div style="font-size:9px;color:#9ca3af">Verify at:</div>
         <div style="font-size:10px;color:#60a5fa;font-family:monospace">veritas-ai-mocha.vercel.app</div>
       </div>
     </div>
@@ -462,7 +492,6 @@ export async function downloadPDF(
 
   try {
     const pdfDoc = await PDFDocument.create();
-
     const builders = [buildPage1, buildPage2, buildPage3];
 
     for (const build of builders) {
@@ -470,8 +499,8 @@ export async function downloadPDF(
       wrap.innerHTML = '';
       wrap.appendChild(section);
 
-      // Allow render
-      await new Promise(r => setTimeout(r, 120));
+      // Brief layout tick
+      await new Promise(r => setTimeout(r, 50));
 
       const dataUrl = await captureSection(wrap);
 
