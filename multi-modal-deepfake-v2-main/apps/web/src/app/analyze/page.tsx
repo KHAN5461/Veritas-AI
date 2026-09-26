@@ -386,7 +386,7 @@ function AnalyzeContent() {
                 </Button>
               </div>
 
-              <div id="forensic-report-content" className="bg-surface rounded-3xl overflow-hidden shadow-sm">
+              <div className="bg-surface rounded-3xl overflow-hidden shadow-sm">
                 <ForensicReport 
                   isLoading={isLoading} 
                   result={result} 

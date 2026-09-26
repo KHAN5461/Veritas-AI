@@ -129,13 +129,13 @@ export default function PwaDebugPage() {
       display: 'inline-block', padding: '4px 12px', borderRadius: '9999px', fontSize: '13px', fontWeight: 600,
       background: ok ? '#00c85320' : '#ff336620', color: ok ? '#00c853' : '#ff3366', marginRight: '8px'
     }}>
-      {ok ? '✅' : '❌'} {label}
+      {ok ? '[OK]' : '[ERR]'} {label}
     </span>
   );
 
   return (
     <div style={{ padding: '24px', maxWidth: '600px', margin: '0 auto', fontFamily: 'monospace', color: '#e0e0e0' }}>
-      <h1 style={{ fontSize: '20px', marginBottom: '16px' }}>🔧 PWA Debug</h1>
+      <h1 style={{ fontSize: '20px', marginBottom: '16px' }}>PWA Diagnostic Terminal</h1>
 
       {loading ? <p>Checking...</p> : swInfo && (
         <>
@@ -174,13 +174,13 @@ export default function PwaDebugPage() {
 
       <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
         <button onClick={checkStatus} style={{ padding: '10px 16px', borderRadius: '8px', background: '#333', color: '#fff', border: 'none', fontSize: '13px', fontWeight: 600 }}>
-          🔄 Refresh Status
+          Refresh Status
         </button>
         <button onClick={forceRegister} style={{ padding: '10px 16px', borderRadius: '8px', background: '#1a73e8', color: '#fff', border: 'none', fontSize: '13px', fontWeight: 600 }}>
-          📥 Force Register SW
+          Force Register SW
         </button>
         <button onClick={resetSW} style={{ padding: '10px 16px', borderRadius: '8px', background: '#ff3366', color: '#fff', border: 'none', fontSize: '13px', fontWeight: 600 }}>
-          🗑️ Reset Everything
+          Reset Everything
         </button>
       </div>
 

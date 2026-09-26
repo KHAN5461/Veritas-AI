@@ -60,7 +60,7 @@ const AnimatedStatWidget = ({ title, value, label, isError, icon, isPercentage =
   }
   
   return (
-    <div className={`h-full w-full rounded-2xl transition-all duration-500 ${isError ? 'shadow-[0_0_15px_rgba(255,0,0,0.1)] hover:shadow-[0_0_20px_rgba(255,0,0,0.15)]' : 'shadow-[0_0_15px_rgba(0,255,100,0.05)] hover:shadow-[0_0_20px_rgba(0,255,100,0.1)]'}`}>
+    <div className="h-full w-full rounded-2xl bg-surface-container/40 border border-outline-variant/30 hover:border-outline-variant/60 transition-colors">
       <StatWidget title={title} value={displayValue} label={label} isError={isError} icon={icon} />
     </div>
   );
@@ -94,24 +94,30 @@ export default function Home() {
   const scansToday = Math.max(1, Math.floor(totalScans * 0.7));
 
   return (
-    <div className="p-4 md:p-8 max-w-6xl mx-auto flex flex-col gap-6 md:gap-8 w-full animate-in fade-in duration-500 pb-24 md:pb-8">
+    <div className="p-4 md:p-8 max-w-6xl mx-auto flex flex-col gap-6 md:gap-8 w-full animate-in fade-in duration-500 pb-28 md:pb-8">
 
       {/* Hero Section */}
-      <Card variant="glass" className="relative overflow-hidden bg-gradient-to-br from-primary-container/40 via-surface/20 to-secondary-container/40 border-outline/10 shadow-2xl">
-        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-primary/20 rounded-full blur-[80px] pointer-events-none"></div>
-        <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-64 h-64 bg-secondary/20 rounded-full blur-[80px] pointer-events-none"></div>
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-tertiary/20 rounded-full blur-[100px] pointer-events-none"></div>
+      <Card variant="glass" className="relative overflow-hidden bg-gradient-to-br from-primary-container/30 via-surface/40 to-secondary-container/20 border-outline/10 shadow-lg">
+        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-primary/10 rounded-full blur-[80px] pointer-events-none"></div>
+        <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-64 h-64 bg-secondary/10 rounded-full blur-[80px] pointer-events-none"></div>
         <div className="relative z-10 p-4 md:p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-on-surface mb-1 drop-shadow-sm">
-              {getGreeting()}{user?.displayName ? `, ${user.displayName.split(' ')[0]}` : ''} 👋
+            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-on-surface mb-1 drop-shadow-sm flex items-center gap-2 flex-wrap">
+              <span>{getGreeting()}{user?.displayName ? `, ${user.displayName.split(' ')[0]}` : ''}</span>
+              <span className="material-symbols-outlined text-primary text-[28px] md:text-[34px]">waving_hand</span>
             </h1>
             <p className="text-on-surface-variant text-sm font-medium mb-4">{dateString}</p>
             <p className="text-on-surface-variant text-base md:text-lg max-w-xl mb-4">Your mission control for multimodal deepfake detection. Drag and drop any file anywhere to begin analysis.</p>
             <div className="flex flex-wrap gap-2">
-              <Chip label={`🔍 ${scansToday} scans today`} />
-              <Chip label={`⚠️ ${deepfakes} threats`} />
-              <Chip label={`📊 ${totalScans} total`} />
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-surface-container border border-outline-variant/30 text-on-surface">
+                <span className="material-symbols-outlined text-[15px] text-primary">search</span> {scansToday} scans today
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-surface-container border border-outline-variant/30 text-on-surface">
+                <span className="material-symbols-outlined text-[15px] text-error">warning</span> {deepfakes} threats
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-surface-container border border-outline-variant/30 text-on-surface">
+                <span className="material-symbols-outlined text-[15px] text-secondary">analytics</span> {totalScans} total
+              </span>
             </div>
           </div>
           <div className="hidden md:flex gap-3 mt-4 md:mt-0 shrink-0">
@@ -120,18 +126,16 @@ export default function Home() {
         </div>
       </Card>
 
-
-
       {/* Quick Action Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
         <Link href="/analyze" className="h-full block">
-          <motion.div whileHover={{ scale: 1.02, y: -4 }} transition={{ type: 'spring', stiffness: 300 }} className="h-full rounded-3xl p-[1px] bg-gradient-to-br from-transparent hover:from-primary/30 hover:to-transparent transition-all">
-            <Card variant="outlined" className="h-full flex flex-col items-start gap-3 hover:border-primary/50 transition-colors group">
+          <motion.div whileHover={{ y: -3 }} transition={{ type: 'spring', stiffness: 300 }} className="h-full">
+            <Card variant="outlined" className="h-full flex flex-col items-start gap-3 hover:border-primary/50 transition-all border-outline-variant/30 group bg-surface">
               <div className="flex justify-between w-full items-start">
                 <div className="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center group-hover:scale-110 transition-transform">
                   <span className="material-symbols-outlined">troubleshoot</span>
                 </div>
-                <span className="text-xs font-mono bg-surface-container-highest text-on-surface-variant px-1.5 py-0.5 rounded border border-outline-variant/40">Ctrl+U</span>
+                <span className="hidden md:inline-flex text-xs font-mono bg-surface-container-highest text-on-surface-variant px-1.5 py-0.5 rounded border border-outline-variant/40">Ctrl+U</span>
               </div>
               <div>
                 <h3 className="font-semibold text-on-surface">Analyze File</h3>
@@ -141,13 +145,13 @@ export default function Home() {
           </motion.div>
         </Link>
         <Link href="/batch" className="h-full block">
-          <motion.div whileHover={{ scale: 1.02, y: -4 }} transition={{ type: 'spring', stiffness: 300 }} className="h-full rounded-3xl p-[1px] bg-gradient-to-br from-transparent hover:from-secondary/30 hover:to-transparent transition-all">
-            <Card variant="outlined" className="h-full flex flex-col items-start gap-3 hover:border-secondary/50 transition-colors group">
+          <motion.div whileHover={{ y: -3 }} transition={{ type: 'spring', stiffness: 300 }} className="h-full">
+            <Card variant="outlined" className="h-full flex flex-col items-start gap-3 hover:border-secondary/50 transition-all border-outline-variant/30 group bg-surface">
               <div className="flex justify-between w-full items-start">
                 <div className="w-10 h-10 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center group-hover:scale-110 transition-transform">
                   <span className="material-symbols-outlined">queue</span>
                 </div>
-                <span className="text-xs font-mono bg-surface-container-highest text-on-surface-variant px-1.5 py-0.5 rounded border border-outline-variant/40">Ctrl+B</span>
+                <span className="hidden md:inline-flex text-xs font-mono bg-surface-container-highest text-on-surface-variant px-1.5 py-0.5 rounded border border-outline-variant/40">Ctrl+B</span>
               </div>
               <div>
                 <h3 className="font-semibold text-on-surface">Batch Analysis</h3>
@@ -157,13 +161,13 @@ export default function Home() {
           </motion.div>
         </Link>
         <Link href="/api-hub" className="h-full block">
-          <motion.div whileHover={{ scale: 1.02, y: -4 }} transition={{ type: 'spring', stiffness: 300 }} className="h-full rounded-3xl p-[1px] bg-gradient-to-br from-transparent hover:from-tertiary/30 hover:to-transparent transition-all">
-            <Card variant="outlined" className="h-full flex flex-col items-start gap-3 hover:border-tertiary/50 transition-colors group">
+          <motion.div whileHover={{ y: -3 }} transition={{ type: 'spring', stiffness: 300 }} className="h-full">
+            <Card variant="outlined" className="h-full flex flex-col items-start gap-3 hover:border-tertiary/50 transition-all border-outline-variant/30 group bg-surface">
               <div className="flex justify-between w-full items-start">
                 <div className="w-10 h-10 rounded-full bg-surface-container-highest text-on-surface flex items-center justify-center group-hover:scale-110 transition-transform">
                   <span className="material-symbols-outlined">api</span>
                 </div>
-                <span className="text-xs font-mono bg-surface-container-highest text-on-surface-variant px-1.5 py-0.5 rounded border border-outline-variant/40">Ctrl+A</span>
+                <span className="hidden md:inline-flex text-xs font-mono bg-surface-container-highest text-on-surface-variant px-1.5 py-0.5 rounded border border-outline-variant/40">Ctrl+A</span>
               </div>
               <div>
                 <h3 className="font-semibold text-on-surface">Developer API</h3>

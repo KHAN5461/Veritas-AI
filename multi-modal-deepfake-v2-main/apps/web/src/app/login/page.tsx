@@ -261,12 +261,14 @@ export default function LoginPage() {
                   </Button>
 
                   <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-sm text-on-surface-variant font-medium">
-                    <div className="flex items-center gap-1">
-                      🔒 End-to-end encrypted
+                    <div className="flex items-center gap-1.5">
+                      <span className="material-symbols-outlined text-[18px] text-emerald-400">lock</span>
+                      <span>End-to-end encrypted</span>
                     </div>
                     <div className="hidden sm:block w-1.5 h-1.5 bg-outline rounded-full"></div>
-                    <div className="flex items-center gap-1">
-                      🚀 No credit card required
+                    <div className="flex items-center gap-1.5">
+                      <span className="material-symbols-outlined text-[18px] text-primary">bolt</span>
+                      <span>Instant verification</span>
                     </div>
                   </div>
                </div>

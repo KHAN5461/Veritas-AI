@@ -133,7 +133,7 @@ export default function ReportPage() {
       </div>
 
       {/* Core Forensic Report */}
-      <div id="forensic-report-content" className="w-full">
+      <div className="w-full">
         <ForensicReport
           isLoading={false}
           result={report}
