@@ -148,12 +148,25 @@ function AnalyzeContent() {
   const [inspectedBatchItem, setInspectedBatchItem] = useState<QueueItem | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const isIngestingSharedRef = useRef(false);
 
   // Handle URL mode switch query
   useEffect(() => {
     if (searchParams.get('mode') === 'batch') {
       setActiveTab('batch');
+    }
+  }, [searchParams]);
+
+  // Clean URL and break any browser POST-resubmission history loop
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.search) {
+      if (searchParams.get('large_file') || searchParams.get('share_error')) {
+        const timer = setTimeout(() => {
+          window.history.replaceState({}, '', '/analyze');
+        }, 1200);
+        return () => clearTimeout(timer);
+      }
     }
   }, [searchParams]);
 
@@ -567,6 +580,18 @@ function AnalyzeContent() {
         }}
       />
 
+      {/* Hidden Camera Input for direct mobile device capture */}
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*,video/*"
+        capture="environment"
+        className="hidden"
+        onChange={e => {
+          if (e.target.files && e.target.files[0]) handleFilesIngest(e.target.files);
+        }}
+      />
+
       {/* ========================================================================= */}
       {/* TAB 1: SINGLE DEEP SCAN                                                    */}
       {/* ========================================================================= */}
@@ -669,13 +694,16 @@ function AnalyzeContent() {
                   <span className="material-symbols-outlined text-[36px]">cloud_upload</span>
                 </div>
                 <h3 className="text-xl font-bold text-on-surface mb-1">Drop media here or browse</h3>
-                <p className="text-xs text-on-surface-variant max-w-sm mb-4">
-                  Supports MP4, WAV, MP3, JPG, and PNG files up to 50MB. Drop multiple files to auto-start a batch.
-                </p>
-
-                <Button variant="filled" onClick={() => fileInputRef.current?.click()} className="text-xs !px-6 !py-2.5">
-                  Browse Files
-                </Button>
+                <div className="flex flex-wrap items-center justify-center gap-3">
+                  <Button variant="filled" onClick={() => fileInputRef.current?.click()} className="text-xs !px-6 !py-2.5">
+                    <span className="material-symbols-outlined text-[18px] mr-1.5">folder_open</span>
+                    Browse Files
+                  </Button>
+                  <Button variant="tonal" onClick={() => cameraInputRef.current?.click()} className="text-xs !px-5 !py-2.5 sm:hidden">
+                    <span className="material-symbols-outlined text-[18px] mr-1.5">photo_camera</span>
+                    Camera Scan
+                  </Button>
+                </div>
 
                 <div className="mt-6 flex items-center gap-2 text-xs text-on-surface-variant">
                   <span>Want to test first?</span>
@@ -958,6 +986,19 @@ function AnalyzeContent() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Mobile Quick-Scan Floating Action Button */}
+      {!file && (
+        <div className="fixed bottom-24 right-4 z-40 md:hidden">
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="flex items-center gap-2 bg-primary text-on-primary font-bold text-xs py-3 px-5 rounded-full shadow-2xl active:scale-95 transition-all border border-white/10"
+          >
+            <span className="material-symbols-outlined text-[20px]">add_photo_alternate</span>
+            <span>Scan Media</span>
+          </button>
         </div>
       )}
     </div>

@@ -75,7 +75,7 @@ Timestamp: ${timestamp}`;
 
   const getShareUrl = () => {
     if (typeof window !== 'undefined') return window.location.href;
-    return 'https://veritas-ai.vercel.app';
+    return 'https://veritas-ai-mocha.vercel.app';
   };
 
   const handleNativeShare = async () => {

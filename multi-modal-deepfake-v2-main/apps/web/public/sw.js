@@ -81,8 +81,8 @@ function saveToIndexedDB(fileData) {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Handle share target POST on any ingestion route (/share-target, /_share-target, /analyze)
-  if (event.request.method === 'POST' && (url.pathname.includes('share-target') || url.pathname.includes('analyze'))) {
+  // Handle share target POST on any ingestion route (/share-target, /_share-target, /analyze, /)
+  if (event.request.method === 'POST' && (url.pathname.includes('share-target') || url.pathname.includes('analyze') || url.pathname === '/')) {
     console.log('[SW ' + SW_VERSION + '] Intercepted share target POST on:', url.pathname);
     event.respondWith(handleShareTarget(event.request));
     return;
