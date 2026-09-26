@@ -39,7 +39,12 @@
       "js": ["content.js"]
     },
     {
-      "matches": ["*://localhost/*"],
+      "matches": [
+        "*://localhost/*",
+        "*://127.0.0.1/*",
+        "https://*.vercel.app/*",
+        "https://veritas-ai*.vercel.app/*"
+      ],
       "js": ["sync.js"]
     }
   ],

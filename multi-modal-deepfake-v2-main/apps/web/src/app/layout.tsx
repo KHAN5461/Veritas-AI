@@ -228,8 +228,10 @@ function TopAppBar() {
     setIsDark(!isDark);
   };
 
+  const [showNotifications, setShowNotifications] = useState(false);
+
   return (
-    <header className="h-14 bg-surface flex items-center px-3 md:px-6 justify-between shrink-0 border-b border-outline-variant/10">
+    <header className="h-14 bg-surface flex items-center px-3 md:px-6 justify-between shrink-0 border-b border-outline-variant/10 relative z-30">
       <div className="flex items-center gap-2 overflow-hidden">
         {/* Mobile-only logo — small and clean */}
         <img
@@ -246,8 +248,58 @@ function TopAppBar() {
           Multimodal Deepfake Detection
         </span>
       </div>
-      <div className="flex items-center gap-1 shrink-0">
+      <div className="flex items-center gap-1 shrink-0 relative">
         <IconButton icon={isDark ? "light_mode" : "dark_mode"} onClick={toggleTheme} />
+        
+        {/* Notification Bell */}
+        <div className="relative">
+          <button
+            onClick={() => setShowNotifications(!showNotifications)}
+            className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-on-surface/8 text-on-surface-variant hover:text-on-surface transition-colors relative"
+            title="Notifications & System Status"
+          >
+            <span className="material-symbols-outlined text-[20px]">notifications</span>
+            <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-emerald-400"></span>
+          </button>
+
+          {/* Notifications Popover */}
+          {showNotifications && (
+            <div className="absolute right-0 top-11 w-72 sm:w-80 bg-surface-container-high border border-outline-variant/40 rounded-2xl shadow-2xl p-4 text-xs z-50 animate-in fade-in zoom-in-95 duration-200">
+              <div className="flex items-center justify-between pb-3 border-b border-outline-variant/20 mb-3">
+                <span className="font-bold text-sm text-on-surface flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary text-[18px]">notifications_active</span>
+                  System Feed
+                </span>
+                <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full font-bold">Online</span>
+              </div>
+              <div className="flex flex-col gap-2.5">
+                <div className="p-2.5 rounded-xl bg-surface-container flex items-start gap-2.5">
+                  <span className="material-symbols-outlined text-emerald-400 text-[18px] shrink-0 mt-0.5">check_circle</span>
+                  <div>
+                    <p className="font-semibold text-on-surface">Detection Engine Active</p>
+                    <p className="text-[11px] text-on-surface-variant">ViT & Audio models loaded and ready for multimodal verification.</p>
+                  </div>
+                </div>
+                <div className="p-2.5 rounded-xl bg-surface-container flex items-start gap-2.5">
+                  <span className="material-symbols-outlined text-primary text-[18px] shrink-0 mt-0.5">security</span>
+                  <div>
+                    <p className="font-semibold text-on-surface">Threat Telemetry</p>
+                    <p className="text-[11px] text-on-surface-variant">Global synthetic media signatures are up-to-date.</p>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-3 pt-2.5 border-t border-outline-variant/20 flex items-center justify-between text-[11px]">
+                <button onClick={() => { setShowNotifications(false); router.push('/threat-intel'); }} className="text-primary hover:underline font-semibold">
+                  Threat Intel &rarr;
+                </button>
+                <button onClick={() => setShowNotifications(false)} className="text-on-surface-variant hover:text-on-surface">
+                  Close
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
         <button
           onClick={() => router.push("/settings")}
           className="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-bold text-sm ml-1 overflow-hidden hover:opacity-90 transition-opacity cursor-pointer border-2 border-transparent hover:border-primary"
@@ -325,7 +377,7 @@ function PwaInit() {
   useEffect(() => {
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker
-        .register("/sw.js?v=6", { scope: "/", updateViaCache: "none" })
+        .register("/sw.js?v=7", { scope: "/", updateViaCache: "none" })
         .then((reg) => {
           console.log("[PwaInit] SW registered, scope:", reg.scope);
           reg.update();

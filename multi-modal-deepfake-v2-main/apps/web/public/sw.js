@@ -1,14 +1,35 @@
-// Veritas AI Service Worker v6
-const SW_VERSION = 'v6';
+// Veritas AI Service Worker v7
+const SW_VERSION = 'v7';
+const OFFLINE_CACHE = 'veritas-offline-v7';
+const OFFLINE_URL = '/offline';
 
 self.addEventListener('install', (event) => {
   console.log('[SW ' + SW_VERSION + '] Installing...');
+  event.waitUntil(
+    caches.open(OFFLINE_CACHE).then((cache) => {
+      console.log('[SW ' + SW_VERSION + '] Precaching offline fallback page...');
+      return cache.addAll([OFFLINE_URL, '/logo.png', '/icon-192.png']);
+    }).catch((err) => {
+      console.warn('[SW ' + SW_VERSION + '] Failed to precache offline assets:', err);
+    })
+  );
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
   console.log('[SW ' + SW_VERSION + '] Activating...');
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(
+    caches.keys().then((keys) => {
+      return Promise.all(
+        keys.map((key) => {
+          if (key !== OFFLINE_CACHE && key !== 'veritas-shared-media') {
+            console.log('[SW ' + SW_VERSION + '] Cleaning old cache:', key);
+            return caches.delete(key);
+          }
+        })
+      );
+    }).then(() => self.clients.claim())
+  );
 });
 
 self.addEventListener('fetch', (event) => {
@@ -21,12 +42,17 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Offline fallback for navigation
+  // Offline fallback for HTML page navigation
   if (event.request.mode === 'navigate') {
     event.respondWith(
-      fetch(event.request).catch(() => {
+      fetch(event.request).catch(async () => {
+        const cache = await caches.open(OFFLINE_CACHE);
+        const cachedOfflinePage = await cache.match(OFFLINE_URL);
+        if (cachedOfflinePage) {
+          return cachedOfflinePage;
+        }
         return new Response(
-          '<html><body style="background:#000;color:#fff;font-family:sans-serif;text-align:center;padding:3rem"><h2>Veritas AI is offline</h2><p>Please check your connection.</p></body></html>',
+          '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Veritas AI - Offline</title><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="background:#0f1419;color:#e1e3e5;font-family:sans-serif;text-align:center;padding:4rem 1rem"><h2>Veritas AI is offline</h2><p>Please check your internet connection.</p><button onclick="location.reload()" style="background:#7dd3fc;color:#003354;border:none;padding:10px 20px;border-radius:20px;font-weight:bold;cursor:pointer;margin-top:1rem">Try Again</button></body></html>',
           { status: 200, headers: { 'Content-Type': 'text/html' } }
         );
       })

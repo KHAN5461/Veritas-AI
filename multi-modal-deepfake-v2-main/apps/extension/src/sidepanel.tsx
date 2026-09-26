@@ -58,12 +58,19 @@ function SidepanelApp() {
   const [currentScan, setCurrentScan] = useState<{ name: string; file: File | null; url: string | null } | null>(null);
   const [result, setResult] = useState<any>(null);
   const [scanText, setScanText] = useState('Initializing scan...');
+  const [apiUrl, setApiUrl] = useState('https://upside-shower-handling.ngrok-free.dev');
+  const [webAppUrl, setWebAppUrl] = useState('https://veritas-ai-mocha.vercel.app');
 
   useEffect(() => {
     // Load theme & settings
     const saved = localStorage.getItem("theme");
     if (saved === "light") document.documentElement.classList.replace("dark", "light");
     else document.documentElement.classList.add("dark");
+
+    const savedApi = localStorage.getItem("veritas_api_url");
+    if (savedApi) setApiUrl(savedApi);
+    const savedWeb = localStorage.getItem("veritas_web_url");
+    if (savedWeb) setWebAppUrl(savedWeb);
 
     // Listen to background tasks
     if (typeof chrome !== 'undefined' && chrome.storage) {
@@ -107,7 +114,7 @@ function SidepanelApp() {
       const formData = new FormData();
       formData.append('file', fileToUpload);
       
-      const response = await fetch('https://upside-shower-handling.ngrok-free.dev/detect', {
+      const response = await fetch(`${apiUrl.replace(/\/$/, '')}/detect`, {
         method: 'POST',
         body: formData,
       });
@@ -163,6 +170,8 @@ function SidepanelApp() {
     }
     // If we only have a public URL, we pass that.
     
+    const targetUrl = `${webAppUrl.replace(/\/$/, '')}/analyze?from_ext=true`;
+
     chrome.storage.local.set({ 
       pending_web_report: { 
         url: currentScan.url, 
@@ -178,11 +187,11 @@ function SidepanelApp() {
           chrome.storage.local.set({ 
             pending_web_report: { url: currentScan.url, result: currentScan.result, name: currentScan.name } 
           }, () => {
-            chrome.tabs.create({ url: `http://localhost:3000/analyze?from_ext=true` });
+            chrome.tabs.create({ url: targetUrl });
           });
           return;
         }
-        chrome.tabs.create({ url: `http://localhost:3000/analyze?from_ext=true` });
+        chrome.tabs.create({ url: targetUrl });
     });
   };
 
@@ -217,13 +226,53 @@ function SidepanelApp() {
           
           {/* Settings State */}
           {status === 'settings' && (
-            <motion.div key="settings" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} className="p-4 flex flex-col gap-6">
+            <motion.div key="settings" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} className="p-4 flex flex-col gap-5">
               <div>
-                <h2 className="text-lg font-semibold mb-1">Preferences</h2>
-                <p className="text-xs text-on-surface-variant">Customize how Veritas AI integrates with the web.</p>
+                <h2 className="text-lg font-bold mb-1 text-on-surface">Preferences & Endpoints</h2>
+                <p className="text-xs text-on-surface-variant">Configure Veritas detection engine connection.</p>
+              </div>
+
+              <div className="flex flex-col gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-on-surface mb-1.5">
+                    Backend Engine URL (ngrok / API)
+                  </label>
+                  <input
+                    type="url"
+                    value={apiUrl}
+                    onChange={(e) => setApiUrl(e.target.value)}
+                    placeholder="https://your-ngrok-url.ngrok-free.dev"
+                    className="w-full bg-surface-container-highest text-on-surface text-xs rounded-xl px-3 py-2.5 border border-outline-variant/30 focus:outline-none focus:ring-2 focus:ring-primary font-mono"
+                  />
+                  <span className="text-[10px] text-on-surface-variant mt-1 block">Your tunneled Python detection service endpoint.</span>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-on-surface mb-1.5">
+                    Veritas Web App URL
+                  </label>
+                  <input
+                    type="url"
+                    value={webAppUrl}
+                    onChange={(e) => setWebAppUrl(e.target.value)}
+                    placeholder="https://veritas-ai-mocha.vercel.app"
+                    className="w-full bg-surface-container-highest text-on-surface text-xs rounded-xl px-3 py-2.5 border border-outline-variant/30 focus:outline-none focus:ring-2 focus:ring-primary font-mono"
+                  />
+                  <span className="text-[10px] text-on-surface-variant mt-1 block">Opens when clicking &apos;View Detailed Web Report&apos;.</span>
+                </div>
               </div>
               
-              <Button variant="filled" onClick={() => setStatus('idle')} className="mt-4">Save & Close</Button>
+              <Button 
+                variant="filled" 
+                onClick={() => {
+                  localStorage.setItem("veritas_api_url", apiUrl);
+                  localStorage.setItem("veritas_web_url", webAppUrl);
+                  setStatus('idle');
+                }} 
+                className="mt-2"
+              >
+                Save Preferences
+              </Button>
             </motion.div>
           )}
 

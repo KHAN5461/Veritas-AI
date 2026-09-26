@@ -40,6 +40,7 @@ const meta = document.createElement('meta');
 meta.name = "veritas-extension-installed";
 meta.content = "true";
 document.head.appendChild(meta);
+(window as any).__VERITAS_EXTENSION__ = true;
 
 // Fallback just in case
 if (window.location.search.includes('from_ext=true')) {

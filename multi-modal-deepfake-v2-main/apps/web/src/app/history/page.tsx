@@ -7,6 +7,7 @@ import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { useAuth } from '../../context/AuthContext';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 type FilterType = 'all' | 'high_risk' | 'authentic' | 'audio';
 type SortType = 'newest' | 'oldest' | 'highest_risk';
@@ -65,6 +66,37 @@ export default function HistoryPage() {
   const totalScans = scans.length;
   const deepfakes = scans.filter(h => h.is_fake).length;
 
+  const handleExportCSV = () => {
+    if (filtered.length === 0) {
+      toast.error('No scan records to export');
+      return;
+    }
+    const headers = ['ID', 'File Name', 'Format', 'Verdict', 'Confidence (%)', 'Date', 'File Hash'];
+    const rows = filtered.map(item => {
+      const date = item.createdAt?.toDate ? item.createdAt.toDate().toISOString() : 'N/A';
+      const conf = item.confidence ? (item.confidence * 100).toFixed(1) : 'N/A';
+      const verdict = item.is_fake ? 'MANIPULATED' : 'AUTHENTIC';
+      return [
+        `"${item.id || ''}"`,
+        `"${(item.fileName || 'media').replace(/"/g, '""')}"`,
+        `"${item.fileType || 'unknown'}"`,
+        `"${verdict}"`,
+        `"${conf}"`,
+        `"${date}"`,
+        `"${item.fileHash || 'N/A'}"`
+      ].join(',');
+    });
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `veritas_scan_history_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success(`Exported ${filtered.length} scan records to CSV`);
+  };
+
   return (
     <div className="p-8 max-w-6xl mx-auto flex flex-col gap-8 w-full">
       <div className="flex items-center justify-between flex-wrap gap-4">
@@ -99,6 +131,9 @@ export default function HistoryPage() {
           </div>
           <Button variant="tonal" onClick={() => { setSearch(''); setActiveFilter('all'); setSortOrder('newest'); }}>
             <span className="material-symbols-outlined text-[18px]">clear_all</span> Reset
+          </Button>
+          <Button variant="outlined" onClick={handleExportCSV} className="text-xs">
+            <span className="material-symbols-outlined text-[18px] mr-1">download</span> Export CSV
           </Button>
         </div>
       </div>
