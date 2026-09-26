@@ -5,6 +5,12 @@ export async function saveScanResult(userId: string, fileData: any, result: any,
   try {
     const scansRef = collection(db, `users/${userId}/scans`);
     
+    // Ensure document does not exceed Firestore 1MB hard limit (e.g. 3.3MB base64 heatmaps)
+    let safeHeatmap: string | null = null;
+    if (result.heatmap && typeof result.heatmap === 'string' && result.heatmap.length < 600000) {
+      safeHeatmap = result.heatmap;
+    }
+
     // Create the document
     const docRef = await addDoc(scansRef, {
       createdAt: serverTimestamp(),
@@ -15,14 +21,14 @@ export async function saveScanResult(userId: string, fileData: any, result: any,
       is_fake: result.is_fake,
       confidence: result.confidence,
       breakdown: result.breakdown,
-      heatmap: result.heatmap || null,
+      heatmap: safeHeatmap,
       status: 'completed',
     });
     
     return docRef.id;
   } catch (error) {
-    console.error("Error saving scan result: ", error);
-    throw error;
+    console.warn("Could not save scan result to Firestore: ", error);
+    return null;
   }
 }
 

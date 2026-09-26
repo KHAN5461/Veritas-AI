@@ -363,23 +363,25 @@ function AnalyzeContent() {
       setResult(data);
       const currentTime = new Date().toLocaleString();
       setTimestamp(currentTime);
+      setProgress(100);
+      setIsLoading(false);
+      toast.success('Forensic analysis completed');
 
+      // Asynchronously record scan in history without delaying forensic report rendering
       if (user) {
-        await saveScanResult(
+        saveScanResult(
           user.uid,
           { name: selectedFile.name, type: selectedFile.type, size: selectedFile.size },
           data,
           hash
-        );
+        ).catch((err) => {
+          console.warn('[History] Could not save to history:', err);
+        });
       }
-
-      setProgress(100);
-      toast.success('Forensic analysis completed');
     } catch {
       toast.error('Veritas engine is initializing. You can retry or inspect the file.');
       // Keep file loaded in UI, don't wipe it out!
       setAnalysisError(true);
-    } finally {
       setIsLoading(false);
     }
   };
@@ -451,12 +453,14 @@ function AnalyzeContent() {
         const data = await response.json();
 
         if (user) {
-          await saveScanResult(
+          saveScanResult(
             user.uid,
             { name: item.file.name, type: item.file.type, size: item.file.size },
             data,
             hash
-          );
+          ).catch((err) => {
+            console.warn('[Batch] Cloud save skipped:', err);
+          });
         }
 
         const isFake = data.is_fake;
