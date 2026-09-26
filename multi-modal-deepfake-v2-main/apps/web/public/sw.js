@@ -1,6 +1,6 @@
-// Veritas AI Service Worker v8
-const SW_VERSION = 'v8';
-const OFFLINE_CACHE = 'veritas-offline-v8';
+// Veritas AI Service Worker v9
+const SW_VERSION = 'v9';
+const OFFLINE_CACHE = 'veritas-offline-v9';
 const OFFLINE_URL = '/offline';
 
 self.addEventListener('install', (event) => {
@@ -32,7 +32,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// IndexedDB Helper to reliably store binary media files
+// Native IndexedDB Helper to reliably store binary media files without RAM bloat
 function saveToIndexedDB(fileData) {
   return new Promise((resolve) => {
     try {
@@ -105,8 +105,8 @@ self.addEventListener('fetch', (event) => {
 
 async function handleShareTarget(request) {
   try {
-    const cloned = request.clone();
-    const formData = await cloned.formData();
+    // Read directly from request without memory-heavy stream cloning
+    const formData = await request.formData();
 
     // Check all possible media form field keys
     let mediaFiles = formData.getAll('media');
@@ -136,7 +136,7 @@ async function handleShareTarget(request) {
         fileName = fileName + '.' + ext;
       }
 
-      // 1. Primary Store: Native IndexedDB
+      // 1. Primary Store: Native IndexedDB (disk-backed, low RAM)
       await saveToIndexedDB({
         file,
         fileName,
@@ -144,20 +144,36 @@ async function handleShareTarget(request) {
         fileSize: file.size
       });
 
-      // 2. Secondary Store: Cache Storage fallback
+      // 2. Broadcast to any open window clients
       try {
-        const cache = await caches.open('veritas-shared-media');
-        await cache.delete('/shared-file');
-        await cache.put(new Request('/shared-file'), new Response(file, {
-          headers: {
-            'Content-Type': file.type || 'application/octet-stream',
-            'Content-Length': String(file.size),
-            'X-Original-Name': encodeURIComponent(fileName),
-            'X-SW-Version': SW_VERSION
-          }
-        }));
-      } catch (cacheErr) {
-        console.warn('[SW ' + SW_VERSION + '] Cache API fallback error:', cacheErr);
+        const clientsList = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+        for (const client of clientsList) {
+          client.postMessage({
+            type: 'VERITAS_PWA_MEDIA_SHARED',
+            fileName,
+            fileType: file.type || 'application/octet-stream'
+          });
+        }
+      } catch (broadcastErr) {
+        console.warn('[SW] Client broadcast error:', broadcastErr);
+      }
+
+      // 3. Secondary Store: Cache Storage fallback (only for moderate sizes < 10MB to avoid OOM)
+      if (file.size < 10 * 1024 * 1024) {
+        try {
+          const cache = await caches.open('veritas-shared-media');
+          await cache.delete('/shared-file');
+          await cache.put(new Request('/shared-file'), new Response(file, {
+            headers: {
+              'Content-Type': file.type || 'application/octet-stream',
+              'Content-Length': String(file.size),
+              'X-Original-Name': encodeURIComponent(fileName),
+              'X-SW-Version': SW_VERSION
+            }
+          }));
+        } catch (cacheErr) {
+          console.warn('[SW ' + SW_VERSION + '] Cache API fallback error:', cacheErr);
+        }
       }
 
       const redirectUrl = new URL('/analyze?shared=true', self.registration.scope).href;

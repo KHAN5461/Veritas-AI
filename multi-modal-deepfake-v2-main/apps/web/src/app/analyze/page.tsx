@@ -11,7 +11,12 @@ import { useRouter, useSearchParams } from 'next/navigation';
 
 async function calculateSHA256(file: File) {
   try {
-    const buffer = await file.arrayBuffer();
+    let source: Blob = file;
+    // On low-RAM mobile devices, slice to 10MB to avoid Out-Of-Memory heap crashes
+    if (file.size > 10 * 1024 * 1024) {
+      source = file.slice(0, 10 * 1024 * 1024);
+    }
+    const buffer = await source.arrayBuffer();
     const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
@@ -40,8 +45,8 @@ interface QueueItem {
   result?: any;
 }
 
-async function retrieveSharedMedia(): Promise<File | null> {
-  // 1. Primary: Retrieve from IndexedDB
+async function retrieveSharedMediaOnce(): Promise<File | null> {
+  // 1. Primary: Retrieve from IndexedDB (low memory, disk-backed)
   try {
     const fileFromIdb = await new Promise<File | null>((resolve) => {
       const req = indexedDB.open('veritas_pwa_db', 1);
@@ -77,7 +82,7 @@ async function retrieveSharedMedia(): Promise<File | null> {
 
     if (fileFromIdb) return fileFromIdb;
   } catch (err) {
-    console.warn('[retrieveSharedMedia] IndexedDB read failed:', err);
+    console.warn('[retrieveSharedMediaOnce] IndexedDB read error:', err);
   }
 
   // 2. Secondary: Fallback to Cache Storage API
@@ -96,15 +101,26 @@ async function retrieveSharedMedia(): Promise<File | null> {
       return new File([blob], fileName, { type: blob.type });
     }
   } catch (err) {
-    console.warn('[retrieveSharedMedia] Cache API fallback failed:', err);
+    console.warn('[retrieveSharedMediaOnce] Cache API fallback error:', err);
   }
 
   return null;
 }
 
+// Resilient polling helper: polls for up to 2.5 seconds to eliminate mobile race conditions
+async function retrieveSharedMediaWithRetry(maxAttempts = 10, intervalMs = 250): Promise<File | null> {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const file = await retrieveSharedMediaOnce();
+    if (file) return file;
+    if (attempt < maxAttempts) {
+      await new Promise((res) => setTimeout(res, intervalMs));
+    }
+  }
+  return null;
+}
+
 function AnalyzeContent() {
   const { user } = useAuth();
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   // Mode: 'single' | 'batch'
@@ -119,6 +135,8 @@ function AnalyzeContent() {
   const [fileUrl, setFileUrl] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
+  const [analysisError, setAnalysisError] = useState(false);
+  const [sharedLinkUrl, setSharedLinkUrl] = useState<string>('');
   const [timestamp, setTimestamp] = useState<string>('');
   const [progress, setProgress] = useState(0);
   const [loadingText, setLoadingText] = useState('');
@@ -130,6 +148,7 @@ function AnalyzeContent() {
   const [inspectedBatchItem, setInspectedBatchItem] = useState<QueueItem | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const isIngestingSharedRef = useRef(false);
 
   // Handle URL mode switch query
   useEffect(() => {
@@ -142,45 +161,61 @@ function AnalyzeContent() {
   useEffect(() => {
     if (searchParams.get('share_error') === '1') {
       toast.error('Could not receive shared file. Please select file directly.');
-      router.replace('/analyze');
+      window.history.replaceState({}, '', '/analyze');
+      return;
+    }
+
+    if (searchParams.get('large_file') === '1') {
+      toast.info('File too large for background transfer. Please select it via browse.');
+      window.history.replaceState({}, '', '/analyze');
       return;
     }
 
     // Inbound social media link (Twitter, YouTube, Reddit, Instagram, etc.)
-    const sharedUrl = searchParams.get('shared_url');
-    if (sharedUrl) {
-      router.replace('/analyze');
-      toast.success('Received shared link: ' + sharedUrl);
+    const incomingUrl = searchParams.get('shared_url');
+    if (incomingUrl) {
+      window.history.replaceState({}, '', '/analyze');
+      setSharedLinkUrl(incomingUrl);
       setActiveTab('single');
-
-      // If it points directly to an image or video, attempt to fetch it
-      if (sharedUrl.match(/\.(jpg|jpeg|png|webp|gif|mp4|webm|mp3|wav)(\?.*)?$/i)) {
-        toast.info('Downloading media from shared URL...');
-        fetch(sharedUrl)
-          .then((res) => res.blob())
-          .then((blob) => {
-            const fileName = sharedUrl.split('/').pop()?.split('?')[0] || 'shared-media';
-            const fileObj = new File([blob], fileName, { type: blob.type });
-            analyzeSingleFile(fileObj);
-          })
-          .catch(() => {
-            toast.error('Cross-origin restriction prevented direct download. Please upload the file directly.');
-          });
-      }
+      toast.success('Shared link ready for forensic analysis');
       return;
     }
 
-    if (searchParams.get('shared') === 'true') {
-      router.replace('/analyze');
-      retrieveSharedMedia().then((fileObj) => {
+    // Shared media file from Android intent
+    if (searchParams.get('shared') === 'true' && !isIngestingSharedRef.current) {
+      isIngestingSharedRef.current = true;
+      window.history.replaceState({}, '', '/analyze');
+      
+      const toastId = toast.loading('Receiving shared media from Android...');
+
+      retrieveSharedMediaWithRetry(12, 250).then((fileObj) => {
+        toast.dismiss(toastId);
         if (fileObj) {
-          toast.success(`Received shared media: ${fileObj.name}`);
+          toast.success(`Received: ${fileObj.name}`);
           setActiveTab('single');
           analyzeSingleFile(fileObj);
         } else {
-          toast.error('Shared file not found in storage. Please select file directly.');
+          toast.error('Shared file was not found in storage. Please select file directly.');
         }
+        isIngestingSharedRef.current = false;
       });
+    }
+
+    // Direct push notification from Service Worker if PWA was already open
+    const handleSwMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'VERITAS_PWA_MEDIA_SHARED') {
+        retrieveSharedMediaWithRetry(5, 200).then((fileObj) => {
+          if (fileObj) {
+            toast.success(`Received shared media: ${fileObj.name}`);
+            setActiveTab('single');
+            analyzeSingleFile(fileObj);
+          }
+        });
+      }
+    };
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', handleSwMessage);
     }
 
     // Extension sync listener
@@ -264,7 +299,15 @@ function AnalyzeContent() {
 
   // Single file deep analysis
   const analyzeSingleFile = async (selectedFile: File) => {
+    // Revoke previous object URL to prevent memory accumulation on mobile
+    if (fileUrl) {
+      try {
+        URL.revokeObjectURL(fileUrl);
+      } catch {}
+    }
+
     setFile(selectedFile);
+    setAnalysisError(false);
     setIsLoading(true);
     setResult(null);
     setProgress(5);
@@ -319,8 +362,9 @@ function AnalyzeContent() {
       setProgress(100);
       toast.success('Forensic analysis completed');
     } catch {
-      toast.error('Analysis failed. Veritas engine may be connecting, please retry.');
-      resetSingle();
+      toast.error('Veritas engine is initializing. You can retry or inspect the file.');
+      // Keep file loaded in UI, don't wipe it out!
+      setAnalysisError(true);
     } finally {
       setIsLoading(false);
     }
@@ -329,8 +373,13 @@ function AnalyzeContent() {
   const resetSingle = () => {
     setFile(null);
     setResult(null);
+    setAnalysisError(false);
     setFileHash('');
-    if (fileUrl) URL.revokeObjectURL(fileUrl);
+    if (fileUrl) {
+      try {
+        URL.revokeObjectURL(fileUrl);
+      } catch {}
+    }
     setFileUrl('');
     setIsLoading(false);
     setProgress(0);
@@ -554,45 +603,115 @@ function AnalyzeContent() {
           )}
 
           {!file ? (
-            /* Upload Dropzone */
-            <div
-              onDragOver={e => {
-                e.preventDefault();
-                setIsDragging(true);
-              }}
-              onDragLeave={() => setIsDragging(false)}
-              onDrop={e => {
-                e.preventDefault();
-                setIsDragging(false);
-                if (e.dataTransfer?.files) handleFilesIngest(e.dataTransfer.files);
-              }}
-              className={`border-2 border-dashed rounded-3xl h-[340px] sm:h-[380px] flex flex-col items-center justify-center transition-all duration-200 text-center p-6 ${
-                isDragging
-                  ? 'border-primary bg-primary/10 scale-[1.01]'
-                  : 'border-outline-variant/40 bg-surface-container-low hover:border-primary/50'
-              }`}
-            >
-              <div className="w-16 h-16 rounded-2xl bg-surface-container-highest text-primary flex items-center justify-center mb-4 shadow-sm">
-                <span className="material-symbols-outlined text-[36px]">cloud_upload</span>
-              </div>
-              <h3 className="text-xl font-bold text-on-surface mb-1">Drop media here or browse</h3>
-              <p className="text-xs text-on-surface-variant max-w-sm mb-4">
-                Supports MP4, WAV, MP3, JPG, and PNG files up to 50MB. Drop multiple files to auto-start a batch.
-              </p>
+            <>
+              {/* Shared Link Card if a URL was shared from social media */}
+              {sharedLinkUrl && (
+                <div className="bg-surface-container-low border border-primary/30 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                      <span className="material-symbols-outlined text-[22px]">link</span>
+                    </div>
+                    <div className="min-w-0">
+                      <span className="text-[11px] font-bold text-primary uppercase tracking-wider">Shared Link Captured</span>
+                      <p className="text-xs text-on-surface font-mono truncate max-w-sm sm:max-w-md">{sharedLinkUrl}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+                    <Button
+                      variant="filled"
+                      onClick={() => {
+                        toast.info('Downloading media from link...');
+                        fetch(sharedLinkUrl)
+                          .then((res) => res.blob())
+                          .then((blob) => {
+                            const fileName = sharedLinkUrl.split('/').pop()?.split('?')[0] || 'shared-media';
+                            const fileObj = new File([blob], fileName, { type: blob.type });
+                            setSharedLinkUrl('');
+                            analyzeSingleFile(fileObj);
+                          })
+                          .catch(() => {
+                            toast.error('Direct download restricted by provider. Please save media and upload directly.');
+                          });
+                      }}
+                      className="text-xs !py-2 !px-4"
+                    >
+                      Scan Link
+                    </Button>
+                    <button
+                      onClick={() => setSharedLinkUrl('')}
+                      className="text-xs text-on-surface-variant hover:text-on-surface px-3 py-2 rounded-xl transition-colors"
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                </div>
+              )}
 
-              <Button variant="filled" onClick={() => fileInputRef.current?.click()} className="text-xs !px-6 !py-2.5">
-                Browse Files
-              </Button>
+              {/* Upload Dropzone */}
+              <div
+                onDragOver={e => {
+                  e.preventDefault();
+                  setIsDragging(true);
+                }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={e => {
+                  e.preventDefault();
+                  setIsDragging(false);
+                  if (e.dataTransfer?.files) handleFilesIngest(e.dataTransfer.files);
+                }}
+                className={`border-2 border-dashed rounded-3xl h-[340px] sm:h-[380px] flex flex-col items-center justify-center transition-all duration-200 text-center p-6 ${
+                  isDragging
+                    ? 'border-primary bg-primary/10 scale-[1.01]'
+                    : 'border-outline-variant/40 bg-surface-container-low hover:border-primary/50'
+                }`}
+              >
+                <div className="w-16 h-16 rounded-2xl bg-surface-container-highest text-primary flex items-center justify-center mb-4 shadow-sm">
+                  <span className="material-symbols-outlined text-[36px]">cloud_upload</span>
+                </div>
+                <h3 className="text-xl font-bold text-on-surface mb-1">Drop media here or browse</h3>
+                <p className="text-xs text-on-surface-variant max-w-sm mb-4">
+                  Supports MP4, WAV, MP3, JPG, and PNG files up to 50MB. Drop multiple files to auto-start a batch.
+                </p>
 
-              <div className="mt-6 flex items-center gap-2 text-xs text-on-surface-variant">
-                <span>Want to test first?</span>
-                <button onClick={loadDemo} className="text-primary hover:underline font-semibold flex items-center gap-1">
-                  Try sample analysis <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
-                </button>
+                <Button variant="filled" onClick={() => fileInputRef.current?.click()} className="text-xs !px-6 !py-2.5">
+                  Browse Files
+                </Button>
+
+                <div className="mt-6 flex items-center gap-2 text-xs text-on-surface-variant">
+                  <span>Want to test first?</span>
+                  <button onClick={loadDemo} className="text-primary hover:underline font-semibold flex items-center gap-1">
+                    Try sample analysis <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+                  </button>
+                </div>
               </div>
-            </div>
+            </>
           ) : (
-            /* Single Result View */
+            /* Single Result View or Error Recovery */
+            <div className="flex flex-col gap-6">
+              {analysisError && !isLoading && (
+                <div className="bg-surface-container-low border border-amber-500/30 rounded-3xl p-6 sm:p-8 flex flex-col items-center text-center">
+                  <div className="w-14 h-14 rounded-2xl bg-amber-500/10 text-amber-400 flex items-center justify-center mb-3">
+                    <span className="material-symbols-outlined text-[32px]">warning</span>
+                  </div>
+                  <h3 className="text-lg font-bold text-on-surface mb-1">Media Loaded: {file.name}</h3>
+                  <p className="text-xs text-on-surface-variant max-w-md mb-6 leading-relaxed">
+                    Veritas AI received your media ({((file.size || 0) / 1024 / 1024).toFixed(2)} MB), but the deepfake neural engine could not be reached. The backend may be offline or initializing.
+                  </p>
+                  <div className="flex flex-wrap items-center justify-center gap-3">
+                    <Button variant="filled" onClick={() => analyzeSingleFile(file)} className="text-xs !px-5">
+                      <span className="material-symbols-outlined text-[16px] mr-1.5">refresh</span>
+                      Retry Deep Analysis
+                    </Button>
+                    <Button variant="tonal" onClick={loadDemo} className="text-xs !px-5">
+                      <span className="material-symbols-outlined text-[16px] mr-1.5">visibility</span>
+                      View Sample Report
+                    </Button>
+                    <Button variant="outlined" onClick={resetSingle} className="text-xs !px-5">
+                      Choose Another File
+                    </Button>
+                  </div>
+                </div>
+              )}
             <AnimatePresence>
               {result && !isLoading && (
                 <motion.div
@@ -657,7 +776,8 @@ function AnalyzeContent() {
                 </motion.div>
               )}
             </AnimatePresence>
-          )}
+          </div>
+        )}
         </div>
       )}
 

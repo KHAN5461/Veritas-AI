@@ -17,6 +17,11 @@ export async function POST(request: Request) {
     const sharedText = formData.get('text') as string | null;
 
     if (file && typeof file === 'object' && 'arrayBuffer' in file && file.size > 0) {
+      // Memory guard for low-RAM mobile devices & serverless limits
+      if (file.size > 4 * 1024 * 1024) {
+        return NextResponse.redirect(new URL('/analyze?large_file=1', request.url), 303);
+      }
+
       const buffer = Buffer.from(await file.arrayBuffer());
       const base64 = buffer.toString('base64');
       const mime = file.type || 'application/octet-stream';

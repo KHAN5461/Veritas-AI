@@ -198,14 +198,14 @@ export default function PwaDebugPage() {
   };
 
   const forceRegister = async () => {
-    log('Force registering SW v8...');
+    log('Force registering SW v9...');
     try {
-      const reg = await navigator.serviceWorker.register('/sw.js?v=8', {
+      const reg = await navigator.serviceWorker.register('/sw.js?v=9', {
         scope: '/',
         updateViaCache: 'none'
       });
       await reg.update();
-      log(`Registered v8! scope=${reg.scope}, state=${(reg.active || reg.waiting || reg.installing)?.state}`);
+      log(`Registered v9! scope=${reg.scope}, state=${(reg.active || reg.waiting || reg.installing)?.state}`);
       setTimeout(() => checkStatus(), 1000);
     } catch (e: any) {
       log(`Registration failed: ${e.message}`);
@@ -230,7 +230,7 @@ export default function PwaDebugPage() {
       {loading ? <p>Checking status...</p> : swInfo && (
         <>
           <div style={{ marginBottom: '20px' }}>
-            <h2 style={{ fontSize: '16px', marginBottom: '8px', color: '#aaa' }}>Service Worker (v8)</h2>
+            <h2 style={{ fontSize: '16px', marginBottom: '8px', color: '#aaa' }}>Service Worker (v9)</h2>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
               <StatusBadge ok={swInfo.registered} label="Registered" />
               <StatusBadge ok={swInfo.active} label="Active" />
@@ -273,7 +273,13 @@ export default function PwaDebugPage() {
           onClick={simulateShareTarget}
           style={{ padding: '10px 16px', borderRadius: '8px', background: '#00c853', color: '#003311', border: 'none', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer' }}
         >
-          Simulate Share Target
+          Simulate Media Share
+        </button>
+        <button
+          onClick={() => router.push('/analyze?shared_url=' + encodeURIComponent('https://twitter.com/example/status/synthetic_video_deepfake_post'))}
+          style={{ padding: '10px 16px', borderRadius: '8px', background: '#38bdf8', color: '#00263d', border: 'none', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer' }}
+        >
+          Simulate Social Link Share
         </button>
         <button
           onClick={checkStatus}
@@ -285,7 +291,7 @@ export default function PwaDebugPage() {
           onClick={forceRegister}
           style={{ padding: '10px 16px', borderRadius: '8px', background: '#1a73e8', color: '#fff', border: 'none', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
         >
-          Update SW to v8
+          Update SW to v9
         </button>
         <button
           onClick={resetSW}
