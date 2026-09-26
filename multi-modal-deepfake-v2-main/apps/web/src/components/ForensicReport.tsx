@@ -67,6 +67,34 @@ Timestamp: ${timestamp}`;
     toast.success('Forensic summary copied to clipboard');
   };
 
+  const [showShareMenu, setShowShareMenu] = useState(false);
+
+  const getShareText = () => {
+    return `Veritas AI Forensic Analysis: ${fileData.name} assessed as ${isManipulated ? 'MANIPULATED / DEEPFAKE' : 'AUTHENTIC'} (${confidenceScore.toFixed(0)}% confidence). Verified with Veritas AI:`;
+  };
+
+  const getShareUrl = () => {
+    if (typeof window !== 'undefined') return window.location.href;
+    return 'https://veritas-ai.vercel.app';
+  };
+
+  const handleNativeShare = async () => {
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({
+          title: `Veritas AI Forensic Report: ${fileData.name}`,
+          text: getShareText(),
+          url: getShareUrl(),
+        });
+        toast.success('Shared successfully');
+      } catch {
+        // User cancelled
+      }
+    } else {
+      setShowShareMenu((prev) => !prev);
+    }
+  };
+
   return (
     <div id="forensic-report-content" className="bg-surface rounded-none print:shadow-none print:border-none flex flex-col gap-8 w-full">
       
@@ -112,8 +140,8 @@ Timestamp: ${timestamp}`;
               </p>
             )}
 
-            {/* Quick action buttons */}
-            <div className="flex items-center gap-2 mt-3 flex-wrap print:hidden">
+            {/* Quick action buttons & Social Share */}
+            <div className="relative flex items-center gap-2 mt-3 flex-wrap print:hidden">
               <button
                 onClick={handleCopySummary}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-surface-container-highest hover:bg-on-surface/8 text-on-surface transition-colors border border-outline-variant/30"
@@ -128,6 +156,71 @@ Timestamp: ${timestamp}`;
                 <span className="material-symbols-outlined text-[16px]">data_object</span>
                 Export JSON
               </button>
+              <div className="relative">
+                <button
+                  onClick={handleNativeShare}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-primary/10 hover:bg-primary/20 text-primary transition-colors border border-primary/20"
+                >
+                  <span className="material-symbols-outlined text-[16px]">share</span>
+                  Share Findings
+                </button>
+
+                {showShareMenu && (
+                  <div className="absolute left-0 top-full mt-2 w-52 bg-surface-container border border-outline-variant/40 rounded-2xl shadow-2xl p-2 z-50 flex flex-col gap-1 backdrop-blur-md">
+                    <a
+                      href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(getShareText())}&url=${encodeURIComponent(getShareUrl())}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => setShowShareMenu(false)}
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-on-surface hover:bg-on-surface/8 transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-[18px] text-sky-400">send</span>
+                      Share on X (Twitter)
+                    </a>
+                    <a
+                      href={`https://api.whatsapp.com/send?text=${encodeURIComponent(getShareText() + ' ' + getShareUrl())}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => setShowShareMenu(false)}
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-on-surface hover:bg-on-surface/8 transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-[18px] text-emerald-400">chat</span>
+                      Share on WhatsApp
+                    </a>
+                    <a
+                      href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(getShareUrl())}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => setShowShareMenu(false)}
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-on-surface hover:bg-on-surface/8 transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-[18px] text-blue-400">share</span>
+                      Share on LinkedIn
+                    </a>
+                    <a
+                      href={`https://t.me/share/url?url=${encodeURIComponent(getShareUrl())}&text=${encodeURIComponent(getShareText())}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => setShowShareMenu(false)}
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-on-surface hover:bg-on-surface/8 transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-[18px] text-cyan-400">near_me</span>
+                      Share on Telegram
+                    </a>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(getShareUrl());
+                        toast.success('Report URL copied to clipboard');
+                        setShowShareMenu(false);
+                      }}
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-on-surface hover:bg-on-surface/8 transition-colors border-t border-outline-variant/20 mt-1 pt-2"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">link</span>
+                      Copy Link
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 

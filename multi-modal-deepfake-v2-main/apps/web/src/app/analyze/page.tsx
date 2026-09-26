@@ -40,6 +40,68 @@ interface QueueItem {
   result?: any;
 }
 
+async function retrieveSharedMedia(): Promise<File | null> {
+  // 1. Primary: Retrieve from IndexedDB
+  try {
+    const fileFromIdb = await new Promise<File | null>((resolve) => {
+      const req = indexedDB.open('veritas_pwa_db', 1);
+      req.onerror = () => resolve(null);
+      req.onsuccess = (e: any) => {
+        try {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains('shared_media')) {
+            resolve(null);
+            return;
+          }
+          const tx = db.transaction('shared_media', 'readwrite');
+          const store = tx.objectStore('shared_media');
+          const getReq = store.get('pending_share');
+          getReq.onsuccess = () => {
+            const data = getReq.result;
+            if (data && data.file) {
+              store.delete('pending_share');
+              const reconstructed = new File([data.file], data.fileName || 'shared-media', {
+                type: data.fileType || data.file.type || 'application/octet-stream',
+              });
+              resolve(reconstructed);
+            } else {
+              resolve(null);
+            }
+          };
+          getReq.onerror = () => resolve(null);
+        } catch {
+          resolve(null);
+        }
+      };
+    });
+
+    if (fileFromIdb) return fileFromIdb;
+  } catch (err) {
+    console.warn('[retrieveSharedMedia] IndexedDB read failed:', err);
+  }
+
+  // 2. Secondary: Fallback to Cache Storage API
+  try {
+    const cache = await caches.open('veritas-shared-media');
+    const response = await cache.match('/shared-file');
+    if (response) {
+      const blob = await response.blob();
+      let fileName = response.headers.get('X-Original-Name');
+      if (fileName) fileName = decodeURIComponent(fileName);
+      if (!fileName || fileName === 'null') {
+        const ext = blob.type.split('/')[1] || 'jpg';
+        fileName = 'shared-media.' + ext;
+      }
+      await cache.delete('/shared-file');
+      return new File([blob], fileName, { type: blob.type });
+    }
+  } catch (err) {
+    console.warn('[retrieveSharedMedia] Cache API fallback failed:', err);
+  }
+
+  return null;
+}
+
 function AnalyzeContent() {
   const { user } = useAuth();
   const router = useRouter();
@@ -76,36 +138,48 @@ function AnalyzeContent() {
     }
   }, [searchParams]);
 
-  // Handle shared file from PWA service worker
+  // Handle shared media file or social media URL from PWA share target
   useEffect(() => {
     if (searchParams.get('share_error') === '1') {
       toast.error('Could not receive shared file. Please select file directly.');
       router.replace('/analyze');
+      return;
+    }
+
+    // Inbound social media link (Twitter, YouTube, Reddit, Instagram, etc.)
+    const sharedUrl = searchParams.get('shared_url');
+    if (sharedUrl) {
+      router.replace('/analyze');
+      toast.success('Received shared link: ' + sharedUrl);
+      setActiveTab('single');
+
+      // If it points directly to an image or video, attempt to fetch it
+      if (sharedUrl.match(/\.(jpg|jpeg|png|webp|gif|mp4|webm|mp3|wav)(\?.*)?$/i)) {
+        toast.info('Downloading media from shared URL...');
+        fetch(sharedUrl)
+          .then((res) => res.blob())
+          .then((blob) => {
+            const fileName = sharedUrl.split('/').pop()?.split('?')[0] || 'shared-media';
+            const fileObj = new File([blob], fileName, { type: blob.type });
+            analyzeSingleFile(fileObj);
+          })
+          .catch(() => {
+            toast.error('Cross-origin restriction prevented direct download. Please upload the file directly.');
+          });
+      }
+      return;
     }
 
     if (searchParams.get('shared') === 'true') {
-      caches.open('veritas-shared-media').then(cache => {
-        cache.match('/shared-file').then(response => {
-          if (response) {
-            response.blob().then(blob => {
-              let fileName = response.headers.get('X-Original-Name');
-              if (fileName) fileName = decodeURIComponent(fileName);
-              if (!fileName || fileName === 'null') {
-                const ext = blob.type.split('/')[1] || 'jpg';
-                fileName = 'shared-media.' + ext;
-              }
-              const fileObj = new File([blob], fileName, { type: blob.type });
-              router.replace('/analyze');
-              toast.success('Received shared media file');
-              setActiveTab('single');
-              analyzeSingleFile(fileObj);
-              cache.delete('/shared-file');
-            });
-          } else {
-            toast.error('Shared file not found in cache.');
-            router.replace('/analyze');
-          }
-        });
+      router.replace('/analyze');
+      retrieveSharedMedia().then((fileObj) => {
+        if (fileObj) {
+          toast.success(`Received shared media: ${fileObj.name}`);
+          setActiveTab('single');
+          analyzeSingleFile(fileObj);
+        } else {
+          toast.error('Shared file not found in storage. Please select file directly.');
+        }
       });
     }
 
