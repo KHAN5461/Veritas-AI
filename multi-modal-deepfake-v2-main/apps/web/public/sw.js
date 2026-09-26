@@ -1,6 +1,6 @@
-// Veritas AI Service Worker v10
-const SW_VERSION = 'v10';
-const OFFLINE_CACHE = 'veritas-offline-v10';
+// Veritas AI Service Worker v11
+const SW_VERSION = 'v11';
+const OFFLINE_CACHE = 'veritas-offline-v11';
 const OFFLINE_URL = '/offline';
 
 self.addEventListener('install', (event) => {
@@ -81,28 +81,38 @@ function saveToIndexedDB(fileData) {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Handle share target POST
-  if (event.request.method === 'POST' && url.pathname.includes('share-target')) {
-    console.log('[SW ' + SW_VERSION + '] Intercepted share-target POST:', url.pathname);
+  // Handle share target POST on any ingestion route (/share-target, /_share-target, /analyze)
+  if (event.request.method === 'POST' && (url.pathname.includes('share-target') || url.pathname.includes('analyze'))) {
+    console.log('[SW ' + SW_VERSION + '] Intercepted share target POST on:', url.pathname);
     event.respondWith(handleShareTarget(event.request));
     return;
   }
 
-  // Offline fallback for HTML page navigation
+  // Offline fallback and 413 error recovery for HTML page navigation
   if (event.request.mode === 'navigate') {
     event.respondWith(
-      fetch(event.request).catch(async () => {
-        const cache = await caches.open(OFFLINE_CACHE);
-        const cachedOfflinePage = await cache.match(OFFLINE_URL);
-        if (cachedOfflinePage) {
-          return cachedOfflinePage;
-        }
-        return new Response(
-          '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Veritas AI - Offline</title><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="background:#0f1419;color:#e1e3e5;font-family:sans-serif;text-align:center;padding:4rem 1rem"><h2>Veritas AI is offline</h2><p>Please check your internet connection.</p><button onclick="location.reload()" style="background:#7dd3fc;color:#003354;border:none;padding:10px 20px;border-radius:20px;font-weight:bold;cursor:pointer;margin-top:1rem">Try Again</button></body></html>',
-          { status: 200, headers: { 'Content-Type': 'text/html' } }
-        );
-      })
+      fetch(event.request)
+        .then((response) => {
+          // If Vercel or any proxy returns 413 (Payload Too Large), cleanly recover
+          if (response.status === 413) {
+            console.warn('[SW ' + SW_VERSION + '] Caught 413 from network, cleanly redirecting to /analyze');
+            return Response.redirect(new URL('/analyze?large_file=1', self.registration.scope).href, 303);
+          }
+          return response;
+        })
+        .catch(async () => {
+          const cache = await caches.open(OFFLINE_CACHE);
+          const cachedOfflinePage = await cache.match(OFFLINE_URL);
+          if (cachedOfflinePage) {
+            return cachedOfflinePage;
+          }
+          return new Response(
+            '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Veritas AI - Offline</title><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="background:#0f1419;color:#e1e3e5;font-family:sans-serif;text-align:center;padding:4rem 1rem"><h2>Veritas AI is offline</h2><p>Please check your internet connection.</p><button onclick="location.reload()" style="background:#7dd3fc;color:#003354;border:none;padding:10px 20px;border-radius:20px;font-weight:bold;cursor:pointer;margin-top:1rem">Try Again</button></body></html>',
+            { status: 200, headers: { 'Content-Type': 'text/html' } }
+          );
+        })
     );
+    return;
   }
 });
 
