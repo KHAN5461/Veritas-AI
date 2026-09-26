@@ -16,7 +16,6 @@ const NAV_ITEMS = [
   { href: "/", icon: "dashboard", label: "Dashboard" },
   { href: "/analyze", icon: "troubleshoot", label: "Analyze" },
   { href: "/history", icon: "history", label: "History" },
-  { href: "/batch", icon: "queue", label: "Batch" },
   { href: "/threat-intel", icon: "radar", label: "Threats" },
   { href: "/api-hub", icon: "api", label: "API Hub" },
 ];
@@ -180,10 +179,9 @@ function NavRail() {
         {[
           { href: "/", icon: "dashboard", label: "Home" },
           { href: "/analyze", icon: "troubleshoot", label: "Analyze" },
-          { href: "/batch", icon: "queue", label: "Batch" },
           { href: "/history", icon: "history", label: "History" },
           { href: "/threat-intel", icon: "radar", label: "Threats" },
-          { href: "/api-hub", icon: "api", label: "API" },
+          { href: "/api-hub", icon: "api", label: "API Hub" },
         ].map((item) => {
           const isActive = pathname === item.href;
           return (
@@ -352,7 +350,7 @@ function KeyboardShortcuts() {
           break;
         case "b":
           e.preventDefault();
-          router.push("/batch");
+          router.push("/analyze?mode=batch");
           break;
         case "k":
           e.preventDefault();
@@ -434,7 +432,7 @@ export default function RootLayout({
                 <div className="flex-1 flex flex-col h-full overflow-hidden relative">
                   <TopAppBar />
                   <InstallBanner />
-                  <main className="flex-1 overflow-y-auto bg-surface-container-lowest relative z-0 pb-24 md:pb-0">
+                  <main className="flex-1 overflow-y-auto bg-surface-container-lowest relative z-0 pb-32 md:pb-0">
                     {children}
                   </main>
                 </div>

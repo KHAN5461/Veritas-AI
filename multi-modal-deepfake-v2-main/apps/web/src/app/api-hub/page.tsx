@@ -1,6 +1,6 @@
 'use client';
 import React, { useState } from 'react';
-import { Card, Button, Chip } from '@repo/ui';
+import { Card, Button } from '@repo/ui';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 
@@ -15,17 +15,17 @@ export default function ApiHubPage() {
 
   const copyToClipboard = (text: string, label: string = 'Code') => {
     navigator.clipboard.writeText(text);
-    toast.success(`${label} copied to clipboard!`);
+    toast.success(`${label} copied to clipboard`);
   };
 
   const handleGenerateKey = () => {
     setIsGenerating(true);
     setTimeout(() => {
-      const newKey = `vrt_live_${Math.random().toString(36).substring(2, 12)}_${Math.random().toString(36).substring(2, 10)}`;
+      const newKey = `vrt_live_${Math.random().toString(36).substring(2, 10)}_${Math.random().toString(36).substring(2, 8)}`;
       setGeneratedKey(newKey);
       setIsGenerating(false);
-      toast.success('New API key generated successfully!');
-    }, 600);
+      toast.success('Generated active sandbox API token');
+    }, 400);
   };
 
   const handleSimulateApi = () => {
@@ -47,8 +47,8 @@ export default function ApiHubPage() {
           sync_anomaly: 0.887
         }
       }, null, 2));
-      toast.success("Simulation returned HTTP 200 OK");
-    }, 800);
+      toast.success('Simulation returned HTTP 200 OK');
+    }, 600);
   };
 
   const codeSnippets: Record<CodeLanguage, string> = {
@@ -109,48 +109,49 @@ func main() {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 	file, _ := os.Open("suspect_video.mp4")
-	defer file.Close()
-
 	part, _ := writer.CreateFormFile("file", "suspect_video.mp4")
 	io.Copy(part, file)
 	writer.Close()
 
 	req, _ := http.NewRequest("POST", "https://api.veritas-ai.io/v1/detect/media", body)
-	req.Header.Set("Authorization", "Bearer ${generatedKey || 'vrt_live_your_api_key_here'}")
+	req.Header.Set("Authorization", "Bearer ${generatedKey || "vrt_live_your_api_key_here"}")
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 
 	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil { panic(err) }
+	resp, _ := client.Do(req)
 	fmt.Println("Status:", resp.Status)
 }`
   };
 
   return (
-    <div className="p-4 sm:p-8 max-w-6xl mx-auto flex flex-col gap-8 w-full pb-28">
+    <div className="p-4 sm:p-8 max-w-6xl mx-auto flex flex-col gap-6 sm:gap-8 w-full pb-32">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-on-surface mb-1 flex items-center gap-3">
-            <span className="material-symbols-outlined text-primary text-[36px]">api</span>
-            Developer & Enterprise API
-          </h1>
-          <p className="text-on-surface-variant">Integrate state-of-the-art forensic detection models directly into your workflows.</p>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="material-symbols-outlined text-primary text-[28px]">api</span>
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-on-surface">
+              Developer API Hub
+            </h1>
+          </div>
+          <p className="text-xs sm:text-sm text-on-surface-variant">
+            Integrate multimodal deepfake detection neural networks directly into production workflows.
+          </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 self-start sm:self-auto">
           <Button 
             variant="filled" 
             onClick={handleGenerateKey} 
             disabled={isGenerating}
-            className="flex items-center gap-2 shadow-lg shadow-primary/20"
+            className="text-xs"
           >
-            <span className="material-symbols-outlined text-[18px]">key</span>
-            {isGenerating ? 'Generating...' : (generatedKey ? 'Regenerate Key' : 'Generate API Key')}
+            <span className="material-symbols-outlined text-[16px] mr-1.5">key</span>
+            {isGenerating ? 'Generating...' : (generatedKey ? 'Regenerate Token' : 'Generate Sandbox Token')}
           </Button>
         </div>
       </div>
 
-      {/* API Key Banner / Generator Display */}
+      {/* Active Key Banner */}
       <AnimatePresence>
         {generatedKey && (
           <motion.div
@@ -159,86 +160,84 @@ func main() {
             exit={{ opacity: 0, height: 0 }}
             className="overflow-hidden"
           >
-            <div className="bg-surface-container-high border-2 border-primary/40 rounded-2xl p-5 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-primary/20 text-primary flex items-center justify-center shrink-0">
-                  <span className="material-symbols-outlined">vpn_key</span>
+            <div className="bg-surface-container-low border border-primary/40 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-9 h-9 rounded-xl bg-primary-container text-on-primary-container flex items-center justify-center shrink-0">
+                  <span className="material-symbols-outlined text-[20px]">vpn_key</span>
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs uppercase tracking-wider font-semibold text-primary">Your Active Sandbox Key</p>
-                  <p className="font-mono text-sm text-on-surface font-semibold truncate select-all">{generatedKey}</p>
+                  <p className="text-[11px] uppercase tracking-wider font-bold text-primary">Active Sandbox Token</p>
+                  <p className="font-mono text-xs sm:text-sm text-on-surface font-semibold truncate select-all">{generatedKey}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <Button variant="tonal" onClick={() => copyToClipboard(generatedKey, 'API Key')} className="text-xs !py-2 !px-3">
-                  <span className="material-symbols-outlined text-[16px] mr-1">content_copy</span>
-                  Copy Key
-                </Button>
-              </div>
+              <Button variant="tonal" onClick={() => copyToClipboard(generatedKey, 'API Token')} className="text-xs shrink-0 !py-1.5">
+                <span className="material-symbols-outlined text-[16px] mr-1">content_copy</span>
+                Copy Token
+              </Button>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Telemetry / Quotas Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="flex flex-col gap-1 p-5">
-          <span className="text-xs font-semibold text-on-surface-variant flex items-center gap-1.5">
+      {/* Telemetry / SLA Metrics Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <Card className="bg-surface-container-low border border-outline-variant/30 flex flex-col gap-1 p-4">
+          <span className="text-[11px] font-semibold text-on-surface-variant flex items-center gap-1.5">
             <span className="material-symbols-outlined text-sm text-primary">speed</span>
             Average Latency
           </span>
-          <span className="text-2xl font-bold text-on-surface">240ms</span>
-          <span className="text-[11px] text-emerald-400 font-medium">Global CDN edge routing</span>
+          <span className="text-xl sm:text-2xl font-bold font-mono text-on-surface">240ms</span>
+          <span className="text-[11px] text-emerald-400 font-medium">Edge optimized</span>
         </Card>
 
-        <Card className="flex flex-col gap-1 p-5">
-          <span className="text-xs font-semibold text-on-surface-variant flex items-center gap-1.5">
+        <Card className="bg-surface-container-low border border-outline-variant/30 flex flex-col gap-1 p-4">
+          <span className="text-[11px] font-semibold text-on-surface-variant flex items-center gap-1.5">
             <span className="material-symbols-outlined text-sm text-emerald-400">check_circle</span>
-            System Uptime
+            Engine Uptime
           </span>
-          <span className="text-2xl font-bold text-emerald-400">99.98%</span>
-          <span className="text-[11px] text-on-surface-variant font-medium">Last 30-day verified</span>
+          <span className="text-xl sm:text-2xl font-bold font-mono text-emerald-400">99.98%</span>
+          <span className="text-[11px] text-on-surface-variant font-medium">Verified 30-day</span>
         </Card>
 
-        <Card className="flex flex-col gap-1 p-5">
-          <span className="text-xs font-semibold text-on-surface-variant flex items-center gap-1.5">
+        <Card className="bg-surface-container-low border border-outline-variant/30 flex flex-col gap-1 p-4">
+          <span className="text-[11px] font-semibold text-on-surface-variant flex items-center gap-1.5">
             <span className="material-symbols-outlined text-sm text-secondary">tune</span>
-            Rate Limit (Sandbox)
+            Sandbox Quota
           </span>
-          <span className="text-2xl font-bold text-on-surface">60 req/min</span>
-          <span className="text-[11px] text-on-surface-variant font-medium">Burst capacity enabled</span>
+          <span className="text-xl sm:text-2xl font-bold font-mono text-on-surface">60 req/min</span>
+          <span className="text-[11px] text-on-surface-variant font-medium">Burst capacity</span>
         </Card>
 
-        <Card className="flex flex-col gap-1 p-5">
-          <span className="text-xs font-semibold text-on-surface-variant flex items-center gap-1.5">
+        <Card className="bg-surface-container-low border border-outline-variant/30 flex flex-col gap-1 p-4">
+          <span className="text-[11px] font-semibold text-on-surface-variant flex items-center gap-1.5">
             <span className="material-symbols-outlined text-sm text-tertiary">hub</span>
-            Supported Formats
+            Payload Formats
           </span>
-          <span className="text-2xl font-bold text-on-surface">MP4, JPG, WAV</span>
-          <span className="text-[11px] text-on-surface-variant font-medium">+12 media codecs</span>
+          <span className="text-xl sm:text-2xl font-bold font-mono text-on-surface">MP4, JPG, WAV</span>
+          <span className="text-[11px] text-on-surface-variant font-medium">Multi-modal</span>
         </Card>
       </div>
 
-      {/* Interactive Code Playground */}
-      <Card className="p-0 overflow-hidden border border-outline-variant/40 shadow-xl">
-        <div className="bg-surface-container-high px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-outline-variant/20">
-          <div className="flex items-center gap-3">
-            <span className="material-symbols-outlined text-primary">code</span>
-            <div>
-              <h2 className="text-lg font-bold text-on-surface">Endpoint Specification & Code SDKs</h2>
-              <p className="text-xs text-on-surface-variant">Production-ready snippets for instant forensic integration.</p>
-            </div>
+      {/* Code Playground */}
+      <Card className="p-0 overflow-hidden bg-surface-container-low border border-outline-variant/30 shadow-sm">
+        <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-outline-variant/20">
+          <div>
+            <h2 className="text-sm font-bold text-on-surface flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary text-[18px]">code</span>
+              Quickstart SDK Code Snippets
+            </h2>
+            <p className="text-xs text-on-surface-variant">Production-ready examples for immediate integration.</p>
           </div>
           
-          <div className="flex items-center bg-surface-container rounded-xl p-1 gap-1 border border-outline-variant/30">
+          <div className="flex items-center bg-surface-container rounded-xl p-1 gap-1 border border-outline-variant/20 overflow-x-auto">
             {(['curl', 'python', 'javascript', 'go'] as CodeLanguage[]).map((lang) => (
               <button
                 key={lang}
                 onClick={() => setActiveLang(lang)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize transition-all ${
+                className={`px-3 py-1 rounded-lg text-xs font-semibold capitalize whitespace-nowrap transition-all ${
                   activeLang === lang
-                    ? 'bg-primary text-on-primary shadow-sm'
-                    : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high'
+                    ? 'bg-primary-container text-on-primary-container shadow-sm font-bold'
+                    : 'text-on-surface-variant hover:text-on-surface'
                 }`}
               >
                 {lang === 'javascript' ? 'Node.js' : lang}
@@ -247,113 +246,75 @@ func main() {
           </div>
         </div>
 
-        <div className="relative bg-surface-container-lowest p-6 font-mono text-xs sm:text-sm text-on-surface overflow-x-auto">
-          <div className="absolute top-4 right-4 z-10">
+        <div className="relative bg-surface-container-lowest p-4 sm:p-5 font-mono text-xs text-on-surface overflow-x-auto">
+          <div className="absolute top-3 right-3 z-10">
             <Button
               variant="tonal"
               onClick={() => copyToClipboard(codeSnippets[activeLang], 'Snippet')}
-              className="text-xs !py-1.5 !px-3 shadow-md"
+              className="text-xs !py-1 !px-2.5"
             >
-              <span className="material-symbols-outlined text-[15px] mr-1">content_copy</span>
+              <span className="material-symbols-outlined text-[14px] mr-1">content_copy</span>
               Copy
             </Button>
           </div>
-          <pre className="text-on-surface-variant whitespace-pre">
+          <pre className="text-on-surface-variant whitespace-pre pr-16 leading-relaxed">
             <code>{codeSnippets[activeLang]}</code>
           </pre>
         </div>
       </Card>
 
-      {/* Live Interactive API Simulator */}
-      <Card className="p-6 flex flex-col gap-6 border border-outline-variant/40">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* Interactive API Simulator */}
+      <Card className="p-5 flex flex-col gap-4 bg-surface-container-low border border-outline-variant/30 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h3 className="text-xl font-bold text-on-surface flex items-center gap-2">
-              <span className="material-symbols-outlined text-secondary">play_circle</span>
+            <h3 className="text-base font-bold text-on-surface flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary text-[20px]">play_circle</span>
               Interactive Sandbox Tester
             </h3>
-            <p className="text-sm text-on-surface-variant">Send a mock test request to test payload deserialization and schema responses.</p>
+            <p className="text-xs text-on-surface-variant">Simulate model inference and examine telemetry deserialization.</p>
           </div>
           <Button 
             variant="filled" 
             onClick={handleSimulateApi} 
             disabled={simulating}
-            className="flex items-center gap-2"
+            className="text-xs"
           >
-            <span className="material-symbols-outlined text-[18px]">send</span>
-            {simulating ? 'Executing Request...' : 'Send Test Request'}
+            <span className="material-symbols-outlined text-[16px] mr-1.5">send</span>
+            {simulating ? 'Executing...' : 'Test Request'}
           </Button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Request Payload */}
-          <div className="flex flex-col gap-2">
-            <span className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Request Headers & Body</span>
-            <div className="bg-surface-container-highest rounded-xl p-4 font-mono text-xs text-on-surface overflow-x-auto">
-              <p className="text-primary">POST /v1/detect/media HTTP/1.1</p>
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">Request Header & Target</span>
+            <div className="bg-surface-container rounded-xl p-3.5 font-mono text-xs text-on-surface overflow-x-auto border border-outline-variant/20">
+              <p className="text-primary font-semibold">POST /v1/detect/media HTTP/1.1</p>
               <p className="text-on-surface-variant">Host: api.veritas-ai.io</p>
               <p className="text-on-surface-variant">Authorization: Bearer {generatedKey || 'vrt_live_...'}</p>
-              <p className="text-on-surface-variant">Content-Type: multipart/form-data; boundary=----WebKitFormBoundary</p>
-              <p className="mt-2 text-tertiary">{"[Payload: synthetic_evidence.mp4 (14.2 MB)]"}</p>
+              <p className="text-on-surface-variant">Content-Type: multipart/form-data</p>
+              <p className="mt-1.5 text-secondary">{"[Payload: suspect_media.mp4 (14.2 MB)]"}</p>
             </div>
           </div>
 
-          {/* Response Payload */}
-          <div className="flex flex-col gap-2">
-            <span className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Live Response Preview</span>
-            <div className="bg-surface-container-lowest border border-outline-variant/40 rounded-xl p-4 font-mono text-xs text-emerald-400 overflow-x-auto min-h-[140px] flex items-center">
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">Response Payload</span>
+            <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-3.5 font-mono text-xs text-emerald-400 overflow-x-auto min-h-[120px] flex items-center">
               {simulating ? (
-                <div className="flex items-center gap-3 text-on-surface-variant mx-auto">
-                  <span className="material-symbols-outlined animate-spin">progress_activity</span>
-                  <span>Calling inference clusters...</span>
+                <div className="flex items-center gap-2 text-on-surface-variant mx-auto">
+                  <span className="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>
+                  <span>Executing neural pipelines...</span>
                 </div>
               ) : simulationResult ? (
-                <pre className="w-full text-xs text-on-surface">
+                <pre className="w-full text-xs text-on-surface leading-relaxed">
                   <code>{simulationResult}</code>
                 </pre>
               ) : (
-                <span className="text-on-surface-variant text-xs italic mx-auto">Click "Send Test Request" above to simulate an endpoint call.</span>
+                <span className="text-on-surface-variant text-xs italic mx-auto">Click &apos;Test Request&apos; to execute live simulation.</span>
               )}
             </div>
           </div>
         </div>
       </Card>
-
-      {/* Endpoints Documentation Grid */}
-      <div>
-        <h3 className="text-xl font-bold text-on-surface mb-4">Core Endpoint Directory</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card className="flex flex-col gap-4 border border-outline-variant/40 hover:border-primary/50 transition-all">
-            <div className="flex items-center justify-between">
-              <h4 className="font-semibold text-on-surface flex items-center gap-2">
-                <span className="bg-primary/20 text-primary text-xs font-mono px-2 py-1 rounded-md font-bold">POST</span>
-                <span className="font-mono text-sm">/v1/detect/media</span>
-              </h4>
-              <Chip label="Synchronous" variant="filter" className="!bg-primary-container !text-on-primary-container !text-xs" />
-            </div>
-            <p className="text-sm text-on-surface-variant">Instant sub-second detection for single image, audio clip, or video up to 50MB.</p>
-            <div className="flex items-center gap-4 text-xs text-on-surface-variant font-mono">
-              <span>Status: <strong className="text-emerald-400">200 OK</strong></span>
-              <span>Content: <strong>application/json</strong></span>
-            </div>
-          </Card>
-
-          <Card className="flex flex-col gap-4 border border-outline-variant/40 hover:border-primary/50 transition-all">
-            <div className="flex items-center justify-between">
-              <h4 className="font-semibold text-on-surface flex items-center gap-2">
-                <span className="bg-secondary/20 text-secondary text-xs font-mono px-2 py-1 rounded-md font-bold">POST</span>
-                <span className="font-mono text-sm">/v1/detect/batch</span>
-              </h4>
-              <Chip label="Asynchronous" variant="filter" className="!bg-secondary-container !text-on-secondary-container !text-xs" />
-            </div>
-            <p className="text-sm text-on-surface-variant">Enqueue multiple media objects for scheduled pipeline analysis. Returns job UUID for status polling.</p>
-            <div className="flex items-center gap-4 text-xs text-on-surface-variant font-mono">
-              <span>Status: <strong className="text-emerald-400">202 Accepted</strong></span>
-              <span>Webhooks: <strong>Supported</strong></span>
-            </div>
-          </Card>
-        </div>
-      </div>
     </div>
   );
 }

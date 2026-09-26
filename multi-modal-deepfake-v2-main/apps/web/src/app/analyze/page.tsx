@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
-import { Button, LinearProgress } from '@repo/ui';
+import { Button, LinearProgress, Card } from '@repo/ui';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ForensicReport } from '../../components/ForensicReport';
 import { useAuth } from '../../context/AuthContext';
@@ -15,33 +15,42 @@ async function calculateSHA256(file: File) {
     const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  } catch (err) {
-    return "Hash calculation failed";
+  } catch {
+    return 'Hash calculation failed';
   }
 }
-
-// Dummy demo result for "Try with sample"
-const DEMO_RESULT = {
-  is_fake: true,
-  confidence: 94.5,
-  details: {
-    visual_artifacts: ["Inconsistent lighting on face", "Unnatural eye blinking pattern"],
-    audio_anomalies: ["Synthesized vocal tract features detected"]
-  }
-};
 
 const STEPS = [
   { id: 'upload', label: 'Upload' },
   { id: 'extract', label: 'Extract Features' },
-  { id: 'analyze', label: 'AI Analysis' },
-  { id: 'report', label: 'Generate Report' }
+  { id: 'analyze', label: 'AI Inference' },
+  { id: 'report', label: 'Generate Findings' }
 ];
+
+interface QueueItem {
+  id: string;
+  file: File;
+  name: string;
+  size: number;
+  type: string;
+  hash: string;
+  verdict: 'PENDING' | 'PROCESSING' | 'AUTHENTIC' | 'MANIPULATED' | 'ERROR';
+  score: number;
+  desc: string;
+  result?: any;
+}
 
 function AnalyzeContent() {
   const { user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
-  
+
+  // Mode: 'single' | 'batch'
+  const [activeTab, setActiveTab] = useState<'single' | 'batch'>(
+    searchParams.get('mode') === 'batch' ? 'batch' : 'single'
+  );
+
+  // Single file states
   const [isDragging, setIsDragging] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [fileHash, setFileHash] = useState<string>('');
@@ -52,16 +61,28 @@ function AnalyzeContent() {
   const [progress, setProgress] = useState(0);
   const [loadingText, setLoadingText] = useState('');
   const [currentStep, setCurrentStep] = useState(0);
+
+  // Batch queue states
+  const [queue, setQueue] = useState<QueueItem[]>([]);
+  const [isBatchProcessing, setIsBatchProcessing] = useState(false);
+  const [inspectedBatchItem, setInspectedBatchItem] = useState<QueueItem | null>(null);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  React.useEffect(() => {
-    // Handle share error (SW couldn't process the file)
+  // Handle URL mode switch query
+  useEffect(() => {
+    if (searchParams.get('mode') === 'batch') {
+      setActiveTab('batch');
+    }
+  }, [searchParams]);
+
+  // Handle shared file from PWA service worker
+  useEffect(() => {
     if (searchParams.get('share_error') === '1') {
-      toast.error('Could not receive the shared file. Please try uploading directly.');
+      toast.error('Could not receive shared file. Please select file directly.');
       router.replace('/analyze');
     }
 
-    // Handle shared file from SW cache
     if (searchParams.get('shared') === 'true') {
       caches.open('veritas-shared-media').then(cache => {
         cache.match('/shared-file').then(response => {
@@ -76,328 +97,674 @@ function AnalyzeContent() {
               const fileObj = new File([blob], fileName, { type: blob.type });
               router.replace('/analyze');
               toast.success('Received shared media file');
-              analyzeFile(fileObj);
+              setActiveTab('single');
+              analyzeSingleFile(fileObj);
               cache.delete('/shared-file');
             });
           } else {
-            toast.error('Shared file not found in cache. Please try uploading directly.');
+            toast.error('Shared file not found in cache.');
             router.replace('/analyze');
           }
         });
       });
     }
 
-    // We use a mutable flag inside the effect to safely deduplicate synchronous messages
+    // Extension sync listener
     let isProcessing = false;
     let intervalId: NodeJS.Timeout | null = null;
     
     const handleMessage = (event: MessageEvent) => {
       if (event.data?.type === 'VERITAS_LOAD_REPORT') {
-        if (isProcessing) return; // Prevent duplicate toasts
+        if (isProcessing) return;
         isProcessing = true;
-        
         if (intervalId) clearInterval(intervalId);
         
-        console.log("[Web App] Received VERITAS_LOAD_REPORT", event.data.payload ? "with payload" : "without payload");
         const payload = event.data.payload;
-        
         let finalUrl = payload.url;
-        let mime = "video/mp4";
+        let mime = 'video/mp4';
         
-        // If the extension passed a base64 payload (for local files dropped in sidepanel)
         if (payload.base64) {
           finalUrl = payload.base64;
-          mime = payload.mimeType || "video/mp4";
+          mime = payload.mimeType || 'video/mp4';
         } else if (payload.name) {
-          // Guess mime from name
-          if (payload.name.match(/\.(jpg|jpeg|png|webp|gif)$/i)) mime = "image/jpeg";
-          if (payload.name.match(/\.(mp3|wav|m4a)$/i)) mime = "audio/mpeg";
+          if (payload.name.match(/\.(jpg|jpeg|png|webp|gif)$/i)) mime = 'image/jpeg';
+          if (payload.name.match(/\.(mp3|wav|m4a)$/i)) mime = 'audio/mpeg';
         }
         
-        const mockFile = new File([], payload.name || "Extension Scan", { type: mime });
+        const mockFile = new File([], payload.name || 'Extension Scan', { type: mime });
         setFile(mockFile);
         setFileUrl(finalUrl);
         setResult(payload.result);
-        setFileHash("ext-scan-complete");
         setTimestamp(new Date().toLocaleString());
-        toast.success("Loaded report instantly from extension!");
+        setActiveTab('single');
+        toast.success(`Loaded forensic analysis for ${payload.name || 'Media'}`);
       }
     };
-    window.addEventListener('message', handleMessage);
-    
-    // Tell the extension we are ready to receive the report
-    if (searchParams.get('from_ext') === 'true' && !result) {
-      console.log("[Web App] Sending VERITAS_READY to Extension!");
-      window.postMessage({ type: 'VERITAS_READY' }, '*');
-      
-      // Poll just in case the content script injected late
-      intervalId = setInterval(() => {
-        if (!result) {
-          console.log("[Web App] Polling VERITAS_READY...");
-          window.postMessage({ type: 'VERITAS_READY' }, '*');
-        }
-      }, 500);
-    }
 
-    const url = searchParams.get('url');
-    if (url && !file && !isLoading && searchParams.get('from_ext') !== 'true') {
-      // Auto analyze the URL
-      fetch(url).then(r => r.blob()).then(blob => {
-        const ext = url.split('.').pop()?.split('?')[0] || 'mp4';
-        const name = url.split('/').pop()?.split('?')[0] || `media.${ext}`;
-        const newFile = new File([blob], name, { type: blob.type });
-        analyzeFile(newFile);
-      }).catch(err => {
-      });
+    window.addEventListener('message', handleMessage);
+    if (window.location.search.includes('from_ext=true')) {
+      intervalId = setInterval(() => {
+        window.postMessage({ type: 'VERITAS_READY' }, '*');
+      }, 500);
+      setTimeout(() => {
+        if (intervalId) clearInterval(intervalId);
+      }, 5000);
     }
 
     return () => {
       window.removeEventListener('message', handleMessage);
       if (intervalId) clearInterval(intervalId);
     };
-  }, [searchParams, result]);
+  }, [router, searchParams]);
 
-  const analyzeFile = async (targetFile: File, isDemo = false) => {
-    setFile(targetFile);
+  // Unified Drop / Upload Handler
+  const handleFilesIngest = async (filesList: FileList | File[]) => {
+    const files = Array.from(filesList);
+    if (files.length === 0) return;
+
+    if (files.length === 1 && activeTab === 'single') {
+      analyzeSingleFile(files[0]);
+      return;
+    }
+
+    // Multiple files OR currently in batch mode -> Enqueue in batch pipeline
+    setActiveTab('batch');
+    const newItems: QueueItem[] = [];
+    for (const f of files) {
+      newItems.push({
+        id: 'q_' + Math.random().toString(36).substring(2, 9),
+        file: f,
+        name: f.name,
+        size: f.size,
+        type: f.type,
+        hash: 'Pending calculation...',
+        verdict: 'PENDING',
+        score: 0,
+        desc: 'Ready for analysis'
+      });
+    }
+
+    setQueue(prev => [...prev, ...newItems]);
+    toast.success(`Enqueued ${files.length} ${files.length === 1 ? 'file' : 'files'} for batch processing`);
+  };
+
+  // Single file deep analysis
+  const analyzeSingleFile = async (selectedFile: File) => {
+    setFile(selectedFile);
     setIsLoading(true);
-    setProgress(0);
-    setCurrentStep(0);
-    setLoadingText('Uploading media securely...');
     setResult(null);
-    setFileUrl(isDemo ? '/demo-image.jpg' : URL.createObjectURL(targetFile));
-    const now = new Date().toLocaleString();
-    setTimestamp(now);
-    
-    // Simulate progress
-    const loadingMessages = [
-      "Extracting multi-modal features...",
-      "Running Vision Transformer (ViT)...",
-      "Analyzing facial landmarks...",
-      "Performing frequency domain analysis...",
-      "Cross-referencing audio-visual sync...",
-      "Finalizing forensic report..."
-    ];
-    
-    let currentProgress = 0;
-    let messageIndex = 0;
-    const progressInterval = setInterval(() => {
-      currentProgress += Math.random() * 8 + 2; // Add 2-10%
-      if (currentProgress > 95) currentProgress = 95; // Cap at 95% until complete
-      setProgress(currentProgress);
-      
-      // Update step indicator based on progress
-      if (currentProgress < 20) setCurrentStep(0);
-      else if (currentProgress < 50) setCurrentStep(1);
-      else if (currentProgress < 85) setCurrentStep(2);
-      else setCurrentStep(3);
+    setProgress(5);
+    setCurrentStep(0);
+    setLoadingText('Ingesting binary stream...');
 
-      // Update text every ~15% progress
-      if (currentProgress > (messageIndex + 1) * 15 && messageIndex < loadingMessages.length - 1) {
-        messageIndex++;
-        setLoadingText(loadingMessages[messageIndex]);
-      }
-    }, 400); // slightly faster for better UX
-
-    const hash = isDemo ? "demo-hash-1234567890" : await calculateSHA256(targetFile);
-    setFileHash(hash);
+    if (selectedFile.type.startsWith('image/') || selectedFile.type.startsWith('video/')) {
+      setFileUrl(URL.createObjectURL(selectedFile));
+    } else {
+      setFileUrl('');
+    }
 
     try {
-      if (isDemo) {
-        // Simulate API delay for demo
-        await new Promise(resolve => setTimeout(resolve, 3000));
-        clearInterval(progressInterval);
-        setProgress(100);
-        setCurrentStep(3);
-        setLoadingText('Complete!');
-        setResult(DEMO_RESULT);
-        toast.success('Demo analysis complete!');
-        setIsLoading(false);
-        return;
-      }
+      setCurrentStep(1);
+      setLoadingText('Computing cryptographic SHA-256 fingerprint...');
+      setProgress(25);
+      const hash = await calculateSHA256(selectedFile);
+      setFileHash(hash);
+
+      setCurrentStep(2);
+      setLoadingText('Executing ViT & Frequency spectral neural networks...');
+      setProgress(55);
 
       const formData = new FormData();
-      formData.append('file', targetFile);
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://upside-shower-handling.ngrok-free.dev'}/detect`, { method: 'POST', body: formData });
-      
-      clearInterval(progressInterval);
-      setProgress(100);
-      setCurrentStep(3);
-      setLoadingText('Complete!');
-      
+      formData.append('file', selectedFile);
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL || 'https://upside-shower-handling.ngrok-free.dev'}/detect`,
+        { method: 'POST', body: formData }
+      );
+
       if (!response.ok) throw new Error('API Error');
+
+      setProgress(85);
+      setCurrentStep(3);
+      setLoadingText('Fusing multi-modal inference vectors...');
+
       const data = await response.json();
       setResult(data);
-      toast.success('Analysis complete!');
+      const currentTime = new Date().toLocaleString();
+      setTimestamp(currentTime);
 
       if (user) {
-        // Save to Firestore non-blocking
-        const fileData = {
-          name: targetFile.name,
-          type: targetFile.type,
-          size: targetFile.size,
-        };
-        saveScanResult(user.uid, fileData, data, hash)
-          .then(scanId => {
-            toast.success(`Report permanently saved (ID: ${scanId.substring(0,6)}...)`);
-            chrome.runtime?.sendMessage({ action: "scan_completed" }).catch(() => {});
-          })
-          .catch(e => {
-            console.error("Failed to save to Firestore:", e);
-          });
+        await saveScanResult(
+          user.uid,
+          { name: selectedFile.name, type: selectedFile.type, size: selectedFile.size },
+          data,
+          hash
+        );
       }
-    } catch (err: any) {
-      clearInterval(progressInterval);
-      setProgress(0);
-      const errorMessage = err?.message || String(err);
-      
-      if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError')) {
-        toast.error("We're having trouble connecting to our analysis engine right now. It might be waking up—please give it a minute and try again!");
-      } else if (errorMessage.includes('413') || errorMessage.includes('Payload Too Large')) {
-        toast.error("This file is a bit too large for us to process right now. Please try a shorter clip.");
-      } else {
-        toast.error("We couldn't analyze this file. It might be corrupted or in an unsupported format.");
-      }
-      setFile(null); // Reset file so they can try again
+
+      setProgress(100);
+      toast.success('Forensic analysis completed');
+    } catch {
+      toast.error('Analysis failed. Veritas engine may be connecting, please retry.');
+      resetSingle();
     } finally {
       setIsLoading(false);
     }
   };
 
-  const loadDemo = () => {
-    const demoFile = new File(["dummy content"], "sample_deepfake_video.mp4", { type: "video/mp4" });
-    analyzeFile(demoFile, true);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const droppedFile = e.dataTransfer.files[0];
-    if (droppedFile) analyzeFile(droppedFile);
-  };
-
-  const handleBrowse = () => fileInputRef.current?.click();
-
-  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selected = e.target.files?.[0];
-    if (selected) analyzeFile(selected);
-  };
-
-  const reset = () => {
+  const resetSingle = () => {
     setFile(null);
     setResult(null);
     setFileHash('');
+    if (fileUrl) URL.revokeObjectURL(fileUrl);
     setFileUrl('');
+    setIsLoading(false);
+    setProgress(0);
+    setCurrentStep(0);
   };
 
-  const handleDownload = () => {
-    import('../../lib/pdf').then(({ downloadPDF }) => {
-      downloadPDF('forensic-report-content', 'Veritas_Analysis_Report.pdf');
+  const loadDemo = () => {
+    const mockFile = new File(['mock'], 'sample_synthetic_deepfake.jpg', { type: 'image/jpeg' });
+    setFile(mockFile);
+    setFileHash('e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855');
+    setFileUrl('/logo.png');
+    setResult({
+      is_fake: true,
+      confidence: 0.945,
+      breakdown: {
+        visual_score: 0.962,
+        audio_score: 0.88,
+        lip_sync_score: 0.91
+      },
+      heatmap: null
     });
+    setTimestamp(new Date().toLocaleString());
+    setActiveTab('single');
+    toast.success('Loaded forensic demo preview');
   };
+
+  // Batch queue processing
+  const processBatchQueue = async () => {
+    const pendingItems = queue.filter(item => item.verdict === 'PENDING');
+    if (pendingItems.length === 0) {
+      toast.info('No pending files to process.');
+      return;
+    }
+
+    setIsBatchProcessing(true);
+    toast.info(`Processing ${pendingItems.length} files in background...`);
+
+    const MAX_CONCURRENT = 3;
+    let index = 0;
+
+    const processItem = async (item: QueueItem) => {
+      setQueue(prev => prev.map(q => (q.id === item.id ? { ...q, verdict: 'PROCESSING', desc: 'Running models...' } : q)));
+
+      try {
+        const hash = await calculateSHA256(item.file);
+        const formData = new FormData();
+        formData.append('file', item.file);
+
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL || 'https://upside-shower-handling.ngrok-free.dev'}/detect`,
+          { method: 'POST', body: formData }
+        );
+
+        if (!response.ok) throw new Error('API Error');
+        const data = await response.json();
+
+        if (user) {
+          await saveScanResult(
+            user.uid,
+            { name: item.file.name, type: item.file.type, size: item.file.size },
+            data,
+            hash
+          );
+        }
+
+        const isFake = data.is_fake;
+        const confidence = data.confidence > 1 ? data.confidence : data.confidence * 100;
+
+        setQueue(prev =>
+          prev.map(q =>
+            q.id === item.id
+              ? {
+                  ...q,
+                  hash,
+                  result: data,
+                  score: confidence,
+                  verdict: isFake ? 'MANIPULATED' : 'AUTHENTIC',
+                  desc: `Visual: ${((data.breakdown?.visual_score ?? 0.8) * 100).toFixed(0)}%`
+                }
+              : q
+          )
+        );
+      } catch {
+        setQueue(prev =>
+          prev.map(q =>
+            q.id === item.id ? { ...q, verdict: 'ERROR', desc: 'Pipeline connection timed out.' } : q
+          )
+        );
+      }
+    };
+
+    const runWorker = async () => {
+      while (index < pendingItems.length) {
+        const current = pendingItems[index++];
+        await processItem(current);
+      }
+    };
+
+    const workers = Array.from({ length: Math.min(MAX_CONCURRENT, pendingItems.length) }, () => runWorker());
+    await Promise.all(workers);
+
+    setIsBatchProcessing(false);
+    toast.success('Batch pipeline completed');
+  };
+
+  const exportBatchCSV = () => {
+    if (queue.length === 0) return;
+    const headers = ['Filename', 'Verdict', 'Confidence (%)', 'SHA-256', 'Status'];
+    const rows = queue.map(q => [
+      `"${q.name.replace(/"/g, '""')}"`,
+      `"${q.verdict}"`,
+      `"${q.score ? q.score.toFixed(1) : 'N/A'}"`,
+      `"${q.hash}"`,
+      `"${q.desc}"`
+    ]);
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.join('\n')].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.href = encodedUri;
+    link.download = `veritas_batch_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success('Exported batch ledger as CSV');
+  };
+
+  // Batch stats summary
+  const batchStats = useMemo(() => {
+    const total = queue.length;
+    const completed = queue.filter(q => q.verdict === 'AUTHENTIC' || q.verdict === 'MANIPULATED').length;
+    const threats = queue.filter(q => q.verdict === 'MANIPULATED').length;
+    const pending = queue.filter(q => q.verdict === 'PENDING').length;
+    return { total, completed, threats, pending };
+  }, [queue]);
 
   return (
-    <div className="p-4 md:p-8 max-w-5xl mx-auto flex flex-col w-full print:p-0 print:m-0 print:max-w-none print:bg-white print:text-black min-h-[80vh]">
-      
-      {!file && (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight text-on-surface mb-1">Forensic Analysis</h1>
-          <p className="text-on-surface-variant">Upload media to generate a professional deepfake analysis report.</p>
-        </motion.div>
-      )}
+    <div className="p-4 sm:p-8 max-w-6xl mx-auto flex flex-col gap-6 w-full pb-32">
+      {/* Top Header & Mode Switcher */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-on-surface">
+            Media Verification Center
+          </h1>
+          <p className="text-xs sm:text-sm text-on-surface-variant">
+            Analyze single files for deep forensic dissection or queue multi-file batches concurrently.
+          </p>
+        </div>
 
-      {isLoading && (
-        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mb-8 bg-surface-container p-6 rounded-3xl border border-outline/10">
-          <div className="flex justify-between mb-6 text-sm overflow-hidden relative">
-            {/* Steps indicator */}
-            {STEPS.map((step, idx) => (
-              <div key={step.id} className={`flex flex-col items-center gap-2 z-10 ${idx <= currentStep ? 'text-primary' : 'text-on-surface-variant/50'}`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors duration-500 ${idx < currentStep ? 'bg-primary text-on-primary' : idx === currentStep ? 'bg-primary-container text-on-primary-container ring-4 ring-primary/20' : 'bg-surface-container-high'}`}>
-                  <span className="material-symbols-outlined text-[16px]">
-                    {idx < currentStep ? 'check' : idx === 0 ? 'upload' : idx === 1 ? 'memory' : idx === 2 ? 'psychology' : 'description'}
-                  </span>
-                </div>
-                <span className="font-medium hidden sm:block">{step.label}</span>
-              </div>
-            ))}
-            {/* Connecting line */}
-            <div className="absolute top-4 left-[10%] right-[10%] h-[2px] bg-surface-container-high -z-0">
-               <div className="h-full bg-primary transition-all duration-500 ease-out" style={{ width: `${(currentStep / (STEPS.length - 1)) * 100}%` }} />
-            </div>
-          </div>
-          <LinearProgress value={progress} />
-          <div className="text-center mt-4 text-sm text-on-surface-variant font-mono bg-surface-container-high py-2 rounded-lg">{loadingText} {Math.floor(progress)}%</div>
-        </motion.div>
-      )}
-
-      <input ref={fileInputRef} type="file" className="hidden" accept="image/*,video/*,audio/*" onChange={handleFileInput} />
-
-      {!file ? (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-          className="relative w-full"
-        >
-          <div
-            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-            onDragLeave={() => setIsDragging(false)}
-            onDrop={handleDrop}
-            className={"relative z-10 border-2 border-dashed rounded-[2rem] h-[400px] flex flex-col items-center justify-center transition-all duration-300 overflow-hidden " + (isDragging ? 'border-primary bg-primary/10 scale-[1.02] shadow-xl' : 'border-outline-variant hover:border-primary/50 bg-surface-container-low')}
+        {/* Material 3 Segmented Toggle */}
+        <div className="flex items-center p-1 rounded-2xl bg-surface-container border border-outline-variant/30 text-xs font-semibold self-stretch sm:self-auto">
+          <button
+            onClick={() => setActiveTab('single')}
+            className={`flex-1 sm:flex-initial px-4 py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
+              activeTab === 'single'
+                ? 'bg-primary-container text-on-primary-container font-bold shadow-sm'
+                : 'text-on-surface-variant hover:text-on-surface'
+            }`}
           >
-            {/* Decorative animated icons floating in the background */}
-            <motion.span animate={{ y: [0, -15, 0], opacity: [0.1, 0.3, 0.1] }} transition={{ repeat: Infinity, duration: 4 }} className="absolute top-10 left-10 material-symbols-outlined text-5xl text-primary pointer-events-none">image</motion.span>
-            <motion.span animate={{ y: [0, 20, 0], opacity: [0.1, 0.2, 0.1] }} transition={{ repeat: Infinity, duration: 5, delay: 1 }} className="absolute bottom-10 right-20 material-symbols-outlined text-4xl text-secondary pointer-events-none">movie</motion.span>
-            <motion.span animate={{ x: [0, 15, 0], opacity: [0.1, 0.4, 0.1] }} transition={{ repeat: Infinity, duration: 3.5, delay: 2 }} className="absolute top-20 right-16 material-symbols-outlined text-3xl text-tertiary pointer-events-none">audio_file</motion.span>
+            <span className="material-symbols-outlined text-[18px]">troubleshoot</span>
+            Single File
+          </button>
+          <button
+            onClick={() => setActiveTab('batch')}
+            className={`flex-1 sm:flex-initial px-4 py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
+              activeTab === 'batch'
+                ? 'bg-primary-container text-on-primary-container font-bold shadow-sm'
+                : 'text-on-surface-variant hover:text-on-surface'
+            }`}
+          >
+            <span className="material-symbols-outlined text-[18px]">queue</span>
+            Batch Queue {queue.length > 0 && `(${queue.length})`}
+          </button>
+        </div>
+      </div>
 
-            <div className={"w-20 h-20 rounded-3xl flex items-center justify-center mb-6 transition-colors duration-300 " + (isDragging ? "bg-primary text-on-primary" : "bg-surface-container-high text-primary")}>
-              <span className={"material-symbols-outlined text-[40px]"}>upload_file</span>
+      {/* Hidden File Input (supports multiple) */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        className="hidden"
+        accept="image/*,video/*,audio/*"
+        onChange={e => {
+          if (e.target.files) handleFilesIngest(e.target.files);
+        }}
+      />
+
+      {/* ========================================================================= */}
+      {/* TAB 1: SINGLE DEEP SCAN                                                    */}
+      {/* ========================================================================= */}
+      {activeTab === 'single' && (
+        <div className="flex flex-col gap-6">
+          {/* Progress Indicator */}
+          {isLoading && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-surface-container-low p-5 rounded-2xl border border-outline-variant/30 shadow-sm"
+            >
+              <div className="grid grid-cols-4 gap-2 mb-4 relative">
+                {STEPS.map((step, idx) => (
+                  <div key={step.id} className="flex flex-col items-center text-center z-10">
+                    <div
+                      className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
+                        idx < currentStep
+                          ? 'bg-emerald-500 text-white'
+                          : idx === currentStep
+                          ? 'bg-primary text-on-primary'
+                          : 'bg-surface-container-highest text-on-surface-variant'
+                      }`}
+                    >
+                      {idx < currentStep ? '✓' : idx + 1}
+                    </div>
+                    <span className="text-[11px] mt-1 hidden sm:block text-on-surface-variant">{step.label}</span>
+                  </div>
+                ))}
+              </div>
+              <LinearProgress value={progress} />
+              <p className="text-center mt-3 text-xs text-on-surface-variant font-mono">{loadingText}</p>
+            </motion.div>
+          )}
+
+          {!file ? (
+            /* Upload Dropzone */
+            <div
+              onDragOver={e => {
+                e.preventDefault();
+                setIsDragging(true);
+              }}
+              onDragLeave={() => setIsDragging(false)}
+              onDrop={e => {
+                e.preventDefault();
+                setIsDragging(false);
+                if (e.dataTransfer?.files) handleFilesIngest(e.dataTransfer.files);
+              }}
+              className={`border-2 border-dashed rounded-3xl h-[340px] sm:h-[380px] flex flex-col items-center justify-center transition-all duration-200 text-center p-6 ${
+                isDragging
+                  ? 'border-primary bg-primary/10 scale-[1.01]'
+                  : 'border-outline-variant/40 bg-surface-container-low hover:border-primary/50'
+              }`}
+            >
+              <div className="w-16 h-16 rounded-2xl bg-surface-container-highest text-primary flex items-center justify-center mb-4 shadow-sm">
+                <span className="material-symbols-outlined text-[36px]">cloud_upload</span>
+              </div>
+              <h3 className="text-xl font-bold text-on-surface mb-1">Drop media here or browse</h3>
+              <p className="text-xs text-on-surface-variant max-w-sm mb-4">
+                Supports MP4, WAV, MP3, JPG, and PNG files up to 50MB. Drop multiple files to auto-start a batch.
+              </p>
+
+              <Button variant="filled" onClick={() => fileInputRef.current?.click()} className="text-xs !px-6 !py-2.5">
+                Browse Files
+              </Button>
+
+              <div className="mt-6 flex items-center gap-2 text-xs text-on-surface-variant">
+                <span>Want to test first?</span>
+                <button onClick={loadDemo} className="text-primary hover:underline font-semibold flex items-center gap-1">
+                  Try sample analysis <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+                </button>
+              </div>
             </div>
-            <h3 className="text-2xl font-bold text-on-surface mb-2">Drag and drop a file to begin</h3>
-            <p className="text-base text-on-surface-variant mb-2">We support MP4, AVI, WAV, MP3, JPG, and PNG formats.</p>
-            <p className="text-sm font-mono text-on-surface-variant/70 mb-8 bg-surface-container px-3 py-1 rounded-md">Supports images, videos, and audio up to 50MB</p>
-            <Button variant="filled" onClick={handleBrowse} className="px-8 py-2 text-lg">Browse Local Files</Button>
-            
-            <div className="absolute bottom-6 flex items-center gap-2 text-sm text-on-surface-variant">
-              <span>Don't have a file?</span>
-              <button onClick={loadDemo} className="text-primary hover:underline font-medium focus:outline-none flex items-center gap-1">
-                Try with sample <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+          ) : (
+            /* Single Result View */
+            <AnimatePresence>
+              {result && !isLoading && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex flex-col gap-6"
+                >
+                  <div className="flex justify-between items-center bg-surface-container-low p-3.5 rounded-2xl border border-outline-variant/30 print:hidden">
+                    <Button variant="outlined" onClick={resetSingle} className="text-xs">
+                      <span className="material-symbols-outlined text-[16px] mr-1.5">refresh</span>
+                      Scan Another
+                    </Button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          if (file) {
+                            setQueue(prev => [
+                              ...prev,
+                              {
+                                id: 'q_' + Math.random().toString(36).substring(2, 9),
+                                file,
+                                name: file.name,
+                                size: file.size,
+                                type: file.type,
+                                hash: fileHash,
+                                verdict: result.is_fake ? 'MANIPULATED' : 'AUTHENTIC',
+                                score: result.confidence * 100,
+                                desc: 'Imported from Single Scan',
+                                result
+                              }
+                            ]);
+                            setActiveTab('batch');
+                            toast.success('Moved scan to Batch Queue');
+                          }
+                        }}
+                        className="px-3 py-1.5 rounded-xl border border-outline-variant/30 text-xs text-on-surface-variant hover:text-on-surface transition-colors"
+                      >
+                        + Add to Batch
+                      </button>
+                      <Button
+                        variant="filled"
+                        onClick={() => {
+                          import('../../lib/pdf').then(({ downloadPDF }) => {
+                            downloadPDF('forensic-report-content', `Veritas_${file.name}.pdf`);
+                          });
+                        }}
+                        className="text-xs"
+                      >
+                        <span className="material-symbols-outlined text-[16px] mr-1.5">download</span>
+                        Download PDF
+                      </Button>
+                    </div>
+                  </div>
+
+                  <ForensicReport
+                    isLoading={isLoading}
+                    result={result}
+                    fileData={{ name: file.name, type: file.type, size: file.size, url: fileUrl }}
+                    fileHash={fileHash}
+                    timestamp={timestamp}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          )}
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB 2: BATCH QUEUE MANAGER                                                */}
+      {/* ========================================================================= */}
+      {activeTab === 'batch' && (
+        <div className="flex flex-col gap-6">
+          {/* Batch Summary Strip */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <Card className="bg-surface-container-low border border-outline-variant/30 p-3.5 flex flex-col justify-between">
+              <span className="text-[11px] text-on-surface-variant font-medium">Total In Queue</span>
+              <span className="text-xl font-bold font-mono text-on-surface mt-1">{batchStats.total}</span>
+            </Card>
+            <Card className="bg-surface-container-low border border-outline-variant/30 p-3.5 flex flex-col justify-between">
+              <span className="text-[11px] text-on-surface-variant font-medium">Completed</span>
+              <span className="text-xl font-bold font-mono text-emerald-400 mt-1">{batchStats.completed}</span>
+            </Card>
+            <Card className="bg-surface-container-low border border-outline-variant/30 p-3.5 flex flex-col justify-between">
+              <span className="text-[11px] text-on-surface-variant font-medium">Flagged Threats</span>
+              <span className="text-xl font-bold font-mono text-error mt-1">{batchStats.threats}</span>
+            </Card>
+            <Card className="bg-surface-container-low border border-outline-variant/30 p-3.5 flex flex-col justify-between">
+              <span className="text-[11px] text-on-surface-variant font-medium">Pending Scan</span>
+              <span className="text-xl font-bold font-mono text-on-surface-variant mt-1">{batchStats.pending}</span>
+            </Card>
+          </div>
+
+          {/* Batch Ingest & Action Toolbar */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-surface-container-low p-4 rounded-2xl border border-outline-variant/30">
+            <div className="flex items-center gap-2">
+              <Button
+                variant="filled"
+                onClick={processBatchQueue}
+                disabled={isBatchProcessing || batchStats.pending === 0}
+                className="text-xs"
+              >
+                <span className="material-symbols-outlined text-[16px] mr-1.5">
+                  {isBatchProcessing ? 'hourglass_top' : 'play_arrow'}
+                </span>
+                {isBatchProcessing ? 'Processing Queue...' : `Start Queue (${batchStats.pending})`}
+              </Button>
+              <Button variant="outlined" onClick={() => fileInputRef.current?.click()} className="text-xs">
+                <span className="material-symbols-outlined text-[16px] mr-1.5">add</span>
+                Add Files
+              </Button>
+            </div>
+
+            <div className="flex items-center gap-2 justify-end">
+              <button
+                onClick={exportBatchCSV}
+                disabled={queue.length === 0}
+                className="px-3 py-1.5 rounded-xl border border-outline-variant/30 text-xs font-semibold text-on-surface hover:bg-surface-container disabled:opacity-40 transition-colors flex items-center gap-1.5"
+              >
+                <span className="material-symbols-outlined text-[16px]">download</span>
+                Export CSV
+              </button>
+              <button
+                onClick={() => setQueue([])}
+                disabled={isBatchProcessing || queue.length === 0}
+                className="px-3 py-1.5 rounded-xl text-xs font-semibold text-error hover:bg-error/10 disabled:opacity-40 transition-colors flex items-center gap-1.5"
+              >
+                <span className="material-symbols-outlined text-[16px]">delete_sweep</span>
+                Clear
               </button>
             </div>
           </div>
-        </motion.div>
-      ) : (
-        <AnimatePresence>
-          {result && !isLoading && (
-            <motion.div 
-              initial={{ opacity: 0, y: 30 }} 
-              animate={{ opacity: 1, y: 0 }} 
-              transition={{ type: 'spring', stiffness: 200, damping: 20 }}
-              className="flex flex-col gap-12 pb-16 print:gap-8 print:pb-0"
-            >
-              {/* Print controls */}
-              <div className="flex justify-between items-center print:hidden bg-surface-container-low p-4 rounded-3xl shadow-sm border border-outline/10">
-                <Button variant="outlined" onClick={reset}>
-                  <span className="material-symbols-outlined text-[18px] mr-2">refresh</span>
-                  Scan Another
-                </Button>
-                <Button variant="filled" onClick={handleDownload}>
-                  <span className="material-symbols-outlined text-[18px] mr-2">download</span>
-                  Download PDF
-                </Button>
-              </div>
 
-              <div className="bg-surface rounded-3xl overflow-hidden shadow-sm">
-                <ForensicReport 
-                  isLoading={isLoading} 
-                  result={result} 
-                  fileData={{ name: file.name, type: file.type, size: file.size, url: fileUrl }} 
-                  fileHash={fileHash} 
-                  timestamp={timestamp} 
+          {/* Queue Table or Empty State */}
+          {queue.length === 0 ? (
+            <div
+              onDragOver={e => {
+                e.preventDefault();
+                setIsDragging(true);
+              }}
+              onDragLeave={() => setIsDragging(false)}
+              onDrop={e => {
+                e.preventDefault();
+                setIsDragging(false);
+                if (e.dataTransfer?.files) handleFilesIngest(e.dataTransfer.files);
+              }}
+              className="border-2 border-dashed border-outline-variant/40 rounded-3xl h-64 flex flex-col items-center justify-center p-6 text-center bg-surface-container-low"
+            >
+              <span className="material-symbols-outlined text-[40px] text-on-surface-variant/60 mb-2">queue</span>
+              <p className="text-sm font-bold text-on-surface">Batch Queue is empty</p>
+              <p className="text-xs text-on-surface-variant mt-1 mb-4">
+                Drag multiple audio, video, or image files here to start bulk verification.
+              </p>
+              <Button variant="outlined" onClick={() => fileInputRef.current?.click()} className="text-xs">
+                Select Multiple Media Files
+              </Button>
+            </div>
+          ) : (
+            <div className="bg-surface-container-low rounded-2xl border border-outline-variant/30 overflow-hidden shadow-sm">
+              <div className="divide-y divide-outline-variant/20">
+                {queue.map((item, idx) => (
+                  <div
+                    key={item.id}
+                    className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 hover:bg-surface-container/40 transition-colors"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-8 h-8 rounded-xl bg-surface-container-highest flex items-center justify-center text-xs font-mono font-bold text-on-surface-variant shrink-0">
+                        {idx + 1}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs sm:text-sm font-semibold text-on-surface truncate max-w-xs sm:max-w-md">
+                          {item.name}
+                        </p>
+                        <p className="text-[11px] text-on-surface-variant font-mono">
+                          {(item.size / 1024 / 1024).toFixed(2)} MB • {item.desc}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+                      <span
+                        className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${
+                          item.verdict === 'AUTHENTIC'
+                            ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                            : item.verdict === 'MANIPULATED'
+                            ? 'bg-error/15 text-error border-error/30'
+                            : item.verdict === 'PROCESSING'
+                            ? 'bg-primary/15 text-primary border-primary/30 animate-pulse'
+                            : item.verdict === 'ERROR'
+                            ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
+                            : 'bg-surface-container-highest text-on-surface-variant border-outline-variant/30'
+                        }`}
+                      >
+                        {item.verdict}
+                      </span>
+
+                      {item.result && (
+                        <button
+                          onClick={() => setInspectedBatchItem(item)}
+                          className="px-2.5 py-1 rounded-lg text-xs font-semibold text-primary hover:bg-primary/10 transition-colors flex items-center gap-1"
+                        >
+                          <span className="material-symbols-outlined text-[14px]">visibility</span>
+                          Inspect
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Inspected Item Modal */}
+          {inspectedBatchItem && inspectedBatchItem.result && (
+            <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-surface border border-outline-variant/30 rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl flex flex-col gap-6">
+                <div className="flex items-center justify-between pb-3 border-b border-outline-variant/30">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-primary text-[22px]">troubleshoot</span>
+                    <h2 className="text-base font-bold text-on-surface truncate max-w-md">
+                      {inspectedBatchItem.name}
+                    </h2>
+                  </div>
+                  <button
+                    onClick={() => setInspectedBatchItem(null)}
+                    className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-surface-container-highest text-on-surface-variant"
+                  >
+                    <span className="material-symbols-outlined text-[20px]">close</span>
+                  </button>
+                </div>
+
+                <ForensicReport
+                  isLoading={false}
+                  result={inspectedBatchItem.result}
+                  fileData={{
+                    name: inspectedBatchItem.name,
+                    type: inspectedBatchItem.type,
+                    size: inspectedBatchItem.size
+                  }}
+                  fileHash={inspectedBatchItem.hash}
+                  timestamp={new Date().toLocaleString()}
                 />
               </div>
-            </motion.div>
+            </div>
           )}
-        </AnimatePresence>
+        </div>
       )}
     </div>
   );
@@ -405,7 +772,7 @@ function AnalyzeContent() {
 
 export default function AnalyzePage() {
   return (
-    <React.Suspense fallback={<div className="p-8 text-center"><LinearProgress /></div>}>
+    <React.Suspense fallback={<div className="p-8 text-center text-xs text-on-surface-variant font-mono">Loading Media Verification Center...</div>}>
       <AnalyzeContent />
     </React.Suspense>
   );
