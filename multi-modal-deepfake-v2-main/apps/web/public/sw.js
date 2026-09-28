@@ -1,6 +1,6 @@
-// Veritas AI Service Worker v11
-const SW_VERSION = 'v11';
-const OFFLINE_CACHE = 'veritas-offline-v11';
+// Veritas AI Service Worker v12
+const SW_VERSION = 'v12';
+const OFFLINE_CACHE = 'veritas-offline-v12';
 const OFFLINE_URL = '/offline';
 
 self.addEventListener('install', (event) => {
@@ -149,9 +149,14 @@ async function handleShareTarget(request) {
         fileName = fileName + '.' + ext;
       }
 
+      // Fix DataCloneError: Files from Request FormData are stream-backed and cannot be cloned into IDB directly.
+      // We must read it into an ArrayBuffer and create a fresh Blob.
+      const buffer = await file.arrayBuffer();
+      const safeBlob = new Blob([buffer], { type: file.type || 'application/octet-stream' });
+
       // 1. Primary Store: Native IndexedDB (disk-backed, low RAM)
       await saveToIndexedDB({
-        file,
+        file: safeBlob,
         fileName,
         fileType: file.type || 'application/octet-stream',
         fileSize: file.size
@@ -176,7 +181,7 @@ async function handleShareTarget(request) {
         try {
           const cache = await caches.open('veritas-shared-media');
           await cache.delete('/shared-file');
-          await cache.put(new Request('/shared-file'), new Response(file, {
+          await cache.put(new Request('/shared-file'), new Response(safeBlob, {
             headers: {
               'Content-Type': file.type || 'application/octet-stream',
               'Content-Length': String(file.size),

@@ -1,0 +1,1 @@
+const formData = new FormData(); formData.append('title', 'Test'); formData.append('media', new Blob(['test data'], { type: 'image/png' }), 'test.png'); fetch('http://localhost:3000/share-target', { method: 'POST', body: formData }).then(res => res.text()).then(console.log).catch(console.error);
