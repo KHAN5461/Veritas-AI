@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
@@ -7,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ForensicReport } from '../../components/ForensicReport';
 import { useAuth } from '../../context/AuthContext';
 import { saveScanResult } from '../../lib/scans';
+import { detectDeepfake } from '../../lib/api';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 async function calculateSHA256(file: File) {
@@ -42,7 +42,7 @@ interface QueueItem {
   verdict: 'PENDING' | 'PROCESSING' | 'AUTHENTIC' | 'MANIPULATED' | 'ERROR';
   score: number;
   desc: string;
-  result?: any;
+  result?: ForensicResult;
 }
 
 async function retrieveSharedMediaOnce(): Promise<File | null> {
@@ -51,9 +51,9 @@ async function retrieveSharedMediaOnce(): Promise<File | null> {
     const fileFromIdb = await new Promise<File | null>((resolve) => {
       const req = indexedDB.open('veritas_pwa_db', 1);
       req.onerror = () => resolve(null);
-      req.onsuccess = (e: any) => {
+      req.onsuccess = (e: Event) => {
         try {
-          const db = e.target.result;
+          const db = (e.target as IDBOpenDBRequest).result;
           if (!db.objectStoreNames.contains('shared_media')) {
             resolve(null);
             return;
@@ -107,12 +107,14 @@ async function retrieveSharedMediaOnce(): Promise<File | null> {
   return null;
 }
 
-// Resilient polling helper: polls for up to 2.5 seconds to eliminate mobile race conditions
-async function retrieveSharedMediaWithRetry(maxAttempts = 10, intervalMs = 250): Promise<File | null> {
+// Resilient polling helper: polls for up to 3 seconds to eliminate mobile race conditions
+// We use 6 attempts at 500ms to give the Service Worker ample time to write 50MB blobs to IndexedDB
+async function retrieveSharedMediaWithRetry(maxAttempts = 6, intervalMs = 500): Promise<File | null> {
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     const file = await retrieveSharedMediaOnce();
     if (file) return file;
     if (attempt < maxAttempts) {
+      console.log(`[PWA] Shared file not ready yet. Retrying in ${intervalMs}ms... (Attempt ${attempt}/${maxAttempts})`);
       await new Promise((res) => setTimeout(res, intervalMs));
     }
   }
@@ -135,7 +137,7 @@ function AnalyzeContent() {
   const [fileHash, setFileHash] = useState<string>('');
   const [fileUrl, setFileUrl] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<ForensicResult | null>(null);
   const [analysisError, setAnalysisError] = useState(false);
   const [sharedLinkUrl, setSharedLinkUrl] = useState<string>('');
   const [timestamp, setTimestamp] = useState<string>('');
@@ -202,7 +204,7 @@ function AnalyzeContent() {
       
       const toastId = toast.loading('Receiving shared media from Android...');
 
-      retrieveSharedMediaWithRetry(12, 250).then((fileObj) => {
+      retrieveSharedMediaWithRetry().then((fileObj) => {
         toast.dismiss(toastId);
         if (fileObj) {
           toast.success(`Received: ${fileObj.name}`);
@@ -218,7 +220,7 @@ function AnalyzeContent() {
     // Direct push notification from Service Worker if PWA was already open
     const handleSwMessage = (event: MessageEvent) => {
       if (event.data?.type === 'VERITAS_PWA_MEDIA_SHARED') {
-        retrieveSharedMediaWithRetry(5, 200).then((fileObj) => {
+        retrieveSharedMediaWithRetry().then((fileObj) => {
           if (fileObj) {
             toast.success(`Received shared media: ${fileObj.name}`);
             setActiveTab('single');
@@ -345,21 +347,15 @@ function AnalyzeContent() {
       setLoadingText('Executing ViT & Frequency spectral neural networks...');
       setProgress(55);
 
-      const formData = new FormData();
-      formData.append('file', selectedFile);
-
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'https://upside-shower-handling.ngrok-free.dev'}/detect`,
-        { method: 'POST', body: formData }
-      );
-
-      if (!response.ok) throw new Error('API Error');
+      const data = await detectDeepfake(selectedFile);
+      if (data.mode === 'heuristic_fallback') {
+        toast.warning('Offline mode: Using local heuristic analysis');
+      }
 
       setProgress(85);
       setCurrentStep(3);
       setLoadingText('Fusing multi-modal inference vectors...');
 
-      const data = await response.json();
       setResult(data);
       const currentTime = new Date().toLocaleString();
       setTimestamp(currentTime);
@@ -441,16 +437,7 @@ function AnalyzeContent() {
 
       try {
         const hash = await calculateSHA256(item.file);
-        const formData = new FormData();
-        formData.append('file', item.file);
-
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || 'https://upside-shower-handling.ngrok-free.dev'}/detect`,
-          { method: 'POST', body: formData }
-        );
-
-        if (!response.ok) throw new Error('API Error');
-        const data = await response.json();
+        const data = await detectDeepfake(item.file);
 
         if (user) {
           saveScanResult(

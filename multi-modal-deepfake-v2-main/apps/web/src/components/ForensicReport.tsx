@@ -1,14 +1,14 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 import React, { useState } from 'react';
 import { Card, Skeleton, Button } from '@repo/ui';
 import { SpyglassViewer } from './SpyglassViewer';
 import { AudioWaveform } from './AudioWaveform';
 import { toast } from 'sonner';
+import type { ForensicResult } from '../lib/api';
 
 interface ForensicReportProps {
   isLoading: boolean;
-  result: any;
+  result: ForensicResult | null;
   fileData: {
     name: string;
     type: string;
@@ -461,7 +461,7 @@ Timestamp: ${timestamp}`;
                     <p className="text-xs text-on-surface-variant mb-2">
                       Use the Spyglass loupe to inspect synthesized regions and pixel boundary anomalies:
                     </p>
-                    <SpyglassViewer originalSrc={fileData.url} heatmapSrc={"data:image/png;base64," + result.heatmap} />
+                    <SpyglassViewer originalSrc={fileData.url} heatmapSrc={result.heatmap.startsWith('blob:') || result.heatmap.startsWith('http') ? result.heatmap : "data:image/png;base64," + result.heatmap} />
                   </div>
                 ) : fileData.type.startsWith('audio/') ? (
                   <div className="w-full">
@@ -484,7 +484,7 @@ Timestamp: ${timestamp}`;
                     <div>
                       <span className="text-xs font-semibold text-on-surface-variant block mb-2">Forensic Heatmap Activation</span>
                       {result.heatmap ? (
-                        <img src={"data:image/png;base64," + result.heatmap} className="w-full h-auto max-h-[380px] object-contain rounded-xl bg-surface-container-highest" alt="Heatmap" />
+                        <img src={result.heatmap.startsWith('blob:') || result.heatmap.startsWith('http') ? result.heatmap : "data:image/png;base64," + result.heatmap} className="w-full h-auto max-h-[380px] object-contain rounded-xl bg-surface-container-highest" alt="Heatmap" />
                       ) : (
                         <div className="w-full h-48 bg-surface-container-highest rounded-xl flex items-center justify-center text-xs text-on-surface-variant">
                           Heatmap activation layer not generated for this format.
