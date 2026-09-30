@@ -46,65 +46,29 @@ interface QueueItem {
 }
 
 async function retrieveSharedMediaOnce(): Promise<File | null> {
-  // 1. Primary: Retrieve from IndexedDB (low memory, disk-backed)
-  try {
-    const fileFromIdb = await new Promise<File | null>((resolve) => {
-      const req = indexedDB.open('veritas_pwa_db', 1);
-      req.onerror = () => resolve(null);
-      req.onsuccess = (e: Event) => {
-        try {
-          const db = (e.target as IDBOpenDBRequest).result;
-          if (!db.objectStoreNames.contains('shared_media')) {
-            resolve(null);
-            return;
-          }
-          const tx = db.transaction('shared_media', 'readwrite');
-          const store = tx.objectStore('shared_media');
-          const getReq = store.get('pending_share');
-          getReq.onsuccess = () => {
-            const data = getReq.result;
-            if (data && data.file) {
-              store.delete('pending_share');
-              const reconstructed = new File([data.file], data.fileName || 'shared-media', {
-                type: data.fileType || data.file.type || 'application/octet-stream',
-              });
-              resolve(reconstructed);
-            } else {
-              resolve(null);
-            }
-          };
-          getReq.onerror = () => resolve(null);
-        } catch {
-          resolve(null);
-        }
-      };
-    });
-
-    if (fileFromIdb) return fileFromIdb;
-  } catch (err) {
-    console.warn('[retrieveSharedMediaOnce] IndexedDB read error:', err);
-  }
-
-  // 2. Secondary: Fallback to Cache Storage API
   try {
     const cache = await caches.open('veritas-shared-media');
-    const response = await cache.match('/shared-file');
-    if (response) {
-      const blob = await response.blob();
-      let fileName = response.headers.get('X-Original-Name');
-      if (fileName) fileName = decodeURIComponent(fileName);
-      if (!fileName || fileName === 'null') {
-        const ext = blob.type.split('/')[1] || 'jpg';
-        fileName = 'shared-media.' + ext;
-      }
-      await cache.delete('/shared-file');
-      return new File([blob], fileName, { type: blob.type });
-    }
-  } catch (err) {
-    console.warn('[retrieveSharedMediaOnce] Cache API fallback error:', err);
-  }
+    const metaRes = await cache.match('/__shared__/meta');
+    if (!metaRes) return null;
 
-  return null;
+    const meta = await metaRes.json();
+    if (!meta.files || meta.files.length === 0) return null;
+
+    const m = meta.files[0];
+    const res = await cache.match(m.key);
+    if (!res) return null;
+    
+    const blob = await res.blob();
+    const file = new File([blob], m.name || 'shared-file', { type: m.type || blob.type });
+
+    const keys = await cache.keys();
+    await Promise.all(keys.map((k) => cache.delete(k)));
+
+    return file;
+  } catch (err) {
+    console.warn('[retrieveSharedMediaOnce] Cache API error:', err);
+    return null;
+  }
 }
 
 // Resilient polling helper: polls for up to 3 seconds to eliminate mobile race conditions

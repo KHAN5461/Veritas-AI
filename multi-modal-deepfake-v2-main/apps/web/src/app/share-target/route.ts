@@ -57,36 +57,32 @@ export async function POST(request: Request) {
         }
         const byteArray = new Uint8Array(byteNumbers);
         const blob = new Blob([byteArray], { type: "${mime}" });
-        const fileObj = new File([blob], "${encodeURIComponent(name)}", { type: "${mime}" });
+        const name = decodeURIComponent("${encodeURIComponent(name)}");
+        const fileObj = new File([blob], name, { type: "${mime}" });
 
-        const req = indexedDB.open('veritas_pwa_db', 1);
-        req.onupgradeneeded = function(e) {
-          const db = e.target.result;
-          if (!db.objectStoreNames.contains('shared_media')) {
-            db.createObjectStore('shared_media', { keyPath: 'id' });
-          }
-        };
-        req.onsuccess = function(e) {
-          const db = e.target.result;
-          const tx = db.transaction('shared_media', 'readwrite');
-          tx.objectStore('shared_media').put({
-            id: 'pending_share',
-            file: fileObj,
-            fileName: "${encodeURIComponent(name)}",
-            fileType: "${mime}",
-            fileSize: ${file.size},
-            timestamp: Date.now()
-          });
-          tx.oncomplete = function() {
-            window.location.replace('/analyze?shared=true');
-          };
-          tx.onerror = function() {
-            window.location.replace('/analyze?shared=true');
-          };
-        };
-        req.onerror = function() {
-          window.location.replace('/analyze?share_error=1');
-        };
+        const cache = await caches.open('veritas-shared-media');
+        const oldKeys = await cache.keys();
+        await Promise.all(oldKeys.map(k => cache.delete(k)));
+
+        const key = '/__shared__/' + Date.now() + '-0';
+        await cache.put(
+          key,
+          new Response(fileObj, {
+            headers: {
+              'Content-Type': "${mime}",
+              'X-Original-Name': encodeURIComponent(name)
+            }
+          })
+        );
+
+        await cache.put(
+          '/__shared__/meta',
+          new Response(JSON.stringify({ files: [{ key, name, type: "${mime}", size: ${file.size} }] }), {
+            headers: { 'Content-Type': 'application/json' }
+          })
+        );
+
+        window.location.replace('/analyze?shared=true');
       } catch (err) {
         window.location.replace('/analyze?share_error=1');
       }
