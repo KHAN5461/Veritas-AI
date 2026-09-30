@@ -64,6 +64,9 @@ export async function detectDeepfake(file: File, fileHash: string): Promise<Fore
     const response = await fetch(`${API_BASE_URL}/jobs`, {
       method: 'POST',
       body: formData,
+      headers: {
+        'X-API-Key': process.env.NEXT_PUBLIC_API_KEY || 'dev_key_123'
+      },
       signal: controller.signal
     });
 
@@ -88,7 +91,11 @@ export async function detectDeepfake(file: File, fileHash: string): Promise<Fore
       await new Promise(r => setTimeout(r, 2000));
       attempts++;
       
-      const pollRes = await fetch(`${API_BASE_URL}/jobs/${jobId}`);
+      const pollRes = await fetch(`${API_BASE_URL}/jobs/${jobId}`, {
+        headers: {
+          'X-API-Key': process.env.NEXT_PUBLIC_API_KEY || 'dev_key_123'
+        }
+      });
       if (pollRes.ok) {
         const pollData = await pollRes.json();
         if (pollData.status === 'completed') {

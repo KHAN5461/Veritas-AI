@@ -5,11 +5,37 @@ import shutil
 import requests
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
-from fastapi import FastAPI, UploadFile, File, Form, BackgroundTasks, HTTPException
+from fastapi import FastAPI, UploadFile, File, Form, BackgroundTasks, HTTPException, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.security import APIKeyHeader
+import time
+from collections import defaultdict
 from vision_api import vision_detector
 from audio_api import audio_detector
+
+API_KEY = os.getenv("VERITAS_API_KEY", "dev_key_123")
+api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+
+class RateLimiter:
+    def __init__(self, requests_per_minute: int):
+        self.rpm = requests_per_minute
+        self.requests = defaultdict(list)
+    
+    def check(self, ip: str):
+        now = time.time()
+        self.requests[ip] = [t for t in self.requests[ip] if now - t < 60]
+        if len(self.requests[ip]) >= self.rpm:
+            raise HTTPException(status_code=429, detail="Rate limit exceeded. Try again in a minute.")
+        self.requests[ip].append(now)
+
+limiter = RateLimiter(requests_per_minute=20)
+
+async def verify_api_key(api_key: str = Depends(api_key_header)):
+    if not api_key or api_key != API_KEY:
+        if os.getenv("ENV") == "production":
+            raise HTTPException(status_code=403, detail="Invalid or missing API Key")
+    return api_key
 
 app = FastAPI(title="Multimodal Deepfake Detection API")
 
@@ -120,7 +146,9 @@ def process_job(job_id: str, file_path: str, ext: str, file_hash: str):
             pass
 
 @app.post("/jobs")
-async def create_job(background_tasks: BackgroundTasks, file: UploadFile = File(...), file_hash: str = Form(None)):
+async def create_job(background_tasks: BackgroundTasks, request: Request, file: UploadFile = File(...), file_hash: str = Form(None), api_key: str = Depends(verify_api_key)):
+    if request.client:
+        limiter.check(request.client.host)
     # Early Rejection
     MAX_SIZE = 50 * 1024 * 1024 # 50MB
     # Wait, FastAPI doesn't easily expose size before reading, but we can check if it exceeds memory if we read it
@@ -157,7 +185,9 @@ async def create_job(background_tasks: BackgroundTasks, file: UploadFile = File(
     return {"job_id": job_id, "status": "processing"}
 
 @app.get("/jobs/{job_id}")
-def get_job_status(job_id: str):
+def get_job_status(job_id: str, request: Request, api_key: str = Depends(verify_api_key)):
+    if request.client:
+        limiter.check(request.client.host)
     if job_id not in jobs:
         raise HTTPException(status_code=404, detail="Job not found")
     return jobs[job_id]
