@@ -4,13 +4,11 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export function OfflineBanner() {
-  const [isOffline, setIsOffline] = useState(false);
+  const [isOffline, setIsOffline] = useState(
+    typeof navigator !== 'undefined' ? !navigator.onLine : false
+  );
 
   useEffect(() => {
-    // Check initial state
-    if (typeof navigator !== 'undefined' && !navigator.onLine) {
-      setIsOffline(true);
-    }
 
     const handleOnline = () => setIsOffline(false);
     const handleOffline = () => setIsOffline(true);

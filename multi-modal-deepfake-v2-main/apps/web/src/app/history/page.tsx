@@ -232,6 +232,7 @@ export default function HistoryPage() {
               </motion.div>
             ))}
           </AnimatePresence>
+        </motion.div>
       ) : (
         <motion.div 
           key="empty"
