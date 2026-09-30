@@ -68,6 +68,7 @@ const AnimatedStatWidget = ({ title, value, label, isError, icon, isPercentage =
 
 export default function Home() {
   const [scans, setScans] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
   
   const [dateString, setDateString] = useState('');
@@ -78,11 +79,15 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setIsLoading(false);
+      return;
+    }
     const q = query(collection(db, `users/${user.uid}/scans`), orderBy('createdAt', 'desc'), limit(3));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setScans(data);
+      setIsLoading(false);
     });
     return () => unsubscribe();
   }, [user]);
@@ -216,7 +221,17 @@ export default function Home() {
           <h2 className="text-xl font-semibold text-on-surface tracking-tight">Recent Activity</h2>
         </div>
         
-        {scans.length > 0 ? (
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="animate-pulse flex flex-col bg-surface-container rounded-2xl p-4 h-32 border border-outline-variant/20">
+                <div className="h-4 bg-outline-variant/30 rounded w-2/3 mb-4"></div>
+                <div className="h-6 bg-outline-variant/20 rounded w-1/3 mb-auto"></div>
+                <div className="h-3 bg-outline-variant/20 rounded w-full mt-4"></div>
+              </div>
+            ))}
+          </div>
+        ) : scans.length > 0 ? (
           <motion.div 
             initial="initial"
             whileInView="animate"

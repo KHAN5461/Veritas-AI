@@ -284,7 +284,26 @@ function AnalyzeContent() {
 
   // Unified Drop / Upload Handler
   const handleFilesIngest = async (filesList: FileList | File[]) => {
-    const files = Array.from(filesList);
+    const rawFiles = Array.from(filesList);
+    if (rawFiles.length === 0) return;
+
+    const files: File[] = [];
+    for (const f of rawFiles) {
+      if (f.size > 50 * 1024 * 1024) {
+        toast.error(`File "${f.name}" exceeds 50MB limit.`);
+        continue;
+      }
+      
+      const validTypes = /^(image|video|audio)\//;
+      const validExts = /\.(jpe?g|png|webp|mp4|avi|mov|mkv|webm|flv|mp3|wav|ogg|flac|m4a|aac)$/i;
+      
+      if (!validTypes.test(f.type) && !validExts.test(f.name)) {
+        toast.error(`Unsupported file type: "${f.name}".`);
+        continue;
+      }
+      files.push(f);
+    }
+    
     if (files.length === 0) return;
 
     if (files.length === 1 && activeTab === 'single') {

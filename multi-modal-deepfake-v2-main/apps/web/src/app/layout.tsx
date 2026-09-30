@@ -9,6 +9,7 @@ import { IconButton } from "@repo/ui";
 import { motion } from "framer-motion";
 import { ScrollToTop } from "../components/ScrollToTop";
 import { InstallBanner } from "../components/InstallBanner";
+import { OfflineBanner } from "../components/OfflineBanner";
 import { AuthProvider, useAuth } from "../context/AuthContext";
 import { auth } from "../lib/firebase";
 
@@ -418,6 +419,7 @@ export default function RootLayout({
         suppressHydrationWarning
         className="bg-surface text-on-surface flex h-screen overflow-hidden font-[Inter,system-ui,sans-serif]"
       >
+        <OfflineBanner />
         <PwaInit />
         <AuthProvider>
           <AuthGuard>

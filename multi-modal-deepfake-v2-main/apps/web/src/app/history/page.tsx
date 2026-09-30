@@ -33,6 +33,8 @@ export default function HistoryPage() {
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [sortOrder, setSortOrder] = useState<SortType>('newest');
   const [scans, setScans] = useState<Record<string, unknown>[]>([]);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { user } = useAuth();
   const router = useRouter();
 
@@ -153,14 +155,17 @@ export default function HistoryPage() {
         <Chip label="Audio Only" icon="mic" selected={activeFilter === 'audio'} onClick={() => setActiveFilter('audio')} />
       </div>
 
-      {filtered.length > 0 ? (
-        <motion.div 
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
-          variants={containerVariants}
-          initial="hidden"
-          animate="show"
-        >
-          <AnimatePresence>
+      <AnimatePresence mode="wait">
+        {filtered.length > 0 ? (
+          <motion.div 
+            key="grid"
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+            variants={containerVariants}
+            initial="hidden"
+            animate="show"
+            exit={{ opacity: 0, y: 10, transition: { duration: 0.2 } }}
+          >
+            <AnimatePresence>
             {filtered.map(item => (
               <motion.div 
                 key={item.id} 
@@ -169,36 +174,70 @@ export default function HistoryPage() {
                 transition={{ type: "spring", stiffness: 300, damping: 20 }}
                 layout
               >
-                <ForensicCard title={item.fileName} score={item.confidence} verdict={item.is_fake ? 'AI-Generated' : 'Authentic'}>
-                  <div className="flex justify-between items-center text-xs mt-2 text-on-surface-variant">
-                    <span>{item.date || new Date(item.createdAt?.toDate?.() || Date.now()).toLocaleString()}</span>
-                    <div className="flex items-center gap-3">
-                      <button 
-                        onClick={async (e) => {
-                          e.preventDefault();
-                          if (user && item.id && confirm('Delete this scan record?')) {
-                            const ok = await deleteScanResult(user.uid, item.id as string);
-                            if (ok) toast.success('Scan deleted');
-                            else toast.error('Failed to delete scan');
-                          }
-                        }}
-                        className="text-error hover:text-error/80"
-                        title="Delete record"
-                      >
-                        <span className="material-symbols-outlined text-[16px]">delete</span>
-                      </button>
-                      <a href={`/report/${item.id}`} className="cursor-pointer hover:text-primary underline">View Report</a>
+                <div className="relative">
+                  <ForensicCard title={item.fileName} score={item.confidence} verdict={item.is_fake ? 'AI-Generated' : 'Authentic'}>
+                    <div className="flex justify-between items-center text-xs mt-2 text-on-surface-variant">
+                      <span>{item.date || new Date(item.createdAt?.toDate?.() || Date.now()).toLocaleString()}</span>
+                      <div className="flex items-center gap-3">
+                        <button 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setDeleteConfirmId(item.id as string);
+                          }}
+                          className="text-error hover:text-error/80"
+                          title="Delete record"
+                        >
+                          <span className="material-symbols-outlined text-[16px]">delete</span>
+                        </button>
+                        <a href={`/report/${item.id}`} className="cursor-pointer hover:text-primary underline">View Report</a>
+                      </div>
                     </div>
-                  </div>
-                </ForensicCard>
+                  </ForensicCard>
+
+                  {/* Inline Delete Confirmation Modal */}
+                  <AnimatePresence>
+                    {deleteConfirmId === item.id && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        className="absolute inset-0 bg-surface/90 backdrop-blur-sm rounded-3xl border border-error/30 flex flex-col items-center justify-center p-4 z-10 text-center"
+                      >
+                        <span className="material-symbols-outlined text-error mb-2 text-3xl">warning</span>
+                        <h4 className="font-semibold mb-1">Delete Record?</h4>
+                        <p className="text-xs text-on-surface-variant mb-4">This cannot be undone.</p>
+                        <div className="flex gap-2 w-full">
+                          <Button variant="tonal" className="flex-1" onClick={() => setDeleteConfirmId(null)}>Cancel</Button>
+                          <Button 
+                            className="flex-1 bg-error hover:bg-error/90 text-on-error" 
+                            disabled={isDeleting}
+                            onClick={async () => {
+                              setIsDeleting(true);
+                              if (user && item.id) {
+                                const ok = await deleteScanResult(user.uid, item.id as string);
+                                if (ok) toast.success('Scan deleted successfully');
+                                else toast.error('Failed to delete scan');
+                              }
+                              setIsDeleting(false);
+                              setDeleteConfirmId(null);
+                            }}
+                          >
+                            {isDeleting ? 'Deleting...' : 'Delete'}
+                          </Button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               </motion.div>
             ))}
           </AnimatePresence>
-        </motion.div>
       ) : (
         <motion.div 
+          key="empty"
           initial={{ opacity: 0, scale: 0.95 }} 
           animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
           transition={{ duration: 0.3 }}
         >
           <Card className="flex flex-col items-center justify-center py-16 text-center">
@@ -218,8 +257,9 @@ export default function HistoryPage() {
               </Button>
             </div>
           </Card>
-        </motion.div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
