@@ -92,3 +92,16 @@ export async function getUserScans(userId: string) {
     throw error;
   }
 }
+
+import { deleteDoc } from 'firebase/firestore';
+
+export async function deleteScanResult(userId: string, scanId: string) {
+  try {
+    const docRef = doc(db, `users/${userId}/scans`, scanId);
+    await deleteDoc(docRef);
+    return true;
+  } catch (error) {
+    console.error("Error deleting scan: ", error);
+    return false;
+  }
+}

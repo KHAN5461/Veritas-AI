@@ -347,7 +347,7 @@ function AnalyzeContent() {
       setLoadingText('Executing ViT & Frequency spectral neural networks...');
       setProgress(55);
 
-      const data = await detectDeepfake(selectedFile);
+      const data = await detectDeepfake(selectedFile, hash);
       if (data.mode === 'heuristic_fallback') {
         toast.warning('Offline mode: Using local heuristic analysis');
       }
@@ -437,7 +437,7 @@ function AnalyzeContent() {
 
       try {
         const hash = await calculateSHA256(item.file);
-        const data = await detectDeepfake(item.file);
+        const data = await detectDeepfake(item.file, hash);
 
         if (user) {
           saveScanResult(

@@ -3,7 +3,9 @@ import os
 import uuid
 import shutil
 import requests
-from fastapi import FastAPI, UploadFile, File
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
+from fastapi import FastAPI, UploadFile, File, Form, BackgroundTasks, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from vision_api import vision_detector
@@ -21,6 +23,10 @@ app.add_middleware(
 
 AUDIO_VIDEO_EXTS = {'.mp4', '.avi', '.mov', '.mkv', '.webm', '.flv', '.mp3', '.wav', '.ogg', '.flac', '.m4a', '.aac'}
 
+jobs = {}
+results_cache = {}
+executor = ThreadPoolExecutor(max_workers=4)
+
 def check_desync(file_path):
     try:
         res = requests.post('https://api-inference.huggingface.co/models/deepfake-desync', files={'file': open(file_path, 'rb')})
@@ -28,22 +34,11 @@ def check_desync(file_path):
     except:
         return None
 
-@app.post("/detect")
-async def submit_video(file: UploadFile = File(...)):
-    os.makedirs("temp", exist_ok=True)
-    ext = os.path.splitext(file.filename)[1].lower()
-    unique_name = f"{uuid.uuid4().hex}{ext}"
-    file_path = os.path.join("temp", unique_name)
-    
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-        
-    print(f"Processing media: {file.filename} synchronously...")
-    
-    is_video = ext in {'.mp4', '.avi', '.mov', '.mkv', '.webm', '.flv'}
-    has_audio = ext in AUDIO_VIDEO_EXTS
-    
+def process_job(job_id: str, file_path: str, ext: str, file_hash: str):
     try:
+        is_video = ext in {'.mp4', '.avi', '.mov', '.mkv', '.webm', '.flv'}
+        has_audio = ext in AUDIO_VIDEO_EXTS
+        
         # 1. Vision
         vision_result = vision_detector.predict_vision(file_path, is_video=is_video)
         vision_score = vision_result.get("score", 0.0)
@@ -70,9 +65,32 @@ async def submit_video(file: UploadFile = File(...)):
             # Factor in lip sync if it's available
             fusion_score = (fusion_score * 0.8) + (float(lip_sync_score) * 0.2)
         
-        return {
-            "is_fake": bool(fusion_score > 0.5),
+        # Phase 2: Metadata & Quality Flags
+        # (Mock implementation of quality flags lowering confidence)
+        # In a real scenario, this would use ffprobe or exiftool
+        quality_flags = []
+        file_size = os.path.getsize(file_path)
+        if file_size < 100 * 1024 and is_video: # Less than 100kb video is heavily compressed
+            quality_flags.append("Heavy Compression")
+            fusion_score = fusion_score * 0.9 # lower confidence
+            
+        if len(vision_result.get("faces", [])) == 0 and not has_audio:
+            quality_flags.append("No Face Found")
+            fusion_score = 0.5 # Inconclusive if no face and no audio
+            
+        # Phase 2: Three Verdict Bands
+        if fusion_score > 0.65:
+            verdict = "Likely fake"
+        elif fusion_score < 0.35:
+            verdict = "Likely real"
+        else:
+            verdict = "Inconclusive"
+
+        result_data = {
+            "is_fake": bool(fusion_score > 0.5), # Keep for backwards compatibility
+            "verdict": verdict,
             "confidence": float(fusion_score),
+            "quality_flags": quality_flags,
             "breakdown": {
                 "visual_score": float(vision_score),
                 "audio_score": float(audio_score) if has_audio else None,
@@ -86,11 +104,84 @@ async def submit_video(file: UploadFile = File(...)):
             "audio_flatness": audio_result.get("flatness", 0.0),
             "audio_phase": audio_result.get("phase", 0.0),
         }
+        
+        jobs[job_id] = {"status": "completed", "result": result_data}
+        
+        # Cache the result
+        if file_hash:
+            results_cache[file_hash] = result_data
+            
+    except Exception as e:
+        jobs[job_id] = {"status": "failed", "error": str(e)}
     finally:
         try:
             os.remove(file_path)
         except:
             pass
+
+@app.post("/jobs")
+async def create_job(background_tasks: BackgroundTasks, file: UploadFile = File(...), file_hash: str = Form(None)):
+    # Early Rejection
+    MAX_SIZE = 50 * 1024 * 1024 # 50MB
+    # Wait, FastAPI doesn't easily expose size before reading, but we can check if it exceeds memory if we read it
+    # We will just write it and check size
+    
+    if file_hash and file_hash in results_cache:
+        return {"job_id": "cached", "status": "completed", "result": results_cache[file_hash]}
+        
+    os.makedirs("temp", exist_ok=True)
+    ext = os.path.splitext(file.filename)[1].lower()
+    
+    valid_exts = {'.mp4', '.avi', '.mov', '.mkv', '.webm', '.flv', '.mp3', '.wav', '.ogg', '.flac', '.m4a', '.aac', '.jpg', '.jpeg', '.png', '.webp'}
+    if ext not in valid_exts:
+        raise HTTPException(status_code=400, detail="Invalid file type. Please upload a supported media file.")
+        
+    unique_name = f"{uuid.uuid4().hex}{ext}"
+    file_path = os.path.join("temp", unique_name)
+    
+    file_size = 0
+    with open(file_path, "wb") as buffer:
+        while chunk := await file.read(8192):
+            file_size += len(chunk)
+            if file_size > MAX_SIZE:
+                os.remove(file_path)
+                raise HTTPException(status_code=400, detail="File too large. Maximum size is 50MB.")
+            buffer.write(chunk)
+            
+    job_id = uuid.uuid4().hex
+    jobs[job_id] = {"status": "processing"}
+    
+    # Run in thread pool to not block async loop
+    background_tasks.add_task(process_job, job_id, file_path, ext, file_hash)
+    
+    return {"job_id": job_id, "status": "processing"}
+
+@app.get("/jobs/{job_id}")
+def get_job_status(job_id: str):
+    if job_id not in jobs:
+        raise HTTPException(status_code=404, detail="Job not found")
+    return jobs[job_id]
+
+# Legacy endpoint for backwards compatibility during migration
+@app.post("/detect")
+async def submit_video(file: UploadFile = File(...)):
+    # ... legacy synchronous code ...
+    os.makedirs("temp", exist_ok=True)
+    ext = os.path.splitext(file.filename)[1].lower()
+    unique_name = f"{uuid.uuid4().hex}{ext}"
+    file_path = os.path.join("temp", unique_name)
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+    
+    job_id = uuid.uuid4().hex
+    jobs[job_id] = {"status": "processing"}
+    process_job(job_id, file_path, ext, None)
+    
+    res = jobs[job_id]
+    if res["status"] == "completed":
+        return res["result"]
+    else:
+        raise HTTPException(status_code=500, detail=res.get("error", "Failed"))
 
 @app.get("/health")
 def health_check():

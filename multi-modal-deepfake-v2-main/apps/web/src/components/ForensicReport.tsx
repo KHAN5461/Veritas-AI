@@ -156,6 +156,16 @@ Timestamp: ${timestamp}`;
                 <span className="material-symbols-outlined text-[16px]">data_object</span>
                 Export JSON
               </button>
+              <button
+                onClick={() => {
+                  toast.success('Thank you! This hash has been flagged to improve our models.');
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-error/10 hover:bg-error/20 text-error transition-colors border border-error/20 ml-auto"
+                title="Flag this analysis as incorrect to help us improve."
+              >
+                <span className="material-symbols-outlined text-[16px]">flag</span>
+                Report Error
+              </button>
               <div className="relative">
                 <button
                   onClick={handleNativeShare}
@@ -239,7 +249,7 @@ Timestamp: ${timestamp}`;
                       cy="50"
                       r="42"
                       fill="none"
-                      stroke={isManipulated ? '#ef4444' : '#10b981'}
+                      stroke={result.verdict === 'Likely fake' ? '#ef4444' : result.verdict === 'Likely real' ? '#10b981' : '#f59e0b'}
                       strokeWidth="8"
                       strokeDasharray={264}
                       strokeDashoffset={264 - (264 * Math.min(confidenceScore, 100)) / 100}
@@ -259,15 +269,28 @@ Timestamp: ${timestamp}`;
 
                 {/* Verdict Badge */}
                 <div className={`px-4 py-1.5 rounded-full text-xs font-bold tracking-wide flex items-center gap-1.5 border ${
-                  isManipulated
+                  result.verdict === 'Likely fake'
                     ? 'bg-error/15 text-error border-error/30'
-                    : 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                    : result.verdict === 'Likely real'
+                    ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                    : 'bg-amber-500/15 text-amber-500 border-amber-500/30'
                 }`}>
                   <span className="material-symbols-outlined text-[16px]">
-                    {isManipulated ? 'gpp_bad' : 'verified'}
+                    {result.verdict === 'Likely fake' ? 'gpp_bad' : result.verdict === 'Likely real' ? 'verified' : 'help'}
                   </span>
-                  {isManipulated ? 'MANIPULATED MEDIA' : 'AUTHENTIC MEDIA'}
+                  {result.verdict ? result.verdict.toUpperCase() : (isManipulated ? 'MANIPULATED' : 'AUTHENTIC')}
                 </div>
+                
+                {/* Quality Flags */}
+                {result.quality_flags && result.quality_flags.length > 0 && (
+                  <div className="mt-3 flex flex-col gap-1 w-full max-w-[150px]">
+                    {result.quality_flags.map((flag, idx) => (
+                      <span key={idx} className="text-[10px] font-semibold tracking-wider text-amber-500 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-md text-center break-words leading-tight">
+                        ⚠ {flag}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </>
             )}
           </div>

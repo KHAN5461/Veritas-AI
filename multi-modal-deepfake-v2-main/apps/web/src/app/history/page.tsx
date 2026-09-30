@@ -7,6 +7,7 @@ import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { useAuth } from '../../context/AuthContext';
 import { useRouter } from 'next/navigation';
+import { deleteScanResult } from '../../lib/scans';
 import { toast } from 'sonner';
 
 type FilterType = 'all' | 'high_risk' | 'authentic' | 'audio';
@@ -171,7 +172,23 @@ export default function HistoryPage() {
                 <ForensicCard title={item.fileName} score={item.confidence} verdict={item.is_fake ? 'AI-Generated' : 'Authentic'}>
                   <div className="flex justify-between items-center text-xs mt-2 text-on-surface-variant">
                     <span>{item.date || new Date(item.createdAt?.toDate?.() || Date.now()).toLocaleString()}</span>
-                    <a href={`/report/${item.id}`} className="cursor-pointer hover:text-primary underline">View Report</a>
+                    <div className="flex items-center gap-3">
+                      <button 
+                        onClick={async (e) => {
+                          e.preventDefault();
+                          if (user && item.id && confirm('Delete this scan record?')) {
+                            const ok = await deleteScanResult(user.uid, item.id as string);
+                            if (ok) toast.success('Scan deleted');
+                            else toast.error('Failed to delete scan');
+                          }
+                        }}
+                        className="text-error hover:text-error/80"
+                        title="Delete record"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">delete</span>
+                      </button>
+                      <a href={`/report/${item.id}`} className="cursor-pointer hover:text-primary underline">View Report</a>
+                    </div>
                   </div>
                 </ForensicCard>
               </motion.div>

@@ -19,7 +19,10 @@ chrome.contextMenus.onClicked.addListener((info: any, tab: any) => {
       chrome.storage.local.get(['pendingScans'], (result: any) => {
         const queue = result.pendingScans || [];
         queue.push(targetUrl);
-        chrome.storage.local.set({ pendingScans: queue });
+        chrome.storage.local.set({ pendingScans: queue }, () => {
+          chrome.action.setBadgeText({ text: queue.length > 0 ? String(queue.length) : "" });
+          chrome.action.setBadgeBackgroundColor({ color: "#ef4444" });
+        });
       });
       
       // Open the side panel for the current tab
@@ -46,20 +49,41 @@ chrome.runtime.onMessage.addListener((message: any, sender: any, sendResponse: a
         const name = message.url.split('/').pop()?.split('?')[0] || `media.${ext}`;
         const formData = new FormData();
         formData.append('file', blob, name);
+        formData.append('file_hash', ''); // Extension doesn't easily compute SHA-256 synchronously
         
-        const apiRes = await fetch('https://upside-shower-handling.ngrok-free.dev/detect', {
+        const apiRes = await fetch('https://upside-shower-handling.ngrok-free.dev/jobs', {
           method: 'POST',
           body: formData
         });
         
         if (!apiRes.ok) throw new Error('API Error');
-        const data = await apiRes.json();
+        const jobData = await apiRes.json();
+        const jobId = jobData.job_id;
+
+        let attempts = 0;
+        let finalData = null;
+        while (attempts < 60) {
+          await new Promise(r => setTimeout(r, 2000));
+          attempts++;
+          const pollRes = await fetch(`https://upside-shower-handling.ngrok-free.dev/jobs/${jobId}`);
+          if (pollRes.ok) {
+            const pollData = await pollRes.json();
+            if (pollData.status === 'completed') {
+              finalData = pollData.result;
+              break;
+            } else if (pollData.status === 'failed') {
+              throw new Error('Analysis failed');
+            }
+          }
+        }
+        
+        if (!finalData) throw new Error('Timeout');
         
         sendResponse({
           success: true,
-          is_fake: data.is_fake,
-          confidence: data.confidence,
-          data
+          is_fake: finalData.is_fake,
+          confidence: finalData.confidence,
+          data: finalData
         });
       } catch (err) {
         sendResponse({ success: false, error: String(err) });

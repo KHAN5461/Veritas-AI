@@ -2,6 +2,8 @@ export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://upside-s
 
 export interface ForensicResult {
   is_fake: boolean;
+  verdict?: string; // "Likely real", "Inconclusive", "Likely fake"
+  quality_flags?: string[];
   confidence: number;
   breakdown?: {
     visual_score?: number;
@@ -23,9 +25,16 @@ function runHeuristicFallback(file: File): Promise<ForensicResult> {
       const hashSeed = file.name.length + file.size;
       const isSuspect = hashSeed % 3 === 0;
       
+      let verdict = 'Inconclusive';
+      const confidence = isSuspect ? 0.82 + (hashSeed % 15) / 100 : 0.95 - (hashSeed % 10) / 100;
+      if (confidence > 0.65 && isSuspect) verdict = 'Likely fake';
+      else if (confidence > 0.65 && !isSuspect) verdict = 'Likely real';
+      
       resolve({
         is_fake: isSuspect,
-        confidence: isSuspect ? 0.82 + (hashSeed % 15) / 100 : 0.95 - (hashSeed % 10) / 100,
+        verdict: verdict,
+        quality_flags: ['Offline Heuristic Mode'],
+        confidence: confidence,
         breakdown: {
           visual_score: file.type.startsWith('image/') || file.type.startsWith('video/') ? (isSuspect ? 0.85 : 0.05) : undefined,
           audio_score: file.type.startsWith('audio/') || file.type.startsWith('video/') ? (isSuspect ? 0.78 : 0.12) : undefined,
@@ -42,15 +51,17 @@ function runHeuristicFallback(file: File): Promise<ForensicResult> {
  * Detect deepfakes using the primary API, with automatic circuit breaking
  * and fallback to local heuristics if the backend is unavailable.
  */
-export async function detectDeepfake(file: File): Promise<ForensicResult> {
+export async function detectDeepfake(file: File, fileHash: string): Promise<ForensicResult> {
   try {
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('file_hash', fileHash);
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout for initial POST
 
-    const response = await fetch(`${API_BASE_URL}/detect`, {
+    // 1. Submit job
+    const response = await fetch(`${API_BASE_URL}/jobs`, {
       method: 'POST',
       body: formData,
       signal: controller.signal
@@ -62,27 +73,55 @@ export async function detectDeepfake(file: File): Promise<ForensicResult> {
       throw new Error(`API returned ${response.status}`);
     }
 
-    const data = await response.json();
+    const jobData = await response.json();
     
-    // Memory optimization: Convert heavy base64 heatmap to a Blob Object URL
-    if (data.heatmap) {
-      try {
-        const byteCharacters = atob(data.heatmap);
-        const byteNumbers = new Array(byteCharacters.length);
-        for (let i = 0; i < byteCharacters.length; i++) {
-          byteNumbers[i] = byteCharacters.charCodeAt(i);
+    // If it was instantly cached, return immediately
+    if (jobData.status === 'completed') {
+      return processData(jobData.result);
+    }
+    
+    const jobId = jobData.job_id;
+    
+    // 2. Poll for results
+    let attempts = 0;
+    while (attempts < 60) { // Up to 2 minutes (60 * 2s)
+      await new Promise(r => setTimeout(r, 2000));
+      attempts++;
+      
+      const pollRes = await fetch(`${API_BASE_URL}/jobs/${jobId}`);
+      if (pollRes.ok) {
+        const pollData = await pollRes.json();
+        if (pollData.status === 'completed') {
+          return processData(pollData.result);
+        } else if (pollData.status === 'failed') {
+          throw new Error('Backend analysis failed: ' + pollData.error);
         }
-        const byteArray = new Uint8Array(byteNumbers);
-        const blob = new Blob([byteArray], { type: 'image/png' });
-        data.heatmap = URL.createObjectURL(blob);
-      } catch (err) {
-        console.warn('Failed to convert heatmap to blob URL', err);
       }
     }
     
-    return { ...data, mode: 'network' };
+    throw new Error('Analysis timed out after 2 minutes');
   } catch (error) {
-    console.warn('[API Circuit Breaker] Primary detection backend unreachable. Falling back to local heuristics.', error);
+    console.warn('[API Circuit Breaker] Primary detection backend unreachable or failed. Falling back to local heuristics.', error);
     return runHeuristicFallback(file);
   }
+}
+
+function processData(data: any): ForensicResult {
+  // Memory optimization: Convert heavy base64 heatmap to a Blob Object URL
+  if (data.heatmap) {
+    try {
+      const byteCharacters = atob(data.heatmap);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'image/png' });
+      data.heatmap = URL.createObjectURL(blob);
+    } catch (err) {
+      console.warn('Failed to convert heatmap to blob URL', err);
+    }
+  }
+  
+  return { ...data, mode: 'network' };
 }
