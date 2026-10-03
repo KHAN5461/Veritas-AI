@@ -45,44 +45,44 @@ interface QueueItem {
   result?: ForensicResult;
 }
 
-async function retrieveSharedMediaOnce(): Promise<File | null> {
+const SHARE_CACHE = 'veritas-shared-media';
+
+// Reads EVERY file the service worker stored for the last share, then clears the cache.
+async function retrieveSharedMediaOnce(): Promise<File[]> {
   try {
-    const cache = await caches.open('veritas-shared-media');
+    const cache = await caches.open(SHARE_CACHE);
     const metaRes = await cache.match('/__shared__/meta');
-    if (!metaRes) return null;
+    if (!metaRes) return [];
 
     const meta = await metaRes.json();
-    if (!meta.files || meta.files.length === 0) return null;
+    const entries: Array<{ key: string; name?: string; type?: string }> = meta.files || [];
 
-    const m = meta.files[0];
-    const res = await cache.match(m.key);
-    if (!res) return null;
-    
-    const blob = await res.blob();
-    const file = new File([blob], m.name || 'shared-file', { type: m.type || blob.type });
+    const files: File[] = [];
+    for (const m of entries) {
+      const res = await cache.match(m.key);
+      if (!res) continue;
+      const blob = await res.blob();
+      files.push(new File([blob], m.name || 'shared-file', { type: m.type || blob.type }));
+    }
+    if (files.length === 0) return [];
 
     const keys = await cache.keys();
     await Promise.all(keys.map((k) => cache.delete(k)));
-
-    return file;
+    return files;
   } catch (err) {
     console.warn('[retrieveSharedMediaOnce] Cache API error:', err);
-    return null;
+    return [];
   }
 }
 
-// Resilient polling helper: polls for up to 3 seconds to eliminate mobile race conditions
-// We use 6 attempts at 500ms to give the Service Worker ample time to write 50MB blobs to IndexedDB
-async function retrieveSharedMediaWithRetry(maxAttempts = 6, intervalMs = 500): Promise<File | null> {
+// The service worker finishes writing BEFORE it redirects here, but we still poll briefly for safety.
+async function retrieveSharedMediaWithRetry(maxAttempts = 6, intervalMs = 500): Promise<File[]> {
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    const file = await retrieveSharedMediaOnce();
-    if (file) return file;
-    if (attempt < maxAttempts) {
-      console.log(`[PWA] Shared file not ready yet. Retrying in ${intervalMs}ms... (Attempt ${attempt}/${maxAttempts})`);
-      await new Promise((res) => setTimeout(res, intervalMs));
-    }
+    const files = await retrieveSharedMediaOnce();
+    if (files.length > 0) return files;
+    if (attempt < maxAttempts) await new Promise((res) => setTimeout(res, intervalMs));
   }
-  return null;
+  return [];
 }
 
 function AnalyzeContent() {
@@ -117,6 +117,46 @@ function AnalyzeContent() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const isIngestingSharedRef = useRef(false);
+  const lastSharedAtRef = useRef(0);
+  // Always points at the newest analyze/ingest functions (so shared files see the current `user`)
+  const latestFns = useRef<{
+    analyze: (f: File) => Promise<void>;
+    ingest: (f: FileList | File[]) => Promise<void>;
+  } | null>(null);
+
+  const ingestSharedMedia = async () => {
+    // Guard against double runs (strict mode, URL clean-up re-triggering the effect)
+    if (isIngestingSharedRef.current) return;
+    if (Date.now() - lastSharedAtRef.current < 15000) return;
+    isIngestingSharedRef.current = true;
+    const toastId = toast.loading('Receiving shared media...');
+    try {
+      const sharedFiles = await retrieveSharedMediaWithRetry();
+      toast.dismiss(toastId);
+      if (sharedFiles.length === 0) {
+        toast.error('Shared file was not found in storage. Please select the file directly.');
+        return;
+      }
+      lastSharedAtRef.current = Date.now();
+
+      if (sharedFiles.length === 1) {
+        const f = sharedFiles[0];
+        if (f.size > 50 * 1024 * 1024) {
+          toast.error(`File "${f.name}" exceeds 50MB limit.`);
+          return;
+        }
+        toast.success(`Received: ${f.name}`);
+        setActiveTab('single');
+        void latestFns.current?.analyze(f);
+      } else {
+        toast.success(`Received ${sharedFiles.length} shared files`);
+        setActiveTab('batch');
+        void latestFns.current?.ingest(sharedFiles);
+      }
+    } finally {
+      isIngestingSharedRef.current = false;
+    }
+  };
 
   // Handle URL mode switch query
   useEffect(() => {
@@ -161,41 +201,10 @@ function AnalyzeContent() {
       return;
     }
 
-    // Shared media file from Android intent
-    if (searchParams.get('shared') === 'true' && !isIngestingSharedRef.current) {
-      isIngestingSharedRef.current = true;
+    // Shared media from the Android share sheet (service worker already stored it in CacheStorage)
+    if (searchParams.get('shared') === 'true') {
       window.history.replaceState({}, '', '/analyze');
-      
-      const toastId = toast.loading('Receiving shared media from Android...');
-
-      retrieveSharedMediaWithRetry().then((fileObj) => {
-        toast.dismiss(toastId);
-        if (fileObj) {
-          toast.success(`Received: ${fileObj.name}`);
-          setActiveTab('single');
-          analyzeSingleFile(fileObj);
-        } else {
-          toast.error('Shared file was not found in storage. Please select file directly.');
-        }
-        isIngestingSharedRef.current = false;
-      });
-    }
-
-    // Direct push notification from Service Worker if PWA was already open
-    const handleSwMessage = (event: MessageEvent) => {
-      if (event.data?.type === 'VERITAS_PWA_MEDIA_SHARED') {
-        retrieveSharedMediaWithRetry().then((fileObj) => {
-          if (fileObj) {
-            toast.success(`Received shared media: ${fileObj.name}`);
-            setActiveTab('single');
-            analyzeSingleFile(fileObj);
-          }
-        });
-      }
-    };
-
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.addEventListener('message', handleSwMessage);
+      void ingestSharedMedia();
     }
 
     // Extension sync listener
@@ -364,6 +373,8 @@ function AnalyzeContent() {
       setIsLoading(false);
     }
   };
+
+  latestFns.current = { analyze: analyzeSingleFile, ingest: handleFilesIngest };
 
   const resetSingle = () => {
     setFile(null);
