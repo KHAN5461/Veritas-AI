@@ -141,17 +141,13 @@ function AnalyzeContent() {
 
       if (sharedFiles.length === 1) {
         const f = sharedFiles[0];
-        if (f.size > 50 * 1024 * 1024) {
-          toast.error(`File "${f.name}" exceeds 50MB limit.`);
-          return;
-        }
         toast.success(`Received: ${f.name}`);
         setActiveTab('single');
-        void latestFns.current?.analyze(f);
+        await handleFilesIngest([f]);
       } else {
         toast.success(`Received ${sharedFiles.length} shared files`);
         setActiveTab('batch');
-        void latestFns.current?.ingest(sharedFiles);
+        await handleFilesIngest(sharedFiles);
       }
     } finally {
       isIngestingSharedRef.current = false;
@@ -630,19 +626,33 @@ function AnalyzeContent() {
                   <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
                     <Button
                       variant="filled"
-                      onClick={() => {
-                        toast.info('Downloading media from link...');
-                        fetch(sharedLinkUrl)
-                          .then((res) => res.blob())
-                          .then((blob) => {
-                            const fileName = sharedLinkUrl.split('/').pop()?.split('?')[0] || 'shared-media';
-                            const fileObj = new File([blob], fileName, { type: blob.type });
-                            setSharedLinkUrl('');
-                            analyzeSingleFile(fileObj);
-                          })
-                          .catch(() => {
-                            toast.error('Direct download restricted by provider. Please save media and upload directly.');
-                          });
+                      onClick={async () => {
+                        const toastId = toast.loading('Extracting media from link...');
+                        try {
+                          const res = await fetch(`/api/fetch-media?url=${encodeURIComponent(sharedLinkUrl)}`);
+                          if (!res.ok) {
+                            const errData = await res.json().catch(() => ({}));
+                            throw new Error(errData.error || `Server responded with ${res.status}`);
+                          }
+                          const blob = await res.blob();
+                          const disposition = res.headers.get('content-disposition');
+                          let fileName = 'shared-media';
+                          if (disposition && disposition.includes('filename=')) {
+                            const match = disposition.match(/filename="?([^"]+)"?/);
+                            if (match) fileName = decodeURIComponent(match[1]);
+                          } else {
+                            const ext = blob.type.split('/')[1]?.split(';')[0] || 'jpg';
+                            fileName = `shared-media.${ext}`;
+                          }
+                          const fileObj = new File([blob], fileName, { type: blob.type });
+                          toast.dismiss(toastId);
+                          toast.success(`Extracted: ${fileName}`);
+                          setSharedLinkUrl('');
+                          await handleFilesIngest([fileObj]);
+                        } catch (err: any) {
+                          toast.dismiss(toastId);
+                          toast.error(err?.message || 'Could not fetch media. Please download and upload the file directly.');
+                        }
                       }}
                       className="text-xs !py-2 !px-4"
                     >

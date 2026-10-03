@@ -72,9 +72,19 @@ self.addEventListener('fetch', (event) => {
 });
 
 function safeName(file, index) {
-  let name = (file.name || '').trim() || `shared-media-${index}`;
+  let name = (file.name || '').trim();
+  const cleanMime = (file.type || '').split(';')[0].trim().toLowerCase();
+  
+  if (!name || name === 'blob' || name === 'shared-media') {
+    name = `shared-media-${index}`;
+  }
+  
   if (!/\.[a-z0-9]{2,5}$/i.test(name)) {
-    name += '.' + (EXT_BY_MIME[file.type] || 'bin');
+    const ext = EXT_BY_MIME[cleanMime] || 
+      (cleanMime.startsWith('image/') ? 'jpg' :
+       cleanMime.startsWith('video/') ? 'mp4' :
+       cleanMime.startsWith('audio/') ? 'mp3' : 'jpg');
+    name += '.' + ext;
   }
   return name;
 }
@@ -85,12 +95,13 @@ async function handleShareTarget(request) {
   try {
     const formData = await request.formData();
 
-    let mediaFiles = formData.getAll('media');
-    if (!mediaFiles.length) mediaFiles = formData.getAll('file');
-    if (!mediaFiles.length) mediaFiles = formData.getAll('files');
-
-    // Real files only (text fields come through as strings)
-    const validFiles = mediaFiles.filter((f) => f instanceof File && f.size > 0);
+    // Comprehensive extraction of all binary files from any form field key
+    const validFiles = [];
+    for (const [key, value] of formData.entries()) {
+      if (value && typeof value === 'object' && typeof value.size === 'number' && value.size > 0) {
+        validFiles.push(value);
+      }
+    }
 
     const sharedUrl = formData.get('url') || formData.get('link');
     const sharedText = formData.get('text');
@@ -108,17 +119,19 @@ async function handleShareTarget(request) {
       for (let i = 0; i < validFiles.length; i++) {
         const f = validFiles[i];
         const fileName = safeName(f, i);
-        const type = f.type || 'application/octet-stream';
+        const cleanType = (f.type || '').split(';')[0].trim() || 
+          (fileName.endsWith('.mp4') || fileName.endsWith('.mov') || fileName.endsWith('.webm') ? 'video/mp4' :
+           fileName.endsWith('.mp3') || fileName.endsWith('.wav') || fileName.endsWith('.ogg') ? 'audio/mpeg' : 'image/jpeg');
         const key = `/__shared__/${stamp}-${i}`;
 
         // Wrapping the File directly avoids copying it into memory
         await cache.put(
           key,
           new Response(f, {
-            headers: { 'Content-Type': type, 'X-Original-Name': encodeURIComponent(fileName) }
+            headers: { 'Content-Type': cleanType, 'X-Original-Name': encodeURIComponent(fileName) }
           })
         );
-        meta.push({ key, name: fileName, type, size: f.size });
+        meta.push({ key, name: fileName, type: cleanType, size: f.size });
       }
 
       // Meta is written LAST, so its presence means every file is ready
@@ -129,8 +142,6 @@ async function handleShareTarget(request) {
         })
       );
 
-      // The redirect below always navigates the window, so no postMessage is needed
-      // (a message to an old page that is about to unload would consume the files and lose them).
       return redirect('/analyze?shared=true');
     }
 
