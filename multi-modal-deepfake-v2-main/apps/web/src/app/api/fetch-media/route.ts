@@ -2,12 +2,24 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
+function extractYouTubeId(url: string): string | null {
+  const regExp = /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/;
+  const match = url.match(regExp);
+  return match ? match[1] : null;
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const targetUrl = searchParams.get('url');
+  let targetUrl = searchParams.get('url');
 
   if (!targetUrl) {
     return NextResponse.json({ error: 'Missing url parameter' }, { status: 400 });
+  }
+
+  // If text contains a URL inside, extract just the URL
+  const extractedUrl = targetUrl.match(/https?:\/\/[^\s"']+/)?.[0];
+  if (extractedUrl) {
+    targetUrl = extractedUrl;
   }
 
   try {
@@ -16,68 +28,143 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid URL protocol' }, { status: 400 });
     }
 
-    // Server-side fetch bypasses browser CORS restrictions
+    // 1. Specialized Handler: YouTube
+    const ytId = extractYouTubeId(targetUrl);
+    if (ytId) {
+      const ytThumbUrls = [
+        `https://img.youtube.com/vi/${ytId}/maxresdefault.jpg`,
+        `https://img.youtube.com/vi/${ytId}/sddefault.jpg`,
+        `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`
+      ];
+
+      for (const thumbUrl of ytThumbUrls) {
+        try {
+          const thumbRes = await fetch(thumbUrl);
+          if (thumbRes.ok && thumbRes.status === 200) {
+            const buffer = await thumbRes.arrayBuffer();
+            // maxresdefault returns 120x90 placeholder if not found (typically < 2000 bytes)
+            if (buffer.byteLength > 5000 || thumbUrl.includes('hqdefault')) {
+              return new NextResponse(buffer, {
+                status: 200,
+                headers: {
+                  'Content-Type': 'image/jpeg',
+                  'Content-Disposition': `inline; filename="youtube-${ytId}-frame.jpg"`,
+                  'Cache-Control': 'no-store'
+                }
+              });
+            }
+          }
+        } catch {}
+      }
+    }
+
+    // 2. Specialized Handler: Reddit Preview / Media
+    if (targetUrl.includes('reddit.com') || targetUrl.includes('redd.it')) {
+      if (targetUrl.includes('preview.redd.it') || targetUrl.includes('i.redd.it')) {
+        targetUrl = targetUrl.replace(/&amp;/g, '&');
+      }
+    }
+
+    // 3. Fetch target with realistic browser headers
     const upstreamRes = await fetch(targetUrl, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'image/*,video/*,audio/*,*/*'
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Sec-Ch-Ua': '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
+        'Sec-Ch-Ua-Mobile': '?0',
+        'Sec-Ch-Ua-Platform': '"Windows"',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'none',
+        'Sec-Fetch-User': '?1'
       },
       redirect: 'follow'
     });
 
     if (!upstreamRes.ok) {
       return NextResponse.json(
-        { error: `Remote server returned HTTP ${upstreamRes.status}` },
+        { error: `Remote server returned HTTP ${upstreamRes.status}. The host may block direct fetching.` },
         { status: upstreamRes.status }
       );
     }
 
     const contentType = (upstreamRes.headers.get('content-type') || '').toLowerCase();
 
-    // If it is an HTML page (like social media links), try to extract og:image or og:video
+    // 4. If HTML Page, parse OpenGraph, Twitter, and HTML5 media tags
     if (contentType.includes('text/html')) {
       const html = await upstreamRes.text();
-      const mediaMatch =
-        html.match(/<meta[^>]+property=["']og:video(?::url)?["'][^>]+content=["']([^"']+)["']/i) ||
-        html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:video(?::url)?["']/i) ||
-        html.match(/<meta[^>]+property=["']og:image(?::url)?["'][^>]+content=["']([^"']+)["']/i) ||
-        html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image(?::url)?["']/i) ||
-        html.match(/<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i);
 
-      if (mediaMatch && mediaMatch[1]) {
-        let extractedMediaUrl = mediaMatch[1];
-        if (extractedMediaUrl.startsWith('/')) {
-          extractedMediaUrl = new URL(extractedMediaUrl, targetUrl).href;
+      const candidateUrls: string[] = [];
+
+      // Look for og:video, twitter:player:stream
+      const videoMatches = [
+        ...html.matchAll(/<meta[^>]+(?:property|name)=["'](?:og:video|og:video:url|og:video:secure_url|twitter:player:stream)["'][^>]+content=["']([^"']+)["']/gi),
+        ...html.matchAll(/<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["'](?:og:video|og:video:url|og:video:secure_url|twitter:player:stream)["']/gi),
+        ...html.matchAll(/<video[^>]+src=["']([^"']+)["']/gi),
+        ...html.matchAll(/<source[^>]+src=["']([^"']+)["']/gi)
+      ];
+      for (const m of videoMatches) {
+        if (m[1]) candidateUrls.push(m[1]);
+      }
+
+      // Look for og:image, twitter:image
+      const imageMatches = [
+        ...html.matchAll(/<meta[^>]+(?:property|name)=["'](?:og:image|og:image:url|og:image:secure_url|twitter:image|twitter:image:src)["'][^>]+content=["']([^"']+)["']/gi),
+        ...html.matchAll(/<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["'](?:og:image|og:image:url|og:image:secure_url|twitter:image|twitter:image:src)["']/gi),
+        ...html.matchAll(/<link[^>]+rel=["']image_src["'][^>]+href=["']([^"']+)["']/gi)
+      ];
+      for (const m of imageMatches) {
+        if (m[1]) candidateUrls.push(m[1]);
+      }
+
+      for (let rawUrl of candidateUrls) {
+        rawUrl = rawUrl.replace(/&amp;/g, '&').trim();
+        if (!rawUrl || rawUrl.startsWith('data:')) continue;
+
+        let absoluteMediaUrl = rawUrl;
+        if (absoluteMediaUrl.startsWith('//')) {
+          absoluteMediaUrl = 'https:' + absoluteMediaUrl;
+        } else if (absoluteMediaUrl.startsWith('/')) {
+          absoluteMediaUrl = new URL(absoluteMediaUrl, targetUrl).href;
         }
 
-        // Fetch the extracted direct media
-        const mediaRes = await fetch(extractedMediaUrl, {
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-          }
-        });
-
-        if (mediaRes.ok) {
-          const mediaType = mediaRes.headers.get('content-type') || 'application/octet-stream';
-          const mediaBuffer = await mediaRes.arrayBuffer();
-          return new NextResponse(mediaBuffer, {
-            status: 200,
+        try {
+          const mediaRes = await fetch(absoluteMediaUrl, {
             headers: {
-              'Content-Type': mediaType,
-              'Content-Disposition': `inline; filename="extracted-media.${mediaType.split('/')[1]?.split(';')[0] || 'jpg'}"`,
-              'Cache-Control': 'no-store'
+              'User-Agent':
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+              'Accept': 'image/*,video/*,audio/*,*/*',
+              'Referer': targetUrl
             }
           });
-        }
+
+          if (mediaRes.ok) {
+            const mediaType = (mediaRes.headers.get('content-type') || '').toLowerCase();
+            if (mediaType.startsWith('image/') || mediaType.startsWith('video/') || mediaType.startsWith('audio/')) {
+              const mediaBuffer = await mediaRes.arrayBuffer();
+              const ext = mediaType.split('/')[1]?.split(';')[0] || (mediaType.startsWith('video/') ? 'mp4' : 'jpg');
+              return new NextResponse(mediaBuffer, {
+                status: 200,
+                headers: {
+                  'Content-Type': mediaType,
+                  'Content-Disposition': `inline; filename="extracted-media.${ext}"`,
+                  'Cache-Control': 'no-store'
+                }
+              });
+            }
+          }
+        } catch {}
       }
 
       return NextResponse.json(
-        { error: 'Could not extract direct media from this web page. Please save the media file and upload it directly.' },
+        { error: 'Could not extract direct media from this web page. Please save the file to your device and upload directly.' },
         { status: 422 }
       );
     }
 
-    // Direct media file stream
+    // 5. Direct media file stream (Image/Video/Audio)
     const arrayBuffer = await upstreamRes.arrayBuffer();
     const finalContentType = contentType || 'application/octet-stream';
     const ext = finalContentType.split('/')[1]?.split(';')[0] || 'media';

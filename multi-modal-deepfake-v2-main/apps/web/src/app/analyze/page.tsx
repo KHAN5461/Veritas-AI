@@ -47,32 +47,76 @@ interface QueueItem {
 
 const SHARE_CACHE = 'veritas-shared-media';
 
-// Reads EVERY file the service worker stored for the last share, then clears the cache.
+// Reads EVERY file stored for the last share (from CacheStorage and IndexedDB fallback), then clears storage.
 async function retrieveSharedMediaOnce(): Promise<File[]> {
+  const files: File[] = [];
+
+  // 1. Primary: Read from Cache Storage
   try {
     const cache = await caches.open(SHARE_CACHE);
     const metaRes = await cache.match('/__shared__/meta');
-    if (!metaRes) return [];
-
-    const meta = await metaRes.json();
-    const entries: Array<{ key: string; name?: string; type?: string }> = meta.files || [];
-
-    const files: File[] = [];
-    for (const m of entries) {
-      const res = await cache.match(m.key);
-      if (!res) continue;
-      const blob = await res.blob();
-      files.push(new File([blob], m.name || 'shared-file', { type: m.type || blob.type }));
+    if (metaRes) {
+      const meta = await metaRes.json();
+      const entries: Array<{ key: string; name?: string; type?: string }> = meta.files || [];
+      for (const m of entries) {
+        const res = await cache.match(m.key);
+        if (!res) continue;
+        const blob = await res.blob();
+        files.push(new File([blob], m.name || 'shared-file', { type: m.type || blob.type }));
+      }
+      if (files.length > 0) {
+        const keys = await cache.keys();
+        await Promise.all(keys.map((k) => cache.delete(k)));
+        return files;
+      }
     }
-    if (files.length === 0) return [];
-
-    const keys = await cache.keys();
-    await Promise.all(keys.map((k) => cache.delete(k)));
-    return files;
   } catch (err) {
-    console.warn('[retrieveSharedMediaOnce] Cache API error:', err);
-    return [];
+    console.warn('[retrieveSharedMediaOnce] Cache API read error:', err);
   }
+
+  // 2. Secondary: Read from IndexedDB (vital for large WhatsApp videos)
+  try {
+    const idbFiles = await new Promise<File[]>((resolve) => {
+      const req = indexedDB.open('veritas_pwa_db', 2);
+      req.onerror = () => resolve([]);
+      req.onsuccess = (e: Event) => {
+        try {
+          const db = (e.target as IDBOpenDBRequest).result;
+          if (!db.objectStoreNames.contains('shared_media_v2')) {
+            resolve([]);
+            return;
+          }
+          const tx = db.transaction('shared_media_v2', 'readwrite');
+          const store = tx.objectStore('shared_media_v2');
+          const getReq = store.get('latest_share');
+          getReq.onsuccess = () => {
+            const data = getReq.result;
+            if (data && Array.isArray(data.files) && data.files.length > 0) {
+              store.delete('latest_share');
+              const reconstructed = data.files.map((item: any) => {
+                const blob = item.blob || item.file;
+                return new File([blob], item.name || 'shared-media', { type: item.type || blob.type || 'application/octet-stream' });
+              });
+              resolve(reconstructed);
+            } else {
+              resolve([]);
+            }
+          };
+          getReq.onerror = () => resolve([]);
+        } catch {
+          resolve([]);
+        }
+      };
+    });
+
+    if (idbFiles && idbFiles.length > 0) {
+      return idbFiles;
+    }
+  } catch (idbErr) {
+    console.warn('[retrieveSharedMediaOnce] IndexedDB read error:', idbErr);
+  }
+
+  return files;
 }
 
 // The service worker finishes writing BEFORE it redirects here, but we still poll briefly for safety.

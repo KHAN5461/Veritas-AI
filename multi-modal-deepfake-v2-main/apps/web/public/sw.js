@@ -1,6 +1,6 @@
-// Veritas AI Service Worker v14 (Share Target: exact route, multi-file, MIME-based names)
-const SW_VERSION = 'v14';
-const OFFLINE_CACHE = 'veritas-offline-v14';
+// Veritas AI Service Worker v15 (Share Target: Dual Storage, WhatsApp Video & Browser Image Support)
+const SW_VERSION = 'v15';
+const OFFLINE_CACHE = 'veritas-offline-v15';
 const SHARE_CACHE = 'veritas-shared-media';
 const OFFLINE_URL = '/offline';
 const SHARE_PATH = '/share-target';
@@ -74,13 +74,14 @@ self.addEventListener('fetch', (event) => {
 function safeName(file, index) {
   let name = (file.name || '').trim();
   const cleanMime = (file.type || '').split(';')[0].trim().toLowerCase();
-  
-  if (!name || name === 'blob' || name === 'shared-media') {
+
+  if (!name || name === 'blob' || name === 'shared-media' || name.startsWith('image.') || name.startsWith('video.')) {
     name = `shared-media-${index}`;
   }
-  
+
   if (!/\.[a-z0-9]{2,5}$/i.test(name)) {
-    const ext = EXT_BY_MIME[cleanMime] || 
+    const ext =
+      EXT_BY_MIME[cleanMime] ||
       (cleanMime.startsWith('image/') ? 'jpg' :
        cleanMime.startsWith('video/') ? 'mp4' :
        cleanMime.startsWith('audio/') ? 'mp3' : 'jpg');
@@ -89,13 +90,42 @@ function safeName(file, index) {
   return name;
 }
 
+function saveToIDB(filesData) {
+  return new Promise((resolve) => {
+    try {
+      const req = indexedDB.open('veritas_pwa_db', 2);
+      req.onupgradeneeded = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains('shared_media_v2')) {
+          db.createObjectStore('shared_media_v2', { keyPath: 'id' });
+        }
+      };
+      req.onsuccess = (e) => {
+        const db = e.target.result;
+        const tx = db.transaction('shared_media_v2', 'readwrite');
+        const store = tx.objectStore('shared_media_v2');
+        store.put({
+          id: 'latest_share',
+          files: filesData,
+          timestamp: Date.now()
+        });
+        tx.oncomplete = () => resolve(true);
+        tx.onerror = () => resolve(false);
+      };
+      req.onerror = () => resolve(false);
+    } catch {
+      resolve(false);
+    }
+  });
+}
+
 async function handleShareTarget(request) {
   const redirect = (path) => Response.redirect(new URL(path, self.registration.scope).href, 303);
 
   try {
     const formData = await request.formData();
 
-    // Comprehensive extraction of all binary files from any form field key
+    // 1. Comprehensive binary file extraction from ANY form field key
     const validFiles = [];
     for (const [key, value] of formData.entries()) {
       if (value && typeof value === 'object' && typeof value.size === 'number' && value.size > 0) {
@@ -103,52 +133,80 @@ async function handleShareTarget(request) {
       }
     }
 
-    const sharedUrl = formData.get('url') || formData.get('link');
+    // 2. Link / Text extraction (supports browser share, Twitter, YouTube, WhatsApp captions)
+    let sharedUrl = formData.get('url') || formData.get('link');
     const sharedText = formData.get('text');
+    const sharedTitle = formData.get('title');
+
+    // If text or title contains an HTTP link, extract it
+    let targetLink = typeof sharedUrl === 'string' && sharedUrl.startsWith('http') ? sharedUrl : null;
+    if (!targetLink && typeof sharedText === 'string') {
+      targetLink = sharedText.match(/https?:\/\/[^\s"']+/)?.[0] || null;
+    }
+    if (!targetLink && typeof sharedTitle === 'string') {
+      targetLink = sharedTitle.match(/https?:\/\/[^\s"']+/)?.[0] || null;
+    }
 
     if (validFiles.length > 0) {
-      const cache = await caches.open(SHARE_CACHE);
-
-      // Clear previous share
-      const oldKeys = await cache.keys();
-      await Promise.all(oldKeys.map((k) => cache.delete(k)));
-
-      const meta = [];
       const stamp = Date.now();
+      const meta = [];
+      const idbFiles = [];
+
+      let cache = null;
+      try {
+        cache = await caches.open(SHARE_CACHE);
+        const oldKeys = await cache.keys();
+        await Promise.all(oldKeys.map((k) => cache.delete(k)));
+      } catch (cacheOpenErr) {
+        console.warn('[SW] Cache open error:', cacheOpenErr);
+      }
 
       for (let i = 0; i < validFiles.length; i++) {
         const f = validFiles[i];
         const fileName = safeName(f, i);
-        const cleanType = (f.type || '').split(';')[0].trim() || 
+        const cleanType =
+          (f.type || '').split(';')[0].trim() ||
           (fileName.endsWith('.mp4') || fileName.endsWith('.mov') || fileName.endsWith('.webm') ? 'video/mp4' :
            fileName.endsWith('.mp3') || fileName.endsWith('.wav') || fileName.endsWith('.ogg') ? 'audio/mpeg' : 'image/jpeg');
         const key = `/__shared__/${stamp}-${i}`;
 
-        // Wrapping the File directly avoids copying it into memory
-        await cache.put(
-          key,
-          new Response(f, {
-            headers: { 'Content-Type': cleanType, 'X-Original-Name': encodeURIComponent(fileName) }
-          })
-        );
+        // Save into Cache Storage
+        if (cache) {
+          try {
+            await cache.put(
+              key,
+              new Response(f, {
+                headers: { 'Content-Type': cleanType, 'X-Original-Name': encodeURIComponent(fileName) }
+              })
+            );
+          } catch (putErr) {
+            console.warn('[SW] Cache put failed for file:', fileName, putErr);
+          }
+        }
+
         meta.push({ key, name: fileName, type: cleanType, size: f.size });
+        idbFiles.push({ key, name: fileName, type: cleanType, size: f.size, blob: f });
       }
 
-      // Meta is written LAST, so its presence means every file is ready
-      await cache.put(
-        '/__shared__/meta',
-        new Response(JSON.stringify({ files: meta }), {
-          headers: { 'Content-Type': 'application/json' }
-        })
-      );
+      // Write meta to Cache Storage
+      if (cache) {
+        try {
+          await cache.put(
+            '/__shared__/meta',
+            new Response(JSON.stringify({ files: meta }), {
+              headers: { 'Content-Type': 'application/json' }
+            })
+          );
+        } catch {}
+      }
+
+      // Dual persistence: Also save into IndexedDB for large WhatsApp videos
+      await saveToIDB(idbFiles);
 
       return redirect('/analyze?shared=true');
     }
 
-    // Link-only share fallback
-    const targetLink =
-      (typeof sharedUrl === 'string' && sharedUrl) ||
-      (typeof sharedText === 'string' ? sharedText.match(/https?:\/\/[^\s]+/)?.[0] : null);
+    // 3. Link-only share fallback (Browser image URL, YouTube, Twitter, Instagram link)
     if (targetLink) {
       return redirect(`/analyze?shared_url=${encodeURIComponent(targetLink)}`);
     }
