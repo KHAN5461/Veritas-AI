@@ -75,12 +75,12 @@ export async function getScanResult(userId: string, scanId: string) {
   }
 }
 
-import { getDocs, query, orderBy } from 'firebase/firestore';
+import { getDocs, query, orderBy, limit } from 'firebase/firestore';
 
-export async function getUserScans(userId: string) {
+export async function getUserScans(userId: string, maxCount = 50) {
   try {
     const scansRef = collection(db, `users/${userId}/scans`);
-    const q = query(scansRef, orderBy('createdAt', 'desc'));
+    const q = query(scansRef, orderBy('createdAt', 'desc'), limit(maxCount));
     const querySnapshot = await getDocs(q);
     const scans: Record<string, unknown>[] = [];
     querySnapshot.forEach((doc) => {

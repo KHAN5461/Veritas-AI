@@ -5,31 +5,46 @@ import { Card, StatWidget, Button, Skeleton } from '@repo/ui';
 import { useAuth } from '../../context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { getUserScans } from '../../lib/scans';
-import dynamic from 'next/dynamic';
-
-const PieChart = dynamic(() => import('recharts').then(mod => mod.PieChart), { ssr: false });
-const Pie = dynamic(() => import('recharts').then(mod => mod.Pie), { ssr: false });
-const Cell = dynamic(() => import('recharts').then(mod => mod.Cell), { ssr: false });
-const BarChart = dynamic(() => import('recharts').then(mod => mod.BarChart), { ssr: false });
-const Bar = dynamic(() => import('recharts').then(mod => mod.Bar), { ssr: false });
-const XAxis = dynamic(() => import('recharts').then(mod => mod.XAxis), { ssr: false });
-const YAxis = dynamic(() => import('recharts').then(mod => mod.YAxis), { ssr: false });
-const Tooltip = dynamic(() => import('recharts').then(mod => mod.Tooltip), { ssr: false });
-const ResponsiveContainer = dynamic(() => import('recharts').then(mod => mod.ResponsiveContainer), { ssr: false });
 
 export default function ThreatIntelPage() {
   const { user } = useAuth();
   const router = useRouter();
-  const [scans, setScans] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+
+  // Instant SWR Cache from LocalStorage
+  const [scans, setScans] = useState<any[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('veritas_threat_intel_cache');
+        if (cached) return JSON.parse(cached);
+      } catch {}
+    }
+    return [];
+  });
+
+  const [loading, setLoading] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const cached = localStorage.getItem('veritas_threat_intel_cache');
+      if (cached) return false;
+    }
+    return true;
+  });
+
   const [filterType, setFilterType] = useState<'all' | 'fake' | 'real'>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     if (user) {
-      getUserScans(user.uid)
-        .then(data => {
-          setScans(data || []);
+      getUserScans(user.uid, 50)
+        .then((data) => {
+          if (data) {
+            setScans(data);
+            try {
+              localStorage.setItem('veritas_threat_intel_cache', JSON.stringify(data));
+            } catch {}
+          }
+        })
+        .catch((err) => {
+          console.warn('[ThreatIntel] Firestore fetch error:', err);
         })
         .finally(() => setLoading(false));
     } else {
@@ -40,20 +55,20 @@ export default function ThreatIntelPage() {
   // Derived statistics
   const stats = useMemo(() => {
     const total = scans.length;
-    const fakes = scans.filter(s => s.is_fake).length;
+    const fakes = scans.filter((s) => s.is_fake).length;
     const reals = total - fakes;
 
     let low = 0;
     let medium = 0;
     let high = 0;
-    
+
     let videoCount = 0;
     let imageCount = 0;
     let audioCount = 0;
 
-    scans.forEach(s => {
+    scans.forEach((s) => {
       const type = (s.fileType || '').toLowerCase();
-      if (type.includes('video') || type.includes('mp4') || type.includes('avi')) videoCount++;
+      if (type.includes('video') || type.includes('mp4') || type.includes('avi') || type.includes('mov')) videoCount++;
       else if (type.includes('audio') || type.includes('mp3') || type.includes('wav')) audioCount++;
       else imageCount++;
 
@@ -65,30 +80,29 @@ export default function ThreatIntelPage() {
       }
     });
 
-    const pieData = [
-      { name: 'Authentic Media', value: reals, color: '#10b981' },
-      { name: 'Manipulated / Deepfake', value: fakes, color: '#ef4444' }
-    ];
+    const fakePct = total > 0 ? (fakes / total) * 100 : 0;
+    const realPct = total > 0 ? (reals / total) * 100 : 0;
 
     const barData = [
-      { name: '50-70% (Suspicious)', count: low },
-      { name: '70-90% (Probable)', count: medium },
-      { name: '90-100% (Critical)', count: high }
+      { name: '50-70% (Suspicious)', count: low, color: '#f59e0b' },
+      { name: '70-90% (Probable)', count: medium, color: '#f97316' },
+      { name: '90-100% (Critical)', count: high, color: '#ef4444' }
     ];
+
+    const maxBarCount = Math.max(low, medium, high, 1);
 
     const mediaDistribution = [
       { name: 'Video Clips', count: videoCount, icon: 'movie' },
       { name: 'Still Images', count: imageCount, icon: 'image' },
-      { name: 'Audio & Speech', count: audioCount, icon: 'graphic_eq' },
+      { name: 'Audio & Speech', count: audioCount, icon: 'graphic_eq' }
     ];
 
-    return { total, fakes, reals, pieData, barData, mediaDistribution };
+    return { total, fakes, reals, fakePct, realPct, barData, maxBarCount, mediaDistribution };
   }, [scans]);
 
   const filteredScans = useMemo(() => {
-    return scans.filter(s => {
-      const matchesType =
-        filterType === 'all' ? true : filterType === 'fake' ? s.is_fake : !s.is_fake;
+    return scans.filter((s) => {
+      const matchesType = filterType === 'all' ? true : filterType === 'fake' ? s.is_fake : !s.is_fake;
       const matchesSearch =
         searchQuery === '' ||
         (s.fileName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -115,7 +129,7 @@ export default function ThreatIntelPage() {
 
         <div className="flex items-center gap-2 self-start sm:self-auto">
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-container border border-outline-variant/30 text-xs font-semibold text-on-surface">
-            <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
             DEFCON 2 Active Telemetry
           </div>
         </div>
@@ -134,7 +148,7 @@ export default function ThreatIntelPage() {
             Log In to View Threat Feed
           </Button>
         </Card>
-      ) : loading ? (
+      ) : loading && scans.length === 0 ? (
         <div className="space-y-4">
           <Skeleton className="h-28 w-full rounded-2xl" />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -189,9 +203,9 @@ export default function ThreatIntelPage() {
             ))}
           </div>
 
-          {/* Graphical Analytics Charts */}
+          {/* Graphical Analytics (Ultra-Fast 0ms Native SVG Visualizations) */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-            {/* Authenticity Ratio Pie */}
+            {/* Authenticity Ratio Donut */}
             <Card className="bg-surface-container-low flex flex-col p-5 border border-outline-variant/30">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-sm font-bold text-on-surface flex items-center gap-2">
@@ -200,53 +214,79 @@ export default function ThreatIntelPage() {
                 </h2>
                 <span className="text-[11px] text-on-surface-variant font-mono">{stats.total} total</span>
               </div>
-              <div className="h-56 w-full">
+
+              <div className="h-56 w-full flex items-center justify-center">
                 {stats.total > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={stats.pieData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={55}
-                        outerRadius={80}
-                        paddingAngle={5}
-                        dataKey="value"
-                      >
-                        {stats.pieData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: '#0f1419',
-                          border: '1px solid rgba(255,255,255,0.1)',
-                          borderRadius: '12px',
-                          color: '#f8fafc',
-                          fontSize: '12px'
-                        }}
+                  <div className="relative w-44 h-44 flex items-center justify-center">
+                    <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                      {/* Background track */}
+                      <circle
+                        cx="50"
+                        cy="50"
+                        r="38"
+                        className="text-surface-container-highest"
+                        strokeWidth="12"
+                        stroke="currentColor"
+                        fill="transparent"
                       />
-                    </PieChart>
-                  </ResponsiveContainer>
+                      {/* Authentic Segment (Green) */}
+                      <circle
+                        cx="50"
+                        cy="50"
+                        r="38"
+                        stroke="#10b981"
+                        strokeWidth="12"
+                        fill="transparent"
+                        strokeDasharray={238.76}
+                        strokeDashoffset={238.76 * (1 - stats.realPct / 100)}
+                        strokeLinecap="round"
+                        className="transition-all duration-700 ease-out"
+                      />
+                      {/* Fake Segment (Red) */}
+                      {stats.fakes > 0 && (
+                        <circle
+                          cx="50"
+                          cy="50"
+                          r="38"
+                          stroke="#ef4444"
+                          strokeWidth="12"
+                          fill="transparent"
+                          strokeDasharray={238.76}
+                          strokeDashoffset={238.76 * (1 - stats.fakePct / 100)}
+                          strokeDasharray-offset={238.76 * (stats.realPct / 100)}
+                          className="transition-all duration-700 ease-out"
+                        />
+                      )}
+                    </svg>
+
+                    {/* Donut Center Label */}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                      <span className="text-2xl font-black font-mono text-on-surface">
+                        {stats.total > 0 ? `${Math.round(stats.realPct)}%` : '0%'}
+                      </span>
+                      <span className="text-[10px] uppercase tracking-wider text-emerald-400 font-bold">Authentic</span>
+                    </div>
+                  </div>
                 ) : (
                   <div className="h-full flex items-center justify-center text-on-surface-variant text-xs">
                     No data recorded yet
                   </div>
                 )}
               </div>
+
               <div className="flex justify-center gap-6 pt-3 border-t border-outline-variant/20 text-xs">
                 <div className="flex items-center gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
+                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50"></div>
                   <span className="text-on-surface">Authentic ({stats.reals})</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full bg-red-500"></div>
+                  <div className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-sm shadow-red-500/50"></div>
                   <span className="text-on-surface">Manipulated ({stats.fakes})</span>
                 </div>
               </div>
             </Card>
 
-            {/* Confidence Histogram */}
+            {/* Confidence Histogram (Native Fast Bar Visualizer) */}
             <Card className="bg-surface-container-low flex flex-col p-5 border border-outline-variant/30">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-sm font-bold text-on-surface flex items-center gap-2">
@@ -255,31 +295,34 @@ export default function ThreatIntelPage() {
                 </h2>
                 <span className="text-[11px] text-on-surface-variant font-mono">Tiers</span>
               </div>
-              <div className="h-56 w-full">
+
+              <div className="h-56 w-full flex flex-col justify-center gap-4 px-2">
                 {stats.fakes > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={stats.barData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                      <XAxis dataKey="name" stroke="#64748b" fontSize={10} tickLine={false} />
-                      <YAxis stroke="#64748b" fontSize={10} tickLine={false} allowDecimals={false} />
-                      <Tooltip
-                        cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                        contentStyle={{
-                          backgroundColor: '#0f1419',
-                          border: '1px solid rgba(255,255,255,0.1)',
-                          borderRadius: '12px',
-                          color: '#f8fafc',
-                          fontSize: '12px'
-                        }}
-                      />
-                      <Bar dataKey="count" fill="#ef4444" radius={[6, 6, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
+                  stats.barData.map((tier, idx) => (
+                    <div key={idx} className="flex flex-col gap-1.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-semibold text-on-surface">{tier.name}</span>
+                        <span className="font-mono font-bold text-on-surface-variant">{tier.count} detected</span>
+                      </div>
+                      <div className="w-full h-3 bg-surface-container-highest rounded-full overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-700 ease-out"
+                          style={{
+                            width: `${Math.max(tier.count > 0 ? (tier.count / stats.maxBarCount) * 100 : 0, tier.count > 0 ? 8 : 0)}%`,
+                            backgroundColor: tier.color,
+                            boxShadow: `0 0 10px ${tier.color}40`
+                          }}
+                        />
+                      </div>
+                    </div>
+                  ))
                 ) : (
                   <div className="h-full flex items-center justify-center text-on-surface-variant text-xs">
                     No active threats flagged in matrix
                   </div>
                 )}
               </div>
+
               <div className="pt-3 border-t border-outline-variant/20 text-[11px] text-on-surface-variant text-center">
                 Critical tier flags indicate &gt;90% ViT facial artefact alignment or synthetic voice cloning.
               </div>
@@ -303,7 +346,7 @@ export default function ThreatIntelPage() {
                   type="text"
                   placeholder="Filter logs..."
                   value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                   className="bg-surface-container-highest text-xs rounded-xl px-3 py-1.5 text-on-surface border border-outline-variant/30 focus:outline-none focus:ring-1 focus:ring-primary w-36 sm:w-44"
                 />
                 <button
@@ -353,7 +396,7 @@ export default function ThreatIntelPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-outline-variant/20">
-                  {filteredScans.slice(0, 15).map(scan => (
+                  {filteredScans.slice(0, 15).map((scan) => (
                     <tr key={scan.id} className="hover:bg-surface-container/60 transition-colors">
                       <td className="px-5 py-3 font-mono text-on-surface-variant">
                         {scan.createdAt?.toDate ? scan.createdAt.toDate().toLocaleString() : 'Just now'}
@@ -394,7 +437,7 @@ export default function ThreatIntelPage() {
 
             {/* Mobile Card View (optimized touch ergonomics) */}
             <div className="sm:hidden divide-y divide-outline-variant/20">
-              {filteredScans.slice(0, 15).map(scan => (
+              {filteredScans.slice(0, 15).map((scan) => (
                 <div key={scan.id} className="p-4 flex flex-col gap-2">
                   <div className="flex items-center justify-between">
                     <span
