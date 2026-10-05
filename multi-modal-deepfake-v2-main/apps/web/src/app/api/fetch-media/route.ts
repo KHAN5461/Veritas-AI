@@ -28,7 +28,32 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid URL protocol' }, { status: 400 });
     }
 
-    // 1. Specialized Handler: YouTube
+    // 1. Cloud Drive Links: Forward internally to cloud drive resolver
+    if (
+      targetUrl.includes('drive.google.com') ||
+      targetUrl.includes('dropbox.com') ||
+      targetUrl.includes('1drv.ms') ||
+      targetUrl.includes('sharepoint.com')
+    ) {
+      const resolverUrl = new URL('/api/cloud-drive-resolver', request.url);
+      resolverUrl.searchParams.set('url', targetUrl);
+      const cloudRes = await fetch(resolverUrl.href);
+      if (cloudRes.ok) {
+        const buffer = await cloudRes.arrayBuffer();
+        const contentType = cloudRes.headers.get('content-type') || 'application/octet-stream';
+        const disposition = cloudRes.headers.get('content-disposition') || 'inline; filename="cloud-media"';
+        return new NextResponse(buffer, {
+          status: 200,
+          headers: {
+            'Content-Type': contentType,
+            'Content-Disposition': disposition,
+            'Cache-Control': 'no-store'
+          }
+        });
+      }
+    }
+
+    // 2. YouTube & YouTube Shorts
     const ytId = extractYouTubeId(targetUrl);
     if (ytId) {
       const ytThumbUrls = [
@@ -42,7 +67,6 @@ export async function GET(request: NextRequest) {
           const thumbRes = await fetch(thumbUrl);
           if (thumbRes.ok && thumbRes.status === 200) {
             const buffer = await thumbRes.arrayBuffer();
-            // maxresdefault returns 120x90 placeholder if not found (typically < 2000 bytes)
             if (buffer.byteLength > 5000 || thumbUrl.includes('hqdefault')) {
               return new NextResponse(buffer, {
                 status: 200,
@@ -58,14 +82,14 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // 2. Specialized Handler: Reddit Preview / Media
+    // 3. Reddit Clean-up
     if (targetUrl.includes('reddit.com') || targetUrl.includes('redd.it')) {
       if (targetUrl.includes('preview.redd.it') || targetUrl.includes('i.redd.it')) {
         targetUrl = targetUrl.replace(/&amp;/g, '&');
       }
     }
 
-    // 3. Fetch target with realistic browser headers
+    // 4. Fetch target with realistic browser headers
     const upstreamRes = await fetch(targetUrl, {
       headers: {
         'User-Agent':
@@ -85,20 +109,19 @@ export async function GET(request: NextRequest) {
 
     if (!upstreamRes.ok) {
       return NextResponse.json(
-        { error: `Remote server returned HTTP ${upstreamRes.status}. The host may block direct fetching.` },
+        { error: `Remote server returned HTTP ${upstreamRes.status}. The host may block automated access.` },
         { status: upstreamRes.status }
       );
     }
 
     const contentType = (upstreamRes.headers.get('content-type') || '').toLowerCase();
 
-    // 4. If HTML Page, parse OpenGraph, Twitter, and HTML5 media tags
+    // 5. If HTML Page, parse OpenGraph, Twitter, and HTML5 media tags
     if (contentType.includes('text/html')) {
       const html = await upstreamRes.text();
-
       const candidateUrls: string[] = [];
 
-      // Look for og:video, twitter:player:stream
+      // Look for og:video, twitter:player:stream, video tags
       const videoMatches = [
         ...html.matchAll(/<meta[^>]+(?:property|name)=["'](?:og:video|og:video:url|og:video:secure_url|twitter:player:stream)["'][^>]+content=["']([^"']+)["']/gi),
         ...html.matchAll(/<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["'](?:og:video|og:video:url|og:video:secure_url|twitter:player:stream)["']/gi),
@@ -109,7 +132,7 @@ export async function GET(request: NextRequest) {
         if (m[1]) candidateUrls.push(m[1]);
       }
 
-      // Look for og:image, twitter:image
+      // Look for og:image, twitter:image, link image_src
       const imageMatches = [
         ...html.matchAll(/<meta[^>]+(?:property|name)=["'](?:og:image|og:image:url|og:image:secure_url|twitter:image|twitter:image:src)["'][^>]+content=["']([^"']+)["']/gi),
         ...html.matchAll(/<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["'](?:og:image|og:image:url|og:image:secure_url|twitter:image|twitter:image:src)["']/gi),
@@ -159,12 +182,12 @@ export async function GET(request: NextRequest) {
       }
 
       return NextResponse.json(
-        { error: 'Could not extract direct media from this web page. Please save the file to your device and upload directly.' },
+        { error: 'Could not extract direct media from this link. Please download the file and upload directly.' },
         { status: 422 }
       );
     }
 
-    // 5. Direct media file stream (Image/Video/Audio)
+    // 6. Direct media file stream (Image/Video/Audio)
     const arrayBuffer = await upstreamRes.arrayBuffer();
     const finalContentType = contentType || 'application/octet-stream';
     const ext = finalContentType.split('/')[1]?.split(';')[0] || 'media';

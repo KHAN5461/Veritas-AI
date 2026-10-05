@@ -1,6 +1,6 @@
-// Veritas AI Service Worker v15 (Share Target: Dual Storage, WhatsApp Video & Browser Image Support)
-const SW_VERSION = 'v15';
-const OFFLINE_CACHE = 'veritas-offline-v15';
+// Veritas AI Service Worker v16 (Universal Media Ingestion Engine)
+const SW_VERSION = 'v16';
+const OFFLINE_CACHE = 'veritas-offline-v16';
 const SHARE_CACHE = 'veritas-shared-media';
 const OFFLINE_URL = '/offline';
 const SHARE_PATH = '/share-target';
@@ -8,10 +8,12 @@ const SHARE_PATH = '/share-target';
 const EXT_BY_MIME = {
   'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif',
   'image/heic': 'heic', 'image/heif': 'heif', 'image/bmp': 'bmp', 'image/tiff': 'tiff',
+  'image/svg+xml': 'svg',
   'video/mp4': 'mp4', 'video/quicktime': 'mov', 'video/webm': 'webm', 'video/3gpp': '3gp',
-  'video/x-matroska': 'mkv', 'video/x-msvideo': 'avi', 'video/mpeg': 'mpeg',
+  'video/3gpp2': '3g2', 'video/x-matroska': 'mkv', 'video/x-msvideo': 'avi', 'video/mpeg': 'mpeg',
   'audio/mpeg': 'mp3', 'audio/mp4': 'm4a', 'audio/x-m4a': 'm4a', 'audio/aac': 'aac',
-  'audio/ogg': 'ogg', 'audio/wav': 'wav', 'audio/flac': 'flac'
+  'audio/ogg': 'ogg', 'audio/wav': 'wav', 'audio/flac': 'flac', 'audio/opus': 'opus',
+  'audio/amr': 'amr'
 };
 
 self.addEventListener('install', (event) => {
@@ -41,7 +43,7 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Share target: ONLY the exact same-origin route. Never touch uploads to the API or other POSTs.
+  // Universal Share Target POST interception
   if (
     event.request.method === 'POST' &&
     url.origin === self.location.origin &&
@@ -71,23 +73,64 @@ self.addEventListener('fetch', (event) => {
   }
 });
 
-function safeName(file, index) {
-  let name = (file.name || '').trim();
-  const cleanMime = (file.type || '').split(';')[0].trim().toLowerCase();
+// Magic number header inspection to recover authentic file extensions for raw streams
+async function sniffMagicMime(blob) {
+  try {
+    const slice = blob.slice(0, 32);
+    const buffer = await slice.arrayBuffer();
+    const bytes = new Uint8Array(buffer);
 
-  if (!name || name === 'blob' || name === 'shared-media' || name.startsWith('image.') || name.startsWith('video.')) {
+    // JPEG: FF D8 FF
+    if (bytes[0] === 0xFF && bytes[1] === 0xD8 && bytes[2] === 0xFF) return 'image/jpeg';
+    // PNG: 89 50 4E 47
+    if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4E && bytes[3] === 0x47) return 'image/png';
+    // GIF: 47 49 46 38
+    if (bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x38) return 'image/gif';
+    // WEBP: RIFF....WEBP
+    if (bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46 &&
+        bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50) return 'image/webp';
+    // MP4 / MOV / M4V (ftyp box at offset 4)
+    if (bytes[4] === 0x66 && bytes[5] === 0x74 && bytes[6] === 0x79 && bytes[7] === 0x70) return 'video/mp4';
+    // Matroska / WebM: 1A 45 DF A3
+    if (bytes[0] === 0x1A && bytes[1] === 0x45 && bytes[2] === 0xDF && bytes[3] === 0xA3) return 'video/webm';
+    // MP3 (ID3v2 tag or MPEG sync)
+    if ((bytes[0] === 0x49 && bytes[1] === 0x44 && bytes[2] === 0x33) || (bytes[0] === 0xFF && (bytes[1] & 0xE0) === 0xE0)) return 'audio/mpeg';
+    // WAV: RIFF....WAVE
+    if (bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46 &&
+        bytes[8] === 0x57 && bytes[9] === 0x41 && bytes[10] === 0x56 && bytes[11] === 0x45) return 'audio/wav';
+    // OGG / Opus
+    if (bytes[0] === 0x4F && bytes[1] === 0x67 && bytes[2] === 0x67 && bytes[3] === 0x53) return 'audio/ogg';
+    // FLAC: 66 4C 61 43
+    if (bytes[0] === 0x66 && bytes[1] === 0x4C && bytes[2] === 0x61 && bytes[3] === 0x43) return 'audio/flac';
+  } catch {}
+  return null;
+}
+
+async function resolveSafeFileMeta(file, index) {
+  let name = (file.name || '').trim();
+  let mime = (file.type || '').split(';')[0].trim().toLowerCase();
+
+  // If MIME is missing or generic octet-stream, sniff header bytes
+  if (!mime || mime === 'application/octet-stream' || mime === 'binary/octet-stream') {
+    const sniffed = await sniffMagicMime(file);
+    if (sniffed) mime = sniffed;
+  }
+
+  if (!name || name === 'blob' || name === 'shared-media' || name.startsWith('image.') || name.startsWith('video.') || name === 'file') {
     name = `shared-media-${index}`;
   }
 
   if (!/\.[a-z0-9]{2,5}$/i.test(name)) {
     const ext =
-      EXT_BY_MIME[cleanMime] ||
-      (cleanMime.startsWith('image/') ? 'jpg' :
-       cleanMime.startsWith('video/') ? 'mp4' :
-       cleanMime.startsWith('audio/') ? 'mp3' : 'jpg');
+      EXT_BY_MIME[mime] ||
+      (mime.startsWith('image/') ? 'jpg' :
+       mime.startsWith('video/') ? 'mp4' :
+       mime.startsWith('audio/') ? 'mp3' : 'jpg');
     name += '.' + ext;
   }
-  return name;
+
+  const finalType = mime || (name.endsWith('.mp4') ? 'video/mp4' : name.endsWith('.mp3') ? 'audio/mpeg' : 'image/jpeg');
+  return { name, type: finalType };
 }
 
 function saveToIDB(filesData) {
@@ -133,12 +176,11 @@ async function handleShareTarget(request) {
       }
     }
 
-    // 2. Link / Text extraction (supports browser share, Twitter, YouTube, WhatsApp captions)
+    // 2. Link / Text extraction (supports browser share, Twitter, YouTube, WhatsApp captions, Drive)
     let sharedUrl = formData.get('url') || formData.get('link');
     const sharedText = formData.get('text');
     const sharedTitle = formData.get('title');
 
-    // If text or title contains an HTTP link, extract it
     let targetLink = typeof sharedUrl === 'string' && sharedUrl.startsWith('http') ? sharedUrl : null;
     if (!targetLink && typeof sharedText === 'string') {
       targetLink = sharedText.match(/https?:\/\/[^\s"']+/)?.[0] || null;
@@ -163,11 +205,7 @@ async function handleShareTarget(request) {
 
       for (let i = 0; i < validFiles.length; i++) {
         const f = validFiles[i];
-        const fileName = safeName(f, i);
-        const cleanType =
-          (f.type || '').split(';')[0].trim() ||
-          (fileName.endsWith('.mp4') || fileName.endsWith('.mov') || fileName.endsWith('.webm') ? 'video/mp4' :
-           fileName.endsWith('.mp3') || fileName.endsWith('.wav') || fileName.endsWith('.ogg') ? 'audio/mpeg' : 'image/jpeg');
+        const { name: fileName, type: cleanType } = await resolveSafeFileMeta(f, i);
         const key = `/__shared__/${stamp}-${i}`;
 
         // Save into Cache Storage
@@ -206,7 +244,7 @@ async function handleShareTarget(request) {
       return redirect('/analyze?shared=true');
     }
 
-    // 3. Link-only share fallback (Browser image URL, YouTube, Twitter, Instagram link)
+    // 3. Link-only share fallback (Browser image URL, YouTube, Drive, Twitter, Instagram link)
     if (targetLink) {
       return redirect(`/analyze?shared_url=${encodeURIComponent(targetLink)}`);
     }

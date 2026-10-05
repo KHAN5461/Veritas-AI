@@ -120,7 +120,7 @@ async function retrieveSharedMediaOnce(): Promise<File[]> {
 }
 
 // The service worker finishes writing BEFORE it redirects here, but we still poll briefly for safety.
-async function retrieveSharedMediaWithRetry(maxAttempts = 6, intervalMs = 500): Promise<File[]> {
+async function retrieveSharedMediaWithRetry(maxAttempts = 8, intervalMs = 400): Promise<File[]> {
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     const files = await retrieveSharedMediaOnce();
     if (files.length > 0) return files;
@@ -655,62 +655,104 @@ function AnalyzeContent() {
 
           {!file ? (
             <>
-              {/* Shared Link Card if a URL was shared from social media */}
-              {sharedLinkUrl && (
-                <div className="bg-surface-container-low border border-primary/30 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                      <span className="material-symbols-outlined text-[22px]">link</span>
+              {/* Shared Link Card if a URL was shared from social media or cloud drives */}
+              {sharedLinkUrl && (() => {
+                let badge = 'Web Link';
+                let icon = 'link';
+                let isCloud = false;
+
+                if (sharedLinkUrl.includes('drive.google.com')) {
+                  badge = 'Google Drive';
+                  icon = 'cloud';
+                  isCloud = true;
+                } else if (sharedLinkUrl.includes('dropbox.com')) {
+                  badge = 'Dropbox';
+                  icon = 'cloud_download';
+                  isCloud = true;
+                } else if (sharedLinkUrl.includes('1drv.ms') || sharedLinkUrl.includes('sharepoint.com')) {
+                  badge = 'OneDrive';
+                  icon = 'cloud_sync';
+                  isCloud = true;
+                } else if (sharedLinkUrl.includes('youtube.com') || sharedLinkUrl.includes('youtu.be')) {
+                  badge = 'YouTube Video';
+                  icon = 'smart_display';
+                } else if (sharedLinkUrl.includes('twitter.com') || sharedLinkUrl.includes('x.com')) {
+                  badge = 'X / Twitter';
+                  icon = 'chat';
+                } else if (sharedLinkUrl.includes('reddit.com') || sharedLinkUrl.includes('redd.it')) {
+                  badge = 'Reddit Post';
+                  icon = 'forum';
+                } else if (sharedLinkUrl.includes('instagram.com')) {
+                  badge = 'Instagram';
+                  icon = 'photo_camera';
+                }
+
+                return (
+                  <div className="bg-surface-container-low border border-primary/30 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                        <span className="material-symbols-outlined text-[22px]">{icon}</span>
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <span className="text-[10px] font-bold text-primary uppercase tracking-wider bg-primary/10 px-2 py-0.5 rounded-md">
+                            {badge}
+                          </span>
+                          {isCloud && (
+                            <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider bg-emerald-500/10 px-2 py-0.5 rounded-md">
+                              Direct Stream
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-on-surface font-mono truncate max-w-sm sm:max-w-md">{sharedLinkUrl}</p>
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <span className="text-[11px] font-bold text-primary uppercase tracking-wider">Shared Link Captured</span>
-                      <p className="text-xs text-on-surface font-mono truncate max-w-sm sm:max-w-md">{sharedLinkUrl}</p>
+                    <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+                      <Button
+                        variant="filled"
+                        onClick={async () => {
+                          const toastId = toast.loading(`Extracting media from ${badge}...`);
+                          try {
+                            const res = await fetch(`/api/fetch-media?url=${encodeURIComponent(sharedLinkUrl)}`);
+                            if (!res.ok) {
+                              const errData = await res.json().catch(() => ({}));
+                              throw new Error(errData.error || `Server responded with ${res.status}`);
+                            }
+                            const blob = await res.blob();
+                            const disposition = res.headers.get('content-disposition');
+                            let fileName = `${badge.toLowerCase().replace(/\s+/g, '-')}-media`;
+                            if (disposition && disposition.includes('filename=')) {
+                              const match = disposition.match(/filename\*?=['"]?(?:UTF-\d['"]*)?([^;\r\n"']*)['"]?/i);
+                              if (match && match[1]) fileName = decodeURIComponent(match[1]);
+                            } else {
+                              const ext = blob.type.split('/')[1]?.split(';')[0] || (blob.type.startsWith('video/') ? 'mp4' : 'jpg');
+                              fileName = `${fileName}.${ext}`;
+                            }
+                            const fileObj = new File([blob], fileName, { type: blob.type || 'application/octet-stream' });
+                            toast.dismiss(toastId);
+                            toast.success(`Extracted: ${fileName}`);
+                            setSharedLinkUrl('');
+                            await handleFilesIngest([fileObj]);
+                          } catch (err: any) {
+                            toast.dismiss(toastId);
+                            toast.error(err?.message || 'Could not fetch media. Please download and upload the file directly.');
+                          }
+                        }}
+                        className="text-xs !py-2 !px-4"
+                      >
+                        <span className="material-symbols-outlined text-[16px] mr-1.5">download</span>
+                        Extract & Scan
+                      </Button>
+                      <button
+                        onClick={() => setSharedLinkUrl('')}
+                        className="text-xs text-on-surface-variant hover:text-on-surface px-3 py-2 rounded-xl transition-colors"
+                      >
+                        Dismiss
+                      </button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
-                    <Button
-                      variant="filled"
-                      onClick={async () => {
-                        const toastId = toast.loading('Extracting media from link...');
-                        try {
-                          const res = await fetch(`/api/fetch-media?url=${encodeURIComponent(sharedLinkUrl)}`);
-                          if (!res.ok) {
-                            const errData = await res.json().catch(() => ({}));
-                            throw new Error(errData.error || `Server responded with ${res.status}`);
-                          }
-                          const blob = await res.blob();
-                          const disposition = res.headers.get('content-disposition');
-                          let fileName = 'shared-media';
-                          if (disposition && disposition.includes('filename=')) {
-                            const match = disposition.match(/filename="?([^"]+)"?/);
-                            if (match) fileName = decodeURIComponent(match[1]);
-                          } else {
-                            const ext = blob.type.split('/')[1]?.split(';')[0] || 'jpg';
-                            fileName = `shared-media.${ext}`;
-                          }
-                          const fileObj = new File([blob], fileName, { type: blob.type });
-                          toast.dismiss(toastId);
-                          toast.success(`Extracted: ${fileName}`);
-                          setSharedLinkUrl('');
-                          await handleFilesIngest([fileObj]);
-                        } catch (err: any) {
-                          toast.dismiss(toastId);
-                          toast.error(err?.message || 'Could not fetch media. Please download and upload the file directly.');
-                        }
-                      }}
-                      className="text-xs !py-2 !px-4"
-                    >
-                      Scan Link
-                    </Button>
-                    <button
-                      onClick={() => setSharedLinkUrl('')}
-                      className="text-xs text-on-surface-variant hover:text-on-surface px-3 py-2 rounded-xl transition-colors"
-                    >
-                      Dismiss
-                    </button>
-                  </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* Upload Dropzone */}
               <div
