@@ -1,37 +1,16 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 import { Button, IconButton } from '@repo/ui';
+import { usePwa } from '../context/PwaContext';
 
 export function ExtensionPromo() {
-  const [hasExtension, setHasExtension] = useState(false);
+  const { hasExtension } = usePwa();
   const [isDismissed, setIsDismissed] = useState(true); // Default true to prevent hydration mismatch flash
 
   useEffect(() => {
     // Check if dismissed
     const dismissed = localStorage.getItem('extension-promo-dismissed') === 'true';
     setIsDismissed(dismissed);
-
-    // Check immediately
-    const checkExtension = () => {
-      if (document.querySelector('meta[name="veritas-extension-installed"]')) {
-        setHasExtension(true);
-        return true;
-      }
-      return false;
-    };
-
-    if (checkExtension()) return;
-
-    // Fast polling for 500ms in case the extension content script is slightly delayed
-    let attempts = 0;
-    const interval = setInterval(() => {
-      attempts++;
-      if (checkExtension() || attempts > 10) {
-        clearInterval(interval);
-      }
-    }, 50);
-
-    return () => clearInterval(interval);
   }, []);
 
   if (hasExtension || isDismissed) return null;

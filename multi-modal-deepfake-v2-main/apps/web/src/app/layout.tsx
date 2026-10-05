@@ -10,7 +10,9 @@ import { motion } from "framer-motion";
 import { ScrollToTop } from "../components/ScrollToTop";
 import { InstallBanner } from "../components/InstallBanner";
 import { OfflineBanner } from "../components/OfflineBanner";
+import { IOSInstallSheet } from "../components/IOSInstallSheet";
 import { AuthProvider, useAuth } from "../context/AuthContext";
+import { PwaProvider, usePwa } from "../context/PwaContext";
 import { auth } from "../lib/firebase";
 
 const NAV_ITEMS = [
@@ -210,6 +212,7 @@ function NavRail() {
 function TopAppBar() {
   const [isDark, setIsDark] = useState(true);
   const { user } = useAuth();
+  const { isStandalone, promptInstall, isInstallable, isIOS } = usePwa();
   const router = useRouter();
 
   useEffect(() => {
@@ -247,11 +250,25 @@ function TopAppBar() {
           Multimodal Deepfake Detection
         </span>
       </div>
-      <div className="flex items-center gap-1 shrink-0 relative">
+      <div className="flex items-center gap-1.5 shrink-0 relative">
         <IconButton icon={isDark ? "light_mode" : "dark_mode"} onClick={toggleTheme} />
         
-        {/* Notification Bell */}
-        <div className="relative">
+        {/* Mobile View NOT INSTALLED: Show glowing Install Action Button */}
+        {!isStandalone && (
+          <div className="md:hidden">
+            <button
+              onClick={promptInstall}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary text-on-primary font-bold text-xs shadow-md shadow-primary/25 active:scale-95 transition-all animate-pulse"
+              title="Install Veritas App"
+            >
+              <span className="material-symbols-outlined text-[16px]">install_mobile</span>
+              <span>Install</span>
+            </button>
+          </div>
+        )}
+
+        {/* Mobile View INSTALLED / DESKTOP: Render Notification Bell */}
+        <div className={`relative ${!isStandalone ? 'hidden md:block' : 'block'}`}>
           <button
             onClick={() => setShowNotifications(!showNotifications)}
             className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-on-surface/8 text-on-surface-variant hover:text-on-surface transition-colors relative"
@@ -376,9 +393,9 @@ function PwaInit() {
   useEffect(() => {
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker
-        .register("/sw.js?v=11", { scope: "/", updateViaCache: "none" })
+        .register("/sw.js?v=16", { scope: "/", updateViaCache: "none" })
         .then((reg) => {
-          console.log("[PwaInit] SW registered v11, scope:", reg.scope);
+          console.log("[PwaInit] SW registered v16, scope:", reg.scope);
           reg.update();
         })
         .catch((err) => {
@@ -422,26 +439,29 @@ export default function RootLayout({
         <OfflineBanner />
         <PwaInit />
         <AuthProvider>
-          <AuthGuard>
-            {isAuthPage ? (
-              <main className="flex-1 w-full h-full overflow-y-auto">{children}</main>
-            ) : (
-              <>
-                <GlobalDropzoneOverlay />
-                <ScrollToTop />
-                <KeyboardShortcuts />
-                <NavRail />
-                <div className="flex-1 flex flex-col h-full overflow-hidden relative">
-                  <TopAppBar />
-                  <InstallBanner />
-                  <main className="flex-1 overflow-y-auto bg-surface-container-lowest relative z-0 pb-32 md:pb-0">
-                    {children}
-                  </main>
-                </div>
-              </>
-            )}
-            <Toaster richColors position="top-right" />
-          </AuthGuard>
+          <PwaProvider>
+            <IOSInstallSheet />
+            <AuthGuard>
+              {isAuthPage ? (
+                <main className="flex-1 w-full h-full overflow-y-auto">{children}</main>
+              ) : (
+                <>
+                  <GlobalDropzoneOverlay />
+                  <ScrollToTop />
+                  <KeyboardShortcuts />
+                  <NavRail />
+                  <div className="flex-1 flex flex-col h-full overflow-hidden relative">
+                    <TopAppBar />
+                    <InstallBanner />
+                    <main className="flex-1 overflow-y-auto bg-surface-container-lowest relative z-0 pb-32 md:pb-0">
+                      {children}
+                    </main>
+                  </div>
+                </>
+              )}
+              <Toaster richColors position="top-right" />
+            </AuthGuard>
+          </PwaProvider>
         </AuthProvider>
       </body>
     </html>
