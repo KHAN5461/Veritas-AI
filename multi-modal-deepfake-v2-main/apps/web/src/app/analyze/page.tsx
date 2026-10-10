@@ -8,6 +8,7 @@ import { useAuth } from '../../context/AuthContext';
 import { saveScanResult } from '../../lib/scans';
 import { detectDeepfake } from '../../lib/api';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { hapticSuccess, hapticWarning, hapticLight, hapticError } from '../../lib/haptics';
 
 async function calculateSHA256(file: File) {
   try {
@@ -217,6 +218,66 @@ function AnalyzeContent() {
     }
   }, [searchParams]);
 
+  const [clipboardPromptUrl, setClipboardPromptUrl] = useState<string | null>(null);
+
+  // Auto-detect media links on clipboard
+  useEffect(() => {
+    const checkClipboardForMedia = async () => {
+      if (typeof navigator === 'undefined' || !navigator.clipboard?.readText) return;
+      try {
+        const text = await navigator.clipboard.readText();
+        if (!text || typeof text !== 'string') return;
+        const clean = text.trim();
+        const urlMatch = clean.match(/https?:\/\/[^\s"']+/)?.[0];
+        if (!urlMatch) return;
+
+        // Verify it matches media platforms or direct media extensions
+        const isMediaCandidate =
+          /drive\.google\.com|dropbox\.com|1drv\.ms|youtube\.com|youtu\.be|twitter\.com|x\.com|reddit\.com|instagram\.com|\.(jpe?g|png|webp|mp4|mov|avi|webm|mp3|wav|ogg|flac|m4a)($|\?)/i.test(
+            urlMatch
+          );
+
+        const lastDismissed = sessionStorage.getItem('dismissed_clipboard_url');
+        if (isMediaCandidate && lastDismissed !== urlMatch && urlMatch !== sharedLinkUrl) {
+          setClipboardPromptUrl(urlMatch);
+        }
+      } catch {
+        // Clipboard permission denied or unavailable
+      }
+    };
+
+    checkClipboardForMedia();
+    window.addEventListener('focus', checkClipboardForMedia);
+    return () => window.removeEventListener('focus', checkClipboardForMedia);
+  }, [sharedLinkUrl]);
+
+  // Handle PWA Long-Press Shortcut Actions (action=camera | action=clipboard)
+  useEffect(() => {
+    const action = searchParams.get('action');
+    if (action === 'camera') {
+      window.history.replaceState({}, '', '/analyze');
+      setTimeout(() => {
+        cameraInputRef.current?.click();
+      }, 350);
+    } else if (action === 'clipboard') {
+      window.history.replaceState({}, '', '/analyze');
+      if (typeof navigator !== 'undefined' && navigator.clipboard?.readText) {
+        navigator.clipboard.readText().then((clipText) => {
+          const match = clipText.trim().match(/https?:\/\/[^\s"']+/)?.[0];
+          if (match) {
+            setSharedLinkUrl(match);
+            setActiveTab('single');
+            toast.success('Pasted media link from clipboard');
+          } else {
+            toast.info('No valid media URL found on clipboard');
+          }
+        }).catch(() => {
+          toast.error('Could not access clipboard');
+        });
+      }
+    }
+  }, [searchParams]);
+
   // Handle shared media file or social media URL from PWA share target
   useEffect(() => {
     if (searchParams.get('share_error') === '1') {
@@ -300,6 +361,8 @@ function AnalyzeContent() {
     const rawFiles = Array.from(filesList);
     if (rawFiles.length === 0) return;
 
+    hapticLight();
+
     const files: File[] = [];
     for (const f of rawFiles) {
       if (f.size > 50 * 1024 * 1024) {
@@ -354,6 +417,7 @@ function AnalyzeContent() {
       } catch {}
     }
 
+    hapticLight();
     setFile(selectedFile);
     setAnalysisError(false);
     setIsLoading(true);
@@ -389,6 +453,11 @@ function AnalyzeContent() {
       setLoadingText('Fusing multi-modal inference vectors...');
 
       setResult(data);
+      if (data.is_fake) {
+        hapticWarning();
+      } else {
+        hapticSuccess();
+      }
       const currentTime = new Date().toLocaleString();
       setTimestamp(currentTime);
       setProgress(100);
@@ -407,6 +476,7 @@ function AnalyzeContent() {
         });
       }
     } catch {
+      hapticError();
       toast.error('Veritas engine is initializing. You can retry or inspect the file.');
       // Keep file loaded in UI, don't wipe it out!
       setAnalysisError(true);
@@ -521,6 +591,7 @@ function AnalyzeContent() {
     await Promise.all(workers);
 
     setIsBatchProcessing(false);
+    hapticSuccess();
     toast.success('Batch pipeline completed');
   };
 
@@ -650,6 +721,52 @@ function AnalyzeContent() {
               </div>
               <LinearProgress value={progress} />
               <p className="text-center mt-3 text-xs text-on-surface-variant font-mono">{loadingText}</p>
+            </motion.div>
+          )}
+
+          {/* Clipboard Auto-Detection Card */}
+          {clipboardPromptUrl && !file && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="bg-surface-container-low border border-primary/40 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg backdrop-blur-sm"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 text-primary">
+                  <span className="material-symbols-outlined text-[22px]">content_paste</span>
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold text-primary tracking-wider uppercase">Media Link Detected on Clipboard</span>
+                    <span className="w-2 h-2 rounded-full bg-primary animate-ping" />
+                  </div>
+                  <p className="text-xs font-mono text-on-surface truncate max-w-lg mt-0.5">{clipboardPromptUrl}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+                <Button
+                  variant="filled"
+                  className="text-xs h-9"
+                  onClick={() => {
+                    hapticLight();
+                    setSharedLinkUrl(clipboardPromptUrl);
+                    setClipboardPromptUrl(null);
+                  }}
+                >
+                  <span className="material-symbols-outlined text-[16px] mr-1">troubleshoot</span>
+                  Scan Now
+                </Button>
+                <button
+                  onClick={() => {
+                    sessionStorage.setItem('dismissed_clipboard_url', clipboardPromptUrl);
+                    setClipboardPromptUrl(null);
+                  }}
+                  className="px-3 py-1.5 text-xs text-on-surface-variant hover:text-on-surface transition-colors"
+                >
+                  Dismiss
+                </button>
+              </div>
             </motion.div>
           )}
 

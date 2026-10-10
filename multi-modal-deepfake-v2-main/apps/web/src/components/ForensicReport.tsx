@@ -5,6 +5,7 @@ import { SpyglassViewer } from './SpyglassViewer';
 import { AudioWaveform } from './AudioWaveform';
 import { toast } from 'sonner';
 import type { ForensicResult } from '../lib/api';
+import { hapticSuccess, hapticWarning, hapticLight } from '../lib/haptics';
 
 interface ForensicReportProps {
   isLoading: boolean;
@@ -51,6 +52,7 @@ export function ForensicReport({ isLoading, result, fileData, fileHash, timestam
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+    hapticLight();
     toast.success('Raw forensic telemetry exported as JSON');
   };
 
@@ -64,6 +66,7 @@ SHA-256: ${fileHash}
 Timestamp: ${timestamp}`;
 
     navigator.clipboard.writeText(summary);
+    hapticSuccess();
     toast.success('Forensic summary copied to clipboard');
   };
 
@@ -79,6 +82,7 @@ Timestamp: ${timestamp}`;
   };
 
   const handleNativeShare = async () => {
+    hapticLight();
     if (typeof navigator !== 'undefined' && navigator.share) {
       try {
         await navigator.share({
@@ -86,6 +90,7 @@ Timestamp: ${timestamp}`;
           text: getShareText(),
           url: getShareUrl(),
         });
+        hapticSuccess();
         toast.success('Shared successfully');
       } catch {
         // User cancelled

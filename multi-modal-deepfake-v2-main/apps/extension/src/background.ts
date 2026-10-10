@@ -1,10 +1,24 @@
 declare var chrome: any;
 
 chrome.runtime.onInstalled.addListener(() => {
-  chrome.contextMenus.create({
-    id: "scan-veritas",
-    title: "Scan with Veritas AI",
-    contexts: ["image", "video", "audio"]
+  chrome.contextMenus.removeAll(() => {
+    chrome.contextMenus.create({
+      id: "scan-veritas-media",
+      title: "Verify Media with Veritas AI",
+      contexts: ["image", "video", "audio"]
+    });
+
+    chrome.contextMenus.create({
+      id: "scan-veritas-link",
+      title: "Verify Link with Veritas AI",
+      contexts: ["link"]
+    });
+
+    chrome.contextMenus.create({
+      id: "scan-veritas-page",
+      title: "Analyze Page with Veritas AI",
+      contexts: ["page"]
+    });
   });
   
   // Initialize storage if needed
@@ -12,23 +26,29 @@ chrome.runtime.onInstalled.addListener(() => {
 });
 
 chrome.contextMenus.onClicked.addListener((info: any, tab: any) => {
-  if (info.menuItemId === "scan-veritas") {
-    const targetUrl = info.srcUrl;
-    if (targetUrl) {
-      // Store it in chrome.storage so sidepanel can pick it up
-      chrome.storage.local.get(['pendingScans'], (result: any) => {
-        const queue = result.pendingScans || [];
-        queue.push(targetUrl);
-        chrome.storage.local.set({ pendingScans: queue }, () => {
-          chrome.action.setBadgeText({ text: queue.length > 0 ? String(queue.length) : "" });
-          chrome.action.setBadgeBackgroundColor({ color: "#ef4444" });
-        });
+  let targetUrl = '';
+  if (info.menuItemId === "scan-veritas-media" || info.menuItemId === "scan-veritas") {
+    targetUrl = info.srcUrl;
+  } else if (info.menuItemId === "scan-veritas-link") {
+    targetUrl = info.linkUrl;
+  } else if (info.menuItemId === "scan-veritas-page") {
+    targetUrl = info.pageUrl;
+  }
+
+  if (targetUrl) {
+    // Store it in chrome.storage so sidepanel can pick it up
+    chrome.storage.local.get(['pendingScans'], (result: any) => {
+      const queue = result.pendingScans || [];
+      queue.push(targetUrl);
+      chrome.storage.local.set({ pendingScans: queue }, () => {
+        chrome.action.setBadgeText({ text: queue.length > 0 ? String(queue.length) : "" });
+        chrome.action.setBadgeBackgroundColor({ color: "#ef4444" });
       });
-      
-      // Open the side panel for the current tab
-      if (chrome.sidePanel && tab && tab.id) {
-        chrome.sidePanel.open({ windowId: tab.windowId });
-      }
+    });
+    
+    // Open the side panel for the current tab
+    if (chrome.sidePanel && tab && tab.id) {
+      chrome.sidePanel.open({ windowId: tab.windowId });
     }
   }
 });

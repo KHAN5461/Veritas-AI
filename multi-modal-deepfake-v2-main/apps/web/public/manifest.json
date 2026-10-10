@@ -30,10 +30,10 @@
   ],
   "shortcuts": [
     {
-      "name": "New Scan",
-      "short_name": "Scan",
-      "description": "Analyze a media file for deepfakes",
-      "url": "/analyze?source=shortcut",
+      "name": "Instant Camera Scan",
+      "short_name": "Camera",
+      "description": "Capture a photo or video to verify authenticity",
+      "url": "/analyze?action=camera&source=shortcut",
       "icons": [
         {
           "src": "/icon-192.png",
@@ -42,10 +42,10 @@
       ]
     },
     {
-      "name": "View History",
-      "short_name": "History",
-      "description": "Browse past analysis results",
-      "url": "/history?source=shortcut",
+      "name": "Scan Copied Link",
+      "short_name": "Clipboard",
+      "description": "Inspect and verify media link from clipboard",
+      "url": "/analyze?action=clipboard&source=shortcut",
       "icons": [
         {
           "src": "/icon-192.png",
@@ -58,6 +58,18 @@
       "short_name": "Batch",
       "description": "Process multiple files at once",
       "url": "/analyze?mode=batch&source=shortcut",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Threat Intelligence",
+      "short_name": "Radar",
+      "description": "View live synthetic media threats",
+      "url": "/threat-intel?source=shortcut",
       "icons": [
         {
           "src": "/icon-192.png",
