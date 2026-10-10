@@ -5,6 +5,25 @@ import { Dropzone, Card, Button, Chip } from '@repo/ui';
 import './index.css';
 
 // ---------------------------------------------------------
+// Types
+// ---------------------------------------------------------
+
+interface HistoryItem {
+  id: string;
+  name: string;
+  url: string | null;
+  timestamp: string;
+  is_fake: boolean;
+  confidence: number;
+  breakdown: {
+    visual_score: number;
+    audio_score: number | null;
+    lip_sync_score: number | null;
+  };
+  heatmap?: string | null;
+}
+
+// ---------------------------------------------------------
 // Sub-components: Advanced SVG Neural Scanner
 // ---------------------------------------------------------
 
@@ -85,12 +104,15 @@ const TruthGauge = ({ score, isFake }: { score: number; isFake: boolean }) => {
 // ---------------------------------------------------------
 
 function SidepanelApp() {
-  const [status, setStatus] = useState<'idle' | 'processing' | 'done' | 'error' | 'settings'>('idle');
+  const [navTab, setNavTab] = useState<'scan' | 'history' | 'settings'>('scan');
+  const [status, setStatus] = useState<'idle' | 'processing' | 'done' | 'error'>('idle');
   const [currentScan, setCurrentScan] = useState<{ name: string; file: File | null; url: string | null; result?: any } | null>(null);
   const [result, setResult] = useState<any>(null);
   const [scanText, setScanText] = useState('Initializing scan...');
   const [apiUrl, setApiUrl] = useState('https://upside-shower-handling.ngrok-free.dev');
   const [webAppUrl, setWebAppUrl] = useState('https://veritas-ai-mocha.vercel.app');
+  const [urlInput, setUrlInput] = useState('');
+  const [history, setHistory] = useState<HistoryItem[]>([]);
   const [isCopied, setIsCopied] = useState(false);
   const [apiPingStatus, setApiPingStatus] = useState<'checking' | 'online' | 'offline'>('online');
 
@@ -105,11 +127,21 @@ function SidepanelApp() {
     const savedWeb = localStorage.getItem("veritas_web_url");
     if (savedWeb) setWebAppUrl(savedWeb);
 
+    // Load scan history from storage
+    if (typeof chrome !== 'undefined' && chrome.storage) {
+      chrome.storage.local.get(['veritas_history'], (res) => {
+        if (Array.isArray(res.veritas_history)) {
+          setHistory(res.veritas_history);
+        }
+      });
+    }
+
     // Listen to background tasks (Right-click "Verify Media with Veritas AI")
     if (typeof chrome !== 'undefined' && chrome.storage) {
       const handleStorage = (scans: string[]) => {
         if (scans && scans.length > 0) {
           const url = scans[0];
+          setNavTab('scan');
           startAnalysis({ name: url.split('/').pop()?.split('?')[0] || 'Web Media', url: url, file: null });
           chrome.storage.local.set({ pendingScans: [] });
         }
@@ -127,6 +159,23 @@ function SidepanelApp() {
     }
   }, []);
 
+  const saveToHistory = (item: HistoryItem) => {
+    setHistory((prev) => {
+      const updated = [item, ...prev.filter(h => h.id !== item.id)].slice(0, 25);
+      if (typeof chrome !== 'undefined' && chrome.storage) {
+        chrome.storage.local.set({ veritas_history: updated });
+      }
+      return updated;
+    });
+  };
+
+  const clearHistory = () => {
+    setHistory([]);
+    if (typeof chrome !== 'undefined' && chrome.storage) {
+      chrome.storage.local.set({ veritas_history: [] });
+    }
+  };
+
   const testConnection = async () => {
     setApiPingStatus('checking');
     try {
@@ -141,6 +190,7 @@ function SidepanelApp() {
   const startAnalysis = async (scan: { name: string; file: File | null; url: string | null }) => {
     setCurrentScan(scan);
     setStatus('processing');
+    setNavTab('scan');
     
     const steps = [
       "Extracting cryptographic binary stream...",
@@ -182,6 +232,22 @@ function SidepanelApp() {
       setResult(data);
       setCurrentScan({ ...scan, result: data });
       setTimeout(() => setStatus('done'), 1200);
+
+      // Append to history ledger
+      saveToHistory({
+        id: 'scan_' + Date.now(),
+        name: scan.name,
+        url: scan.url,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        is_fake: data.is_fake,
+        confidence: data.confidence,
+        breakdown: {
+          visual_score: data.breakdown?.visual_score ?? 0.8,
+          audio_score: data.breakdown?.audio_score ?? null,
+          lip_sync_score: data.breakdown?.lip_sync_score ?? null
+        },
+        heatmap: data.heatmap
+      });
       
       // Save to cloud sync
       chrome.runtime?.sendMessage({
@@ -196,6 +262,18 @@ function SidepanelApp() {
       clearInterval(interval);
       setStatus('error');
     }
+  };
+
+  const handleUrlSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!urlInput.trim()) return;
+    const cleanUrl = urlInput.trim();
+    setUrlInput('');
+    startAnalysis({
+      name: cleanUrl.split('/').pop()?.split('?')[0] || 'Web Media Link',
+      url: cleanUrl,
+      file: null
+    });
   };
 
   // Demo Presets for One-Click Testing
@@ -232,6 +310,40 @@ function SidepanelApp() {
     setResult(demoData);
     setCurrentScan(mockScan);
     setStatus('done');
+    setNavTab('scan');
+
+    saveToHistory({
+      id: 'demo_' + Date.now(),
+      name: mockScan.name,
+      url: mockScan.url,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      is_fake: demoData.is_fake,
+      confidence: demoData.confidence,
+      breakdown: demoData.breakdown,
+      heatmap: null
+    });
+  };
+
+  const loadFromHistory = (item: HistoryItem) => {
+    setResult({
+      is_fake: item.is_fake,
+      confidence: item.confidence,
+      breakdown: item.breakdown,
+      heatmap: item.heatmap
+    });
+    setCurrentScan({
+      name: item.name,
+      file: null,
+      url: item.url,
+      result: {
+        is_fake: item.is_fake,
+        confidence: item.confidence,
+        breakdown: item.breakdown,
+        heatmap: item.heatmap
+      }
+    });
+    setStatus('done');
+    setNavTab('scan');
   };
 
   const copySummaryReport = () => {
@@ -300,72 +412,156 @@ Verified by Veritas AI Neural Engine`;
   };
 
   const pageVariants = {
-    initial: { opacity: 0, y: 8, scale: 0.99 },
+    initial: { opacity: 0, y: 6, scale: 0.99 },
     in: { opacity: 1, y: 0, scale: 1 },
-    out: { opacity: 0, y: -8, scale: 0.99 }
+    out: { opacity: 0, y: -6, scale: 0.99 }
   };
 
-  const pageTransition = { type: "tween", ease: "easeOut", duration: 0.22 };
+  const pageTransition = { type: "tween", ease: "easeOut", duration: 0.2 };
 
   return (
     <div className="bg-surface text-on-surface min-h-screen flex flex-col font-sans select-none antialiased">
       {/* High-Tech Cyber Header */}
-      <header className="flex items-center justify-between px-4 py-3 border-b border-outline-variant/30 bg-surface/90 backdrop-blur-md sticky top-0 z-20 shadow-xs">
-        <div className="flex items-center gap-2.5">
+      <header className="flex items-center justify-between px-3.5 py-2.5 border-b border-outline-variant/30 bg-surface/90 backdrop-blur-md sticky top-0 z-20 shadow-xs">
+        <div className="flex items-center gap-2">
           <div className="relative">
             <img src="/icons/icon48.png" className="w-6 h-6 rounded-lg object-contain shadow-sm" alt="Veritas Logo" />
             <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-500 border border-surface animate-pulse" />
           </div>
-          <div className="flex flex-col">
-            <div className="flex items-center gap-1.5">
-              <span className="font-extrabold tracking-wider text-xs bg-gradient-to-r from-primary to-tertiary bg-clip-text text-transparent">
-                VERITAS AI
-              </span>
-              <span className="text-[9px] font-mono px-1.5 py-0.2 rounded-full bg-primary/10 text-primary border border-primary/20">
-                v1.0
-              </span>
-            </div>
-          </div>
+          <span className="font-extrabold tracking-wider text-xs bg-gradient-to-r from-primary to-tertiary bg-clip-text text-transparent">
+            VERITAS AI
+          </span>
         </div>
 
-        <div className="flex items-center gap-1">
-          <button 
-            onClick={() => setStatus(status === 'settings' ? 'idle' : 'settings')} 
-            title="Engine Settings"
-            className={`w-7 h-7 flex items-center justify-center rounded-lg transition-colors ${status === 'settings' ? 'bg-primary/20 text-primary' : 'text-on-surface-variant hover:bg-on-surface/10 hover:text-on-surface'}`}
+        {/* Segmented Tab Navigation */}
+        <div className="flex items-center p-0.5 rounded-xl bg-surface-container border border-outline-variant/30 text-[11px] font-semibold">
+          <button
+            onClick={() => setNavTab('scan')}
+            className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 ${
+              navTab === 'scan' ? 'bg-primary text-on-primary shadow-xs' : 'text-on-surface-variant hover:text-on-surface'
+            }`}
           >
-            <span className="material-symbols-outlined text-[17px]">settings</span>
+            <span className="material-symbols-outlined text-[15px]">radar</span>
+            Scan
           </button>
-          <button 
-            onClick={toggleTheme} 
-            title="Toggle Dark/Light Mode"
-            className="w-7 h-7 flex items-center justify-center rounded-lg text-on-surface-variant hover:bg-on-surface/10 hover:text-on-surface transition-colors"
+          <button
+            onClick={() => setNavTab('history')}
+            className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 ${
+              navTab === 'history' ? 'bg-primary text-on-primary shadow-xs' : 'text-on-surface-variant hover:text-on-surface'
+            }`}
           >
-            <span className="material-symbols-outlined text-[17px]">contrast</span>
+            <span className="material-symbols-outlined text-[15px]">history</span>
+            History
+            {history.length > 0 && (
+              <span className={`text-[9px] px-1 rounded-full ${navTab === 'history' ? 'bg-on-primary text-primary' : 'bg-primary/20 text-primary'}`}>
+                {history.length}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => setNavTab('settings')}
+            className={`px-2 py-1 rounded-lg transition-all flex items-center ${
+              navTab === 'settings' ? 'bg-primary text-on-primary shadow-xs' : 'text-on-surface-variant hover:text-on-surface'
+            }`}
+            title="Settings"
+          >
+            <span className="material-symbols-outlined text-[15px]">settings</span>
           </button>
         </div>
+
+        <button 
+          onClick={toggleTheme} 
+          title="Toggle Dark/Light Mode"
+          className="w-7 h-7 flex items-center justify-center rounded-lg text-on-surface-variant hover:bg-on-surface/10 hover:text-on-surface transition-colors"
+        >
+          <span className="material-symbols-outlined text-[16px]">contrast</span>
+        </button>
       </header>
 
-      {/* Main View Area */}
+      {/* Main Content Area */}
       <div className="flex-1 relative flex flex-col">
         <AnimatePresence mode="wait">
           
           {/* ========================================================= */}
-          {/* SETTINGS VIEW                                             */}
+          {/* 1. HISTORY VIEW                                           */}
           {/* ========================================================= */}
-          {status === 'settings' && (
-            <motion.div key="settings" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} className="p-4 flex flex-col gap-5 flex-1">
-              <div>
-                <div className="flex items-center gap-2 text-primary">
-                  <span className="material-symbols-outlined text-[20px]">tune</span>
-                  <h2 className="text-sm font-bold tracking-wide text-on-surface uppercase">Endpoint Configuration</h2>
+          {navTab === 'history' && (
+            <motion.div key="history" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} className="p-3.5 flex flex-col gap-3 flex-1">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="text-xs font-bold text-on-surface uppercase tracking-wider">Recent Web Inspections</h2>
+                  <p className="text-[11px] text-on-surface-variant">Saved locally in browser sandbox</p>
                 </div>
-                <p className="text-xs text-on-surface-variant mt-0.5">Customize Veritas AI inference and web synchronizer connections.</p>
+                {history.length > 0 && (
+                  <button 
+                    onClick={clearHistory}
+                    className="text-[11px] text-error hover:underline flex items-center gap-0.5"
+                  >
+                    <span className="material-symbols-outlined text-[13px]">delete_sweep</span>
+                    Clear
+                  </button>
+                )}
               </div>
 
-              <div className="flex flex-col gap-4">
+              {history.length === 0 ? (
+                <div className="flex flex-col items-center justify-center flex-1 my-auto text-center p-6 text-on-surface-variant">
+                  <div className="w-12 h-12 rounded-2xl bg-surface-container flex items-center justify-center mb-2 text-on-surface-variant/50">
+                    <span className="material-symbols-outlined text-[28px]">history_toggle_off</span>
+                  </div>
+                  <span className="text-xs font-semibold text-on-surface">No scan history yet</span>
+                  <p className="text-[11px] text-on-surface-variant/80 mt-1 max-w-[200px]">
+                    Right-click any web image or test a sample to build your evidence ledger.
+                  </p>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2 overflow-y-auto max-h-[calc(100vh-120px)] pr-1">
+                  {history.map((item) => (
+                    <div 
+                      key={item.id}
+                      onClick={() => loadFromHistory(item)}
+                      className="p-3 rounded-xl bg-surface-container-low hover:bg-surface-container border border-outline-variant/30 hover:border-primary/40 transition-all cursor-pointer flex items-center justify-between gap-3 group"
+                    >
+                      <div className="min-w-0 flex items-center gap-2.5">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${item.is_fake ? 'bg-red-500/10 text-red-400' : 'bg-emerald-500/10 text-emerald-400'}`}>
+                          <span className="material-symbols-outlined text-[18px]">
+                            {item.is_fake ? 'warning' : 'verified'}
+                          </span>
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold text-on-surface truncate group-hover:text-primary transition-colors">
+                            {item.name}
+                          </p>
+                          <span className="text-[10px] text-on-surface-variant font-mono">
+                            {item.timestamp} • {(item.confidence * 100).toFixed(0)}% score
+                          </span>
+                        </div>
+                      </div>
+                      <span className="material-symbols-outlined text-on-surface-variant text-[16px] group-hover:translate-x-0.5 transition-transform">
+                        chevron_right
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {/* ========================================================= */}
+          {/* 2. SETTINGS VIEW                                          */}
+          {/* ========================================================= */}
+          {navTab === 'settings' && (
+            <motion.div key="settings" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} className="p-4 flex flex-col gap-4 flex-1">
+              <div>
+                <h2 className="text-xs font-bold tracking-wider text-on-surface uppercase flex items-center gap-1.5 text-primary">
+                  <span className="material-symbols-outlined text-[18px]">tune</span>
+                  Engine Configuration
+                </h2>
+                <p className="text-xs text-on-surface-variant mt-0.5">Manage deepfake inference and web sync bridges.</p>
+              </div>
+
+              <div className="flex flex-col gap-3.5">
                 <div>
-                  <div className="flex justify-between items-center mb-1.5">
+                  <div className="flex justify-between items-center mb-1">
                     <label className="text-xs font-semibold text-on-surface">Neural Backend Service</label>
                     <button 
                       onClick={testConnection} 
@@ -380,18 +576,18 @@ Verified by Veritas AI Neural Engine`;
                     value={apiUrl}
                     onChange={(e) => setApiUrl(e.target.value)}
                     placeholder="https://upside-shower-handling.ngrok-free.dev"
-                    className="w-full bg-surface-container-highest text-on-surface text-xs rounded-xl px-3 py-2.5 border border-outline-variant/40 focus:outline-none focus:ring-1 focus:ring-primary font-mono"
+                    className="w-full bg-surface-container-highest text-on-surface text-xs rounded-xl px-3 py-2 border border-outline-variant/40 focus:outline-none focus:ring-1 focus:ring-primary font-mono"
                   />
                   <div className="flex items-center gap-1.5 mt-1">
                     <span className={`w-1.5 h-1.5 rounded-full ${apiPingStatus === 'online' ? 'bg-emerald-500' : apiPingStatus === 'checking' ? 'bg-amber-500 animate-ping' : 'bg-red-500'}`} />
                     <span className="text-[10px] text-on-surface-variant font-mono">
-                      {apiPingStatus === 'online' ? 'Service Healthy & Connected' : apiPingStatus === 'checking' ? 'Testing connection...' : 'Service unreachable'}
+                      {apiPingStatus === 'online' ? 'Tunnel Online & Responsive' : apiPingStatus === 'checking' ? 'Testing connection...' : 'Service unreachable'}
                     </span>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-on-surface mb-1.5">
+                  <label className="block text-xs font-semibold text-on-surface mb-1">
                     Veritas Web App Platform
                   </label>
                   <input
@@ -399,7 +595,7 @@ Verified by Veritas AI Neural Engine`;
                     value={webAppUrl}
                     onChange={(e) => setWebAppUrl(e.target.value)}
                     placeholder="https://veritas-ai-mocha.vercel.app"
-                    className="w-full bg-surface-container-highest text-on-surface text-xs rounded-xl px-3 py-2.5 border border-outline-variant/40 focus:outline-none focus:ring-1 focus:ring-primary font-mono"
+                    className="w-full bg-surface-container-highest text-on-surface text-xs rounded-xl px-3 py-2 border border-outline-variant/40 focus:outline-none focus:ring-1 focus:ring-primary font-mono"
                   />
                   <span className="text-[10px] text-on-surface-variant mt-1 block">Full forensic report viewer destination.</span>
                 </div>
@@ -411,7 +607,7 @@ Verified by Veritas AI Neural Engine`;
                   onClick={() => {
                     localStorage.setItem("veritas_api_url", apiUrl);
                     localStorage.setItem("veritas_web_url", webAppUrl);
-                    setStatus('idle');
+                    setNavTab('scan');
                   }} 
                   className="w-full text-xs h-9"
                 >
@@ -420,33 +616,33 @@ Verified by Veritas AI Neural Engine`;
                 </Button>
                 <Button 
                   variant="tonal" 
-                  onClick={() => setStatus('idle')} 
+                  onClick={() => setNavTab('scan')} 
                   className="w-full text-xs h-9"
                 >
-                  Cancel
+                  Return to Scanner
                 </Button>
               </div>
             </motion.div>
           )}
 
           {/* ========================================================= */}
-          {/* IDLE VIEW (HOME)                                          */}
+          {/* 3. SCAN TAB (IDLE, PROCESSING, ERROR, OR DONE)            */}
           {/* ========================================================= */}
-          {status === 'idle' && (
-            <motion.div key="idle" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} className="p-4 flex flex-col gap-5 flex-1">
+          {navTab === 'scan' && status === 'idle' && (
+            <motion.div key="idle" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} className="p-3.5 flex flex-col gap-4 flex-1">
               
               {/* Hero Banner */}
-              <div className="relative overflow-hidden rounded-2xl bg-gradient-to-b from-primary/10 via-surface-container-low to-surface-container-low p-5 border border-outline-variant/30 flex flex-col items-center text-center">
-                <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-3 shadow-inner border border-primary/20">
-                  <span className="material-symbols-outlined text-[32px]">shield_lock</span>
+              <div className="relative overflow-hidden rounded-2xl bg-gradient-to-b from-primary/10 via-surface-container-low to-surface-container-low p-4 border border-outline-variant/30 flex flex-col items-center text-center">
+                <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-2 shadow-inner border border-primary/20">
+                  <span className="material-symbols-outlined text-[28px]">shield_lock</span>
                 </div>
-                <h2 className="text-base font-bold text-on-surface tracking-tight">Autonomous Forensic Guard</h2>
-                <p className="text-xs text-on-surface-variant mt-1 max-w-xs leading-relaxed">
+                <h2 className="text-sm font-bold text-on-surface tracking-tight">Autonomous Forensic Guard</h2>
+                <p className="text-[11px] text-on-surface-variant mt-0.5 max-w-xs leading-relaxed">
                   Real-time neural detection for web images, audio, video, and social media links.
                 </p>
 
                 {/* Instant Test Preset Pills */}
-                <div className="flex items-center gap-2 mt-4">
+                <div className="flex items-center gap-2 mt-3">
                   <button
                     onClick={() => loadDemoSample(true)}
                     className="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-all flex items-center gap-1 cursor-pointer"
@@ -464,6 +660,30 @@ Verified by Veritas AI Neural Engine`;
                 </div>
               </div>
 
+              {/* Direct URL Input Bar */}
+              <form onSubmit={handleUrlSubmit} className="flex gap-1.5">
+                <div className="relative flex-1">
+                  <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-[16px]">
+                    link
+                  </span>
+                  <input
+                    type="url"
+                    value={urlInput}
+                    onChange={(e) => setUrlInput(e.target.value)}
+                    placeholder="Paste YouTube, X, or Media URL..."
+                    className="w-full pl-8 pr-2 py-2 rounded-xl text-xs bg-surface-container border border-outline-variant/30 focus:outline-none focus:ring-1 focus:ring-primary text-on-surface"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={!urlInput.trim()}
+                  className="px-3 py-2 rounded-xl text-xs font-semibold bg-primary text-on-primary disabled:opacity-40 disabled:cursor-not-allowed hover:bg-primary/90 transition-all flex items-center gap-1 cursor-pointer shrink-0"
+                >
+                  <span className="material-symbols-outlined text-[15px]">send</span>
+                  Scan
+                </button>
+              </form>
+
               {/* Native Dropzone */}
               <div className="relative">
                 <Dropzone 
@@ -475,8 +695,8 @@ Verified by Veritas AI Neural Engine`;
               </div>
 
               {/* Browser Context Menu Hint */}
-              <div className="rounded-xl p-3 bg-surface-container border border-outline-variant/20 flex items-start gap-2.5">
-                <span className="material-symbols-outlined text-primary text-[18px] shrink-0 mt-0.5">mouse</span>
+              <div className="rounded-xl p-2.5 bg-surface-container border border-outline-variant/20 flex items-start gap-2">
+                <span className="material-symbols-outlined text-primary text-[16px] shrink-0 mt-0.5">mouse</span>
                 <p className="text-[11px] text-on-surface-variant leading-snug">
                   <strong className="text-on-surface">Right-Click Anywhere:</strong> Select <span className="text-primary font-medium">&quot;Verify Media with Veritas AI&quot;</span> on any webpage to inspect content instantly without downloading.
                 </p>
@@ -485,13 +705,11 @@ Verified by Veritas AI Neural Engine`;
             </motion.div>
           )}
 
-          {/* ========================================================= */}
-          {/* PROCESSING VIEW                                           */}
-          {/* ========================================================= */}
-          {status === 'processing' && (
+          {/* Processing State */}
+          {navTab === 'scan' && status === 'processing' && (
             <motion.div key="processing" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} className="p-6 flex flex-col items-center justify-center flex-1 my-auto">
               <SVGScanner />
-              <div className="mt-8 flex flex-col items-center gap-3 text-center">
+              <div className="mt-8 flex flex-col items-center gap-2.5 text-center">
                 <span className="font-bold text-base text-on-surface tracking-tight">Scanning Evidence</span>
                 <span className="text-xs text-primary font-mono bg-primary/10 border border-primary/20 px-3.5 py-1.5 rounded-full animate-pulse shadow-sm max-w-xs truncate">
                   {scanText}
@@ -503,10 +721,8 @@ Verified by Veritas AI Neural Engine`;
             </motion.div>
           )}
 
-          {/* ========================================================= */}
-          {/* ERROR VIEW                                                */}
-          {/* ========================================================= */}
-          {status === 'error' && (
+          {/* Error State */}
+          {navTab === 'scan' && status === 'error' && (
             <motion.div key="error" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} className="p-4 flex flex-col items-center justify-center flex-1 text-center my-auto">
               <div className="w-14 h-14 bg-error-container text-on-error-container rounded-2xl flex items-center justify-center mb-3 shadow-md">
                 <span className="material-symbols-outlined text-[30px]">cloud_off</span>
@@ -526,14 +742,12 @@ Verified by Veritas AI Neural Engine`;
             </motion.div>
           )}
 
-          {/* ========================================================= */}
-          {/* DONE VIEW (FORENSIC REPORT)                               */}
-          {/* ========================================================= */}
-          {status === 'done' && result && (
-            <motion.div key="done" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} className="p-4 flex flex-col gap-4 pb-6 flex-1">
+          {/* Done State */}
+          {navTab === 'scan' && status === 'done' && result && (
+            <motion.div key="done" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} className="p-3.5 flex flex-col gap-3.5 pb-6 flex-1">
               
               {/* Verdict Summary Card */}
-              <div className={`rounded-2xl p-5 border flex flex-col items-center shadow-lg transition-all ${
+              <div className={`rounded-2xl p-4 border flex flex-col items-center shadow-lg transition-all ${
                 result.is_fake 
                   ? 'bg-gradient-to-b from-red-500/10 via-surface-container-low to-surface-container-low border-red-500/40' 
                   : 'bg-gradient-to-b from-emerald-500/10 via-surface-container-low to-surface-container-low border-emerald-500/40'
@@ -542,7 +756,7 @@ Verified by Veritas AI Neural Engine`;
                   label={result.is_fake ? "MANIPULATION DETECTED" : "VERIFIED AUTHENTIC"} 
                   icon={result.is_fake ? "warning" : "verified_user"}
                   variant={result.is_fake ? "filter" : "assist"}
-                  className={`mb-4 !h-7 !px-3.5 !text-[11px] font-extrabold tracking-wider ${
+                  className={`mb-3 !h-7 !px-3 !text-[10px] font-extrabold tracking-wider ${
                     result.is_fake 
                       ? '!bg-red-500 !text-white !border-red-600 ring-2 ring-red-500/20' 
                       : '!bg-emerald-500 !text-white !border-emerald-600 ring-2 ring-emerald-500/20'
@@ -551,13 +765,13 @@ Verified by Veritas AI Neural Engine`;
                 
                 <TruthGauge score={result.confidence} isFake={result.is_fake} />
 
-                <div className="text-[11px] font-mono text-on-surface-variant truncate max-w-full px-2 mt-2">
+                <div className="text-[11px] font-mono text-on-surface-variant truncate max-w-full px-2 mt-1">
                   Target: <span className="text-on-surface font-semibold">{currentScan?.name || 'Inspected Media'}</span>
                 </div>
               </div>
 
               {/* Forensic Signal Breakdown */}
-              <Card variant="elevated" className="flex flex-col gap-3.5 p-4 rounded-2xl border border-outline-variant/30">
+              <Card variant="elevated" className="flex flex-col gap-3 p-3.5 rounded-2xl border border-outline-variant/30">
                 <div className="flex justify-between items-center border-b border-outline-variant/20 pb-2">
                   <span className="text-xs font-bold text-on-surface tracking-wider uppercase flex items-center gap-1.5">
                     <span className="material-symbols-outlined text-primary text-[16px]">biometrics</span>
@@ -571,7 +785,7 @@ Verified by Veritas AI Neural Engine`;
                   <div>
                     <div className="flex justify-between text-xs mb-1">
                       <span className="text-on-surface-variant flex items-center gap-1">
-                        <span className="material-symbols-outlined text-[14px]">visibility</span>
+                        <span className="material-symbols-outlined text-[13px]">visibility</span>
                         ViT Spatial Artifacts
                       </span>
                       <span className="font-mono font-bold text-on-surface">
@@ -591,7 +805,7 @@ Verified by Veritas AI Neural Engine`;
                   <div>
                     <div className="flex justify-between text-xs mb-1">
                       <span className="text-on-surface-variant flex items-center gap-1">
-                        <span className="material-symbols-outlined text-[14px]">graphic_eq</span>
+                        <span className="material-symbols-outlined text-[13px]">graphic_eq</span>
                         Acoustic Frequency / Vocoder
                       </span>
                       <span className="font-mono font-bold text-on-surface">
@@ -611,7 +825,7 @@ Verified by Veritas AI Neural Engine`;
                   <div>
                     <div className="flex justify-between text-xs mb-1">
                       <span className="text-on-surface-variant flex items-center gap-1">
-                        <span className="material-symbols-outlined text-[14px]">face</span>
+                        <span className="material-symbols-outlined text-[13px]">face</span>
                         Biometric Coherence
                       </span>
                       <span className="font-mono font-bold text-on-surface">

@@ -8,6 +8,7 @@ import { useAuth } from '../../context/AuthContext';
 import { saveScanResult } from '../../lib/scans';
 import { detectDeepfake } from '../../lib/api';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { hapticSuccess, hapticWarning, hapticLight, hapticError } from '../../lib/haptics';
 
 async function calculateSHA256(file: File) {
@@ -627,6 +628,33 @@ function AnalyzeContent() {
 
   return (
     <div className="p-4 sm:p-8 max-w-6xl mx-auto flex flex-col gap-6 w-full pb-32">
+      {/* Real-Time Defense Advisory Ticker */}
+      <div className="flex items-center gap-3 px-3.5 py-2.5 rounded-2xl bg-surface-container-low border border-primary/20 text-xs text-on-surface-variant overflow-hidden shadow-xs">
+        <div className="flex items-center gap-1.5 shrink-0">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="text-[10px] font-bold tracking-wider uppercase text-primary">LIVE INTEL</span>
+        </div>
+        <div className="h-3.5 w-px bg-outline-variant/40 shrink-0" />
+        <div className="flex-1 overflow-x-auto no-scrollbar py-0.5">
+          <div className="flex items-center gap-4 text-[11px] font-mono whitespace-nowrap">
+            <span className="flex items-center gap-1.5 text-on-surface">
+              <span className="text-emerald-400">●</span> ViT-B/16 & Audio-Spectra v2: <strong className="text-emerald-400">ONLINE</strong>
+            </span>
+            <span className="text-outline-variant">•</span>
+            <span className="flex items-center gap-1.5">
+              <span className="text-amber-400">⚠️</span> Global Alert: Elevated synthetic voice cloning activity detected
+            </span>
+            <span className="text-outline-variant">•</span>
+            <span className="flex items-center gap-1.5">
+              <span className="text-primary">🛡️</span> SHA-256 Cryptographic Ledger: Active
+            </span>
+          </div>
+        </div>
+        <Link href="/threat-intel" className="text-[11px] font-semibold text-primary hover:underline shrink-0 flex items-center gap-0.5 hidden sm:flex">
+          Intel Map <span className="material-symbols-outlined text-[13px]">arrow_forward</span>
+        </Link>
+      </div>
+
       {/* Top Header & Mode Switcher */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>

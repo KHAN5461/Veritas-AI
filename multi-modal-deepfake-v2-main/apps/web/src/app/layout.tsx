@@ -11,6 +11,7 @@ import { ScrollToTop } from "../components/ScrollToTop";
 import { InstallBanner } from "../components/InstallBanner";
 import { OfflineBanner } from "../components/OfflineBanner";
 import { IOSInstallSheet } from "../components/IOSInstallSheet";
+import { ShortcutsModal } from "../components/ShortcutsModal";
 import { AuthProvider, useAuth } from "../context/AuthContext";
 import { PwaProvider, usePwa } from "../context/PwaContext";
 import { auth } from "../lib/firebase";
@@ -251,6 +252,15 @@ function TopAppBar() {
         </span>
       </div>
       <div className="flex items-center gap-1.5 shrink-0 relative">
+        <button
+          onClick={() => {
+            window.dispatchEvent(new KeyboardEvent('keydown', { key: '?' }));
+          }}
+          className="w-9 h-9 rounded-full items-center justify-center hover:bg-on-surface/8 text-on-surface-variant hover:text-on-surface transition-colors hidden sm:flex"
+          title="Keyboard Shortcuts (?)"
+        >
+          <span className="material-symbols-outlined text-[20px]">keyboard</span>
+        </button>
         <IconButton icon={isDark ? "light_mode" : "dark_mode"} onClick={toggleTheme} />
         
         {/* Mobile View NOT INSTALLED: Show glowing Install Action Button */}
@@ -448,6 +458,7 @@ export default function RootLayout({
                 <>
                   <GlobalDropzoneOverlay />
                   <ScrollToTop />
+                  <ShortcutsModal />
                   <KeyboardShortcuts />
                   <NavRail />
                   <div className="flex-1 flex flex-col h-full overflow-hidden relative">
