@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Multimodal Deepfake Detector",
+  "name": "Veritas AI - Multimodal Deepfake Detector",
   "version": "1.0.0",
-  "description": "Right-click any image, video, or audio on the web to check it for AI-generated manipulation using vision, audio, and fusion analysis.",
+  "description": "Enterprise-grade AI deepfake & synthetic media detection. Right-click any image, video, audio, or link to verify authenticity in real-time.",
   "permissions": [
     "contextMenus",
     "sidePanel",
@@ -21,7 +21,7 @@
     "default_path": "sidepanel.html"
   },
   "action": {
-    "default_title": "Open Deepfake Detector",
+    "default_title": "Veritas AI - Deepfake Detector",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",
