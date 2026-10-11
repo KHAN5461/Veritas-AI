@@ -22,9 +22,33 @@ interface ForensicReportProps {
 
 export function ForensicReport({ isLoading, result, fileData, fileHash, timestamp }: ForensicReportProps) {
   const [activeTab, setActiveTab] = useState<'overview' | 'visual' | 'provenance' | 'raw'>('overview');
+  const [isExportingPDF, setIsExportingPDF] = useState(false);
 
   const confidenceScore = result ? (result.confidence > 1 ? result.confidence : result.confidence * 100) : 0;
   const isManipulated = result?.is_fake ?? false;
+
+  const handleExportPDF = async () => {
+    if (!result) return;
+    try {
+      setIsExportingPDF(true);
+      hapticLight();
+      toast.info('Generating high-security forensic PDF dossier...');
+      const { downloadPDF } = await import('../lib/pdf');
+      await downloadPDF('forensic-report-content', `Veritas_${(fileData.name || 'Report').replace(/\.[^/.]+$/, '')}.pdf`, {
+        result,
+        fileData,
+        fileHash,
+        timestamp
+      });
+      hapticSuccess();
+      toast.success('Forensic PDF dossier generated successfully');
+    } catch (err: any) {
+      console.error('PDF generation error:', err);
+      toast.error('Failed to generate PDF: ' + (err?.message || 'Unknown error'));
+    } finally {
+      setIsExportingPDF(false);
+    }
+  };
 
   const handleExportJSON = () => {
     if (!result) return;
@@ -160,6 +184,17 @@ Timestamp: ${timestamp}`;
               >
                 <span className="material-symbols-outlined text-[16px]">data_object</span>
                 Export JSON
+              </button>
+              <button
+                onClick={handleExportPDF}
+                disabled={isExportingPDF || !result}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-primary/10 hover:bg-primary/20 text-primary transition-colors border border-primary/20 disabled:opacity-50"
+                title="Download 3-page court-admissible forensic PDF dossier"
+              >
+                <span className="material-symbols-outlined text-[16px]">
+                  {isExportingPDF ? 'hourglass_top' : 'picture_as_pdf'}
+                </span>
+                {isExportingPDF ? 'Generating...' : 'Export PDF'}
               </button>
               <button
                 onClick={() => {
