@@ -144,3 +144,53 @@ html.light {
 @media (max-width: 768px) {
   .grid { grid-template-columns: 1fr !important; }
 }
+
+/* ---------- CYBER-FORENSIC UI UTILITIES ---------- */
+.bg-grid-pattern {
+  background-image: radial-gradient(rgba(125, 211, 252, 0.12) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+.light .bg-grid-pattern {
+  background-image: radial-gradient(rgba(26, 109, 173, 0.08) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+@keyframes radarSweep {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes scanlineBeam {
+  0% { transform: translateY(-100%); opacity: 0; }
+  50% { opacity: 0.75; }
+  100% { transform: translateY(240%); opacity: 0; }
+}
+
+@keyframes sonarPing {
+  0% { transform: scale(0.92); opacity: 0.8; }
+  80%, 100% { transform: scale(1.6); opacity: 0; }
+}
+
+.animate-radar-sweep {
+  animation: radarSweep 3.5s linear infinite;
+}
+
+.animate-scanline {
+  animation: scanlineBeam 2.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.animate-sonar-ping {
+  animation: sonarPing 2.2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+.glow-primary {
+  box-shadow: 0 0 20px -3px rgba(125, 211, 252, 0.35);
+}
+
+.glow-crimson {
+  box-shadow: 0 0 20px -3px rgba(239, 68, 68, 0.35);
+}
+
+.glow-emerald {
+  box-shadow: 0 0 20px -3px rgba(16, 185, 129, 0.35);
+}
