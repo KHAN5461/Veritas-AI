@@ -1,10 +1,15 @@
 declare var chrome: any;
 
 chrome.runtime.onInstalled.addListener(() => {
+  // Set extension icon click to open side panel automatically
+  if (chrome.sidePanel && chrome.sidePanel.setPanelBehavior) {
+    chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
+  }
+
   chrome.contextMenus.removeAll(() => {
     chrome.contextMenus.create({
       id: "scan-veritas-media",
-      title: "Verify Media with Veritas AI",
+      title: "Inspect Media with Veritas AI",
       contexts: ["image", "video", "audio"]
     });
 
@@ -36,7 +41,7 @@ chrome.contextMenus.onClicked.addListener((info: any, tab: any) => {
   }
 
   if (targetUrl) {
-    // Store it in chrome.storage so sidepanel can pick it up
+    // Store in chrome.storage so sidepanel can pick it up
     chrome.storage.local.get(['pendingScans'], (result: any) => {
       const queue = result.pendingScans || [];
       queue.push(targetUrl);
@@ -46,9 +51,17 @@ chrome.contextMenus.onClicked.addListener((info: any, tab: any) => {
       });
     });
     
-    // Open the side panel for the current tab
-    if (chrome.sidePanel && tab && tab.id) {
-      chrome.sidePanel.open({ windowId: tab.windowId });
+    // Reliably open the side panel in Manifest V3
+    if (chrome.sidePanel) {
+      if (tab?.id) {
+        chrome.sidePanel.open({ tabId: tab.id }).catch(() => {
+          if (tab?.windowId) {
+            chrome.sidePanel.open({ windowId: tab.windowId }).catch(() => {});
+          }
+        });
+      } else if (tab?.windowId) {
+        chrome.sidePanel.open({ windowId: tab.windowId }).catch(() => {});
+      }
     }
   }
 });

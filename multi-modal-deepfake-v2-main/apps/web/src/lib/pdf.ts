@@ -532,19 +532,19 @@ function buildPage2(data: ResolvedPdfData): HTMLElement {
           <tr style="border-bottom:1px solid #e2e8f0">
             <td style="padding:4px 6px;font-weight:600">2. Cornea Specular Reflections</td>
             <td style="padding:4px 6px;color:#475569">Ray-Traced Glint Symmetry</td>
-            <td style="padding:4px 6px;color:#334155">${isFake ? 'Asymmetrical pupil glint vectors diverging from scene lighting' : 'Consistent directional illuminance vectors verified'}</td>
-            <td style="padding:4px 6px;text-align:center;font-weight:700;color:${assessmentColor}">${assessmentLabel}</td>
+            <td style="padding:4px 6px;color:#334155">${result?.corneal_concordance != null ? `Specular discordance score: ${(result.corneal_concordance * 100).toFixed(1)}% (${result.corneal_concordance > 0.65 ? 'Discordant directional light vector' : 'Concordant ambient illumination'})` : (isFake ? 'Asymmetrical pupil glint vectors diverging from scene lighting' : 'Consistent directional illuminance vectors verified')}</td>
+            <td style="padding:4px 6px;text-align:center;font-weight:700;color:${(result?.corneal_concordance ?? (isFake ? 0.8 : 0.2)) > 0.65 ? '#881337' : '#14532d'}">${(result?.corneal_concordance ?? (isFake ? 0.8 : 0.2)) > 0.65 ? 'ANOMALOUS' : 'CONFORMANT'}</td>
           </tr>
           <tr style="border-bottom:1px solid #e2e8f0">
-            <td style="padding:4px 6px;font-weight:600">3. 2D-FFT Spatial Grid Residuals</td>
-            <td style="padding:4px 6px;color:#475569">Fast Fourier Transform</td>
-            <td style="padding:4px 6px;color:#334155">${isFake ? 'Periodic high-frequency peaks indicative of neural upsampling' : 'Natural Gaussian frequency roll-off conformant'}</td>
-            <td style="padding:4px 6px;text-align:center;font-weight:700;color:${assessmentColor}">${assessmentLabel}</td>
+            <td style="padding:4px 6px;font-weight:600">3. YCbCr Chrominance Noise</td>
+            <td style="padding:4px 6px;color:#475569">Bayer Noise Residual Covariance</td>
+            <td style="padding:4px 6px;color:#334155">${result?.chrominance_noise != null ? `Chrominance decoupling: ${(result.chrominance_noise * 100).toFixed(1)}% (${result.chrominance_noise > 0.65 ? 'Sensor Bayer correlation broken' : 'Sensor noise covariance verified'})` : (isFake ? 'Decoupled chromatic noise variance across Cb/Cr channels' : 'Natural optical sensor chromatic noise correlation verified')}</td>
+            <td style="padding:4px 6px;text-align:center;font-weight:700;color:${(result?.chrominance_noise ?? (isFake ? 0.8 : 0.2)) > 0.65 ? '#881337' : '#14532d'}">${(result?.chrominance_noise ?? (isFake ? 0.8 : 0.2)) > 0.65 ? 'ANOMALOUS' : 'CONFORMANT'}</td>
           </tr>
           <tr>
-            <td style="padding:4px 6px;font-weight:600">4. Epidermal Micro-Texture</td>
-            <td style="padding:4px 6px;color:#475569">High-Pass Spatial Filtering</td>
-            <td style="padding:4px 6px;color:#334155">${isFake ? 'Attenuation of natural pore noise; generative diffusion blur' : 'Natural biological epidermal texture intact'}</td>
+            <td style="padding:4px 6px;font-weight:600">4. Epidermal Micro-Texture &amp; Jitter</td>
+            <td style="padding:4px 6px;color:#475569">High-Pass Spatial &amp; Landmark Drift</td>
+            <td style="padding:4px 6px;color:#334155">${result?.temporal_stability != null && result.temporal_stability > 0 ? `Temporal face landmark drift: ${(result.temporal_stability * 100).toFixed(1)}%` : (isFake ? 'Attenuation of natural pore noise; generative diffusion blur' : 'Natural biological epidermal texture intact')}</td>
             <td style="padding:4px 6px;text-align:center;font-weight:700;color:${assessmentColor}">${assessmentLabel}</td>
           </tr>
         </tbody>
@@ -578,8 +578,13 @@ function buildPage2(data: ResolvedPdfData): HTMLElement {
 
 /** ─── PAGE 3: Provenance Ledger & Legal Admissibility Declaration ──────── */
 function buildPage3(data: ResolvedPdfData): HTMLElement {
-  const { fileData, fileHash, timestamp } = data;
+  const { result, fileData, fileHash, timestamp } = data;
   const shortId = fileHash ? fileHash.substring(0, 12).toUpperCase() : 'UNSIGNED';
+  const provenance = result?.provenance;
+  const hasC2PA = provenance?.has_c2pa ?? false;
+  const hasAiProv = provenance?.has_ai_provenance ?? false;
+  const aiSigs = (provenance?.ai_signatures ?? []).join(', ');
+  const hasCameraMeta = provenance?.has_camera_metadata ?? false;
 
   const el = document.createElement('div');
   el.style.cssText = PAGE_STYLE;
@@ -597,22 +602,28 @@ function buildPage3(data: ResolvedPdfData): HTMLElement {
           <tr style="background:#f1f5f9;border-bottom:1px solid #cbd5e1">
             <th style="padding:4px 6px;font-weight:700;color:#0f172a;width:24%">METADATA DOMAIN</th>
             <th style="padding:4px 6px;font-weight:700;color:#0f172a;width:26%">APPLICABLE STANDARD</th>
-            <th style="padding:4px 6px;font-weight:700;color:#0f172a;width:16%;text-align:center">STATUS</th>
-            <th style="padding:4px 6px;font-weight:700;color:#0f172a;width:34%">TECHNICAL OBSERVATIONS</th>
+            <th style="padding:4px 6px;font-weight:700;color:#0f172a;width:18%;text-align:center">STATUS</th>
+            <th style="padding:4px 6px;font-weight:700;color:#0f172a;width:32%">TECHNICAL OBSERVATIONS</th>
           </tr>
         </thead>
         <tbody>
           <tr style="border-bottom:1px solid #e2e8f0">
             <td style="padding:4px 6px;font-weight:600">C2PA Trust Manifest</td>
             <td style="padding:4px 6px;color:#475569">C2PA v1.3 / ISO 21595</td>
-            <td style="padding:4px 6px;text-align:center;font-weight:700;color:#b45309">ABSENT</td>
-            <td style="padding:4px 6px;color:#334155">No signed cryptographic manifest block detected in container header</td>
+            <td style="padding:4px 6px;text-align:center;font-weight:700;color:${hasC2PA ? '#14532d' : '#b45309'}">${hasC2PA ? 'VERIFIED (PRESENT)' : 'ABSENT'}</td>
+            <td style="padding:4px 6px;color:#334155">${hasC2PA ? 'Cryptographic C2PA manifest claims verified in container header' : 'No signed cryptographic manifest block detected in container header'}</td>
+          </tr>
+          <tr style="border-bottom:1px solid #e2e8f0">
+            <td style="padding:4px 6px;font-weight:600">AI Model Signatures</td>
+            <td style="padding:4px 6px;color:#475569">Synthesis Chunk Hashes</td>
+            <td style="padding:4px 6px;text-align:center;font-weight:700;color:${hasAiProv ? '#881337' : '#14532d'}">${hasAiProv ? `DETECTED (${aiSigs})` : 'NEGATIVE'}</td>
+            <td style="padding:4px 6px;color:#334155">${hasAiProv ? `Binary chunk match: ${aiSigs} synthesis fingerprint detected` : 'No known generative diffusion or GAN generator headers detected'}</td>
           </tr>
           <tr style="border-bottom:1px solid #e2e8f0">
             <td style="padding:4px 6px;font-weight:600">Hardware Sensor EXIF</td>
             <td style="padding:4px 6px;color:#475569">JEITA CP-3451E / EXIF 2.32</td>
-            <td style="padding:4px 6px;text-align:center;font-weight:700;color:#b45309">STRIPPED</td>
-            <td style="padding:4px 6px;color:#334155">Camera make/model, focal length, ISO, and GPS tags omitted</td>
+            <td style="padding:4px 6px;text-align:center;font-weight:700;color:${hasCameraMeta ? '#14532d' : '#b45309'}">${hasCameraMeta ? 'VERIFIED' : 'STRIPPED'}</td>
+            <td style="padding:4px 6px;color:#334155">${hasCameraMeta ? 'Camera sensor make/model and physical optics metadata preserved' : 'Camera make/model, focal length, ISO, and GPS tags omitted'}</td>
           </tr>
           <tr>
             <td style="padding:4px 6px;font-weight:600">Container Packaging</td>

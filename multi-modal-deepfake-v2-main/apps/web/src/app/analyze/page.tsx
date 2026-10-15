@@ -442,16 +442,21 @@ function AnalyzeContent() {
 
       setCurrentStep(2);
       setLoadingText('Executing ViT & Frequency spectral neural networks...');
-      setProgress(55);
+      setProgress(35);
 
-      const data = await detectDeepfake(selectedFile, hash);
+      const data = await detectDeepfake(selectedFile, hash, (stepText, progressPct) => {
+        setLoadingText(stepText);
+        setProgress(progressPct);
+        if (progressPct >= 90) setCurrentStep(3);
+        else if (progressPct >= 25) setCurrentStep(2);
+      });
       if (data.mode === 'heuristic_fallback') {
         toast.warning('Offline mode: Using local heuristic analysis');
       }
 
-      setProgress(85);
+      setProgress(100);
       setCurrentStep(3);
-      setLoadingText('Fusing multi-modal inference vectors...');
+      setLoadingText('Forensic dossier compiled successfully');
 
       setResult(data);
       if (data.is_fake) {

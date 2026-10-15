@@ -11,6 +11,23 @@ export interface ForensicResult {
     lip_sync_score?: number;
   };
   heatmap?: string | null;
+  fft?: string | null;
+  spectrogram?: string | null;
+  audio_flatness?: number;
+  audio_phase?: number;
+  temporal_stability?: number;
+  corneal_concordance?: number;
+  chrominance_noise?: number;
+  audio_jitter?: number;
+  audio_shimmer?: number;
+  audio_hnr?: number;
+  provenance?: {
+    has_ai_provenance: boolean;
+    ai_signatures: string[];
+    has_c2pa: boolean;
+    has_camera_metadata: boolean;
+  };
+  metadata?: Record<string, any>;
   mode?: 'network' | 'heuristic_fallback';
 }
 
@@ -51,7 +68,54 @@ function runHeuristicFallback(file: File): Promise<ForensicResult> {
  * Detect deepfakes using the primary API, with automatic circuit breaking
  * and fallback to local heuristics if the backend is unavailable.
  */
-export async function detectDeepfake(file: File, fileHash: string): Promise<ForensicResult> {
+const STEP_LABELS: Record<string, string> = {
+  queued: 'Queued for forensic pipeline execution...',
+  vision_scan: 'Scanning spatial ViT patches, corneal highlights & chrominance noise...',
+  audio_analysis: 'Probing vocoder harmonics, jitter & vocal micro-tremors...',
+  av_desync: 'Evaluating cross-modal audio-visual lip synchronization...',
+  multimodal_fusion: 'Computing Bayesian multimodal fusion consensus...',
+  done: 'Compiling final forensic telemetry dossier...'
+};
+
+async function pollForResults(
+  jobId: string,
+  onProgress?: (step: string, progress: number) => void
+): Promise<ForensicResult> {
+  let attempts = 0;
+  while (attempts < 60) {
+    await new Promise(r => setTimeout(r, 1500));
+    attempts++;
+
+    const pollRes = await fetch(`${API_BASE_URL}/jobs/${jobId}`, {
+      headers: {
+        'X-API-Key': process.env.NEXT_PUBLIC_API_KEY || 'dev_key_123'
+      }
+    });
+
+    if (pollRes.ok) {
+      const pollData = await pollRes.json();
+      if (pollData.step && onProgress) {
+        onProgress(STEP_LABELS[pollData.step] || pollData.step, pollData.progress ?? 50);
+      }
+      if (pollData.status === 'completed' && pollData.result) {
+        return processData(pollData.result);
+      } else if (pollData.status === 'failed') {
+        throw new Error('Backend analysis failed: ' + pollData.error);
+      }
+    }
+  }
+  throw new Error('Analysis timed out after 2 minutes');
+}
+
+/**
+ * Detect deepfakes using the primary API, with real-time SSE streaming,
+ * automatic circuit breaking, and fallback to local heuristics.
+ */
+export async function detectDeepfake(
+  file: File,
+  fileHash: string,
+  onProgress?: (step: string, progress: number) => void
+): Promise<ForensicResult> {
   try {
     const formData = new FormData();
     formData.append('file', file);
@@ -78,35 +142,74 @@ export async function detectDeepfake(file: File, fileHash: string): Promise<Fore
 
     const jobData = await response.json();
     
-    // If it was instantly cached, return immediately
-    if (jobData.status === 'completed') {
+    // Instant cache hit return
+    if (jobData.status === 'completed' && jobData.result) {
+      if (onProgress) onProgress('Retrieved instant verifiable forensic cache', 100);
       return processData(jobData.result);
     }
     
     const jobId = jobData.job_id;
-    
-    // 2. Poll for results
-    let attempts = 0;
-    while (attempts < 60) { // Up to 2 minutes (60 * 2s)
-      await new Promise(r => setTimeout(r, 2000));
-      attempts++;
-      
-      const pollRes = await fetch(`${API_BASE_URL}/jobs/${jobId}`, {
-        headers: {
-          'X-API-Key': process.env.NEXT_PUBLIC_API_KEY || 'dev_key_123'
-        }
-      });
-      if (pollRes.ok) {
-        const pollData = await pollRes.json();
-        if (pollData.status === 'completed') {
-          return processData(pollData.result);
-        } else if (pollData.status === 'failed') {
-          throw new Error('Backend analysis failed: ' + pollData.error);
-        }
+    if (onProgress) onProgress('Job enqueued in neural processing queue...', 10);
+
+    // 2. Real-time Server-Sent Events (SSE) Stream with automatic Polling fallback
+    if (typeof window !== 'undefined' && typeof window.EventSource !== 'undefined') {
+      try {
+        return await new Promise<ForensicResult>((resolve, reject) => {
+          const streamUrl = `${API_BASE_URL}/jobs/${jobId}/stream`;
+          const es = new EventSource(streamUrl);
+          let settled = false;
+
+          const timer = setTimeout(() => {
+            if (!settled) {
+              settled = true;
+              es.close();
+              pollForResults(jobId, onProgress).then(resolve).catch(reject);
+            }
+          }, 60000); // 60s max on SSE before falling back to poll
+
+          es.onmessage = (event) => {
+            try {
+              const data = JSON.parse(event.data);
+              if (data.step && onProgress) {
+                onProgress(STEP_LABELS[data.step] || data.step, data.progress ?? 50);
+              }
+              if (data.status === 'completed' && data.result) {
+                if (!settled) {
+                  settled = true;
+                  clearTimeout(timer);
+                  es.close();
+                  resolve(processData(data.result));
+                }
+              } else if (data.status === 'failed') {
+                if (!settled) {
+                  settled = true;
+                  clearTimeout(timer);
+                  es.close();
+                  reject(new Error('Backend analysis failed: ' + (data.error || 'Unknown error')));
+                }
+              }
+            } catch (parseErr) {
+              console.debug('[SSE Stream Parse Error]', parseErr);
+            }
+          };
+
+          es.onerror = () => {
+            if (!settled) {
+              settled = true;
+              clearTimeout(timer);
+              es.close();
+              // Graceful seamless fallback to polling
+              pollForResults(jobId, onProgress).then(resolve).catch(reject);
+            }
+          };
+        });
+      } catch (streamErr) {
+        console.debug('[SSE Fallback]', streamErr);
+        return await pollForResults(jobId, onProgress);
       }
     }
-    
-    throw new Error('Analysis timed out after 2 minutes');
+
+    return await pollForResults(jobId, onProgress);
   } catch (error) {
     console.warn('[API Circuit Breaker] Primary detection backend unreachable or failed. Falling back to local heuristics.', error);
     return runHeuristicFallback(file);
