@@ -135,7 +135,7 @@ class BoundedTTLCache:
 jobs_cache = BoundedTTLCache(max_items=1000, default_ttl_sec=3600.0)      # 1 hour for job results
 results_cache = BoundedTTLCache(max_items=2000, default_ttl_sec=86400.0)  # 24 hours for file hashes
 
-executor = ThreadPoolExecutor(max_workers=4, thread_name_prefix="veritas-worker")
+executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="veritas-worker")
 
 # =====================================================================
 # Pydantic Schemas for API Documentation & Validation

@@ -14,6 +14,10 @@ def generate_heatmap_b64(frame):
     if frame is None or getattr(frame, "size", 0) == 0:
         return None
     try:
+        h, w = frame.shape[:2]
+        if max(h, w) > 512:
+            scale = 512.0 / max(h, w)
+            frame = cv2.resize(frame, (int(w * scale), int(h * scale)))
         encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 90]
         _, encoded = cv2.imencode('.jpg', frame, encode_param)
         decoded = cv2.imdecode(encoded, cv2.IMREAD_COLOR)
@@ -31,6 +35,10 @@ def generate_fft_b64(frame):
     if frame is None or getattr(frame, "size", 0) == 0:
         return None
     try:
+        h, w = frame.shape[:2]
+        if max(h, w) > 512:
+            scale = 512.0 / max(h, w)
+            frame = cv2.resize(frame, (int(w * scale), int(h * scale)))
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         f = np.fft.fft2(gray)
         fshift = np.fft.fftshift(f)
@@ -296,20 +304,22 @@ class VisionModel:
                     logger.info("Loaded Ensemble Model C (ViT - GAN/Synthetic)")
                 except Exception as e:
                     logger.warning("Could not load GAN model: %s", e)
+
+                # Load MediaPipe FaceMesh for biometric analysis when memory allows
+                try:
+                    import mediapipe as mp
+                    self.mp_face_mesh = mp.solutions.face_mesh.FaceMesh(static_image_mode=True, max_num_faces=1, refine_landmarks=True)
+                    logger.info("Loaded MediaPipe FaceMesh for biometric analysis")
+                except ImportError:
+                    logger.info("mediapipe not installed. Skipping biometric mesh checks.")
+                except Exception as e:
+                    logger.warning("Could not initialize MediaPipe FaceMesh: %s", e)
             else:
                 logger.info("Operating in LOW_MEM / Cloud Free Tier mode (512MB budget): Active forensic suite uses ELA, 2D FFT Spectral, Chrominance Noise Residuals, and C2PA Provenance.")
 
-            # Load MediaPipe FaceMesh for biometric analysis
-            try:
-                import mediapipe as mp
-                self.mp_face_mesh = mp.solutions.face_mesh.FaceMesh(static_image_mode=True, max_num_faces=1, refine_landmarks=True)
-                logger.info("Loaded MediaPipe FaceMesh for biometric analysis")
-            except ImportError:
-                logger.info("mediapipe not installed. Skipping biometric mesh checks.")
-            except Exception as e:
-                logger.warning("Could not initialize MediaPipe FaceMesh: %s", e)
-
             self._models_loaded = True
+            import gc
+            gc.collect()
 
     def _resolve_fake_index(self, model, default_idx: int = 1) -> int:
         """Dynamically identify the class index corresponding to synthetic/deepfake media."""
