@@ -1,4 +1,4 @@
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://upside-shower-handling.ngrok-free.dev';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || 'https://khan5461-veritas-ai-backend.hf.space';
 
 export interface ForensicResult {
   is_fake: boolean;
@@ -21,6 +21,17 @@ export interface ForensicResult {
   audio_jitter?: number;
   audio_shimmer?: number;
   audio_hnr?: number;
+  physical_forensics?: {
+    corneal_reflection_risk?: number;
+    chrominance_noise_risk?: number;
+    temporal_jitter_risk?: number;
+  };
+  acoustic_forensics?: {
+    jitter?: number;
+    shimmer?: number;
+    hnr?: number;
+  };
+  timeline?: Array<{ timestamp: number; score: number; label?: string }>;
   provenance?: {
     has_ai_provenance: boolean;
     ai_signatures: string[];

@@ -32,7 +32,7 @@ export default function HistoryPage() {
   const [search, setSearch] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [sortOrder, setSortOrder] = useState<SortType>('newest');
-  const [scans, setScans] = useState<Record<string, unknown>[]>([]);
+  const [scans, setScans] = useState<any[]>([]);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const { user } = useAuth();

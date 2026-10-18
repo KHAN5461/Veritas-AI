@@ -4,7 +4,7 @@ import { Card, Button, Switch } from '@repo/ui';
 import { toast } from 'sonner';
 import { useAuth } from '../../context/AuthContext';
 import { auth } from '../../lib/firebase';
-import { updateProfile } from 'firebase/auth';
+import { updateProfile, signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -16,7 +16,7 @@ const AVATAR_PRESETS = [
 ];
 
 export default function SettingsPage() {
-  const { user, logOut } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
 
   // Profile editing states
@@ -117,7 +117,7 @@ export default function SettingsPage() {
 
   const handleSignOut = async () => {
     try {
-      await logOut();
+      await signOut(auth);
       router.push('/login');
     } catch {
       toast.error('Failed to sign out');

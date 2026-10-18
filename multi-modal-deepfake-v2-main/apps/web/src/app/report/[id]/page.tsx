@@ -237,34 +237,24 @@ export default function ReportPage() {
         <div className="flex items-center gap-2 w-full md:w-auto justify-end flex-wrap">
           <Button 
             variant="tonal" 
-            onClick={() => window.print()} 
-            className="!py-2 !px-3 text-xs rounded-xl"
-            title="Print forensic dossier directly"
-          >
-            <span className="material-symbols-outlined text-[16px] mr-1">print</span>
-            Print
-          </Button>
-
-          <Button 
-            variant="tonal" 
             onClick={handleShare} 
-            className="!py-2 !px-3 text-xs rounded-xl"
+            className="!py-2 !px-3 text-xs rounded-xl flex-1 sm:flex-initial justify-center"
             title="Share report link"
           >
             <span className="material-symbols-outlined text-[16px] mr-1">share</span>
-            Share
+            <span>Share</span>
           </Button>
 
           <Button 
             variant="filled" 
             onClick={handleDownload} 
             disabled={isDownloading} 
-            className="!py-2 !px-4 text-xs font-semibold rounded-xl shadow-sm"
+            className="!py-2 !px-4 text-xs font-semibold rounded-xl shadow-sm flex-1 sm:flex-initial justify-center"
           >
             <span className="material-symbols-outlined text-[16px] mr-1.5">
               {isDownloading ? 'hourglass_top' : 'download'}
             </span>
-            {isDownloading ? 'Compiling PDF...' : 'Download PDF'}
+            <span>{isDownloading ? 'Compiling PDF...' : 'Download PDF'}</span>
           </Button>
         </div>
       </div>

@@ -1,7 +1,9 @@
+import os
 import torch
 import numpy as np
 import cv2
 import base64
+from typing import List, Dict, Any, Optional, Tuple, Union
 from transformers import AutoImageProcessor, AutoModelForImageClassification
 
 import logging

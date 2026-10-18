@@ -2,11 +2,17 @@ import io
 import os
 import uuid
 import logging
+from typing import List, Dict, Any, Optional, Tuple, Union
 import torch
 import librosa
 import librosa.display
 import numpy as np
-import ffmpeg
+try:
+    import ffmpeg
+    _has_ffmpeg = True
+except ImportError:
+    ffmpeg = None
+    _has_ffmpeg = False
 import base64
 import matplotlib
 matplotlib.use('Agg')  # Thread-safe non-interactive backend
@@ -113,13 +119,20 @@ class AudioModel:
 
     def extract_audio(self, file_path: str, output_audio_path: str, max_duration_sec: int = 30):
         try:
-            (
-                ffmpeg
-                .input(file_path, t=max_duration_sec)
-                .output(output_audio_path, acodec='pcm_s16le', ac=1, ar='16k')
-                .overwrite_output()
-                .run(quiet=True)
-            )
+            if _has_ffmpeg and ffmpeg is not None:
+                (
+                    ffmpeg
+                    .input(file_path, t=max_duration_sec)
+                    .output(output_audio_path, acodec='pcm_s16le', ac=1, ar='16k')
+                    .overwrite_output()
+                    .run(quiet=True)
+                )
+            else:
+                import subprocess
+                subprocess.run(
+                    ["ffmpeg", "-y", "-i", file_path, "-t", str(max_duration_sec), "-acodec", "pcm_s16le", "-ac", "1", "-ar", "16000", output_audio_path],
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True
+                )
             return os.path.exists(output_audio_path) and os.path.getsize(output_audio_path) > 0
         except Exception as e:
             logger.debug("Audio extraction failed or file has no audio track: %s", e)

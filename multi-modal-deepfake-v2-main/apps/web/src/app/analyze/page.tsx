@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ForensicReport } from '../../components/ForensicReport';
 import { useAuth } from '../../context/AuthContext';
 import { saveScanResult } from '../../lib/scans';
-import { detectDeepfake } from '../../lib/api';
+import { detectDeepfake, type ForensicResult } from '../../lib/api';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { hapticSuccess, hapticWarning, hapticLight, hapticError } from '../../lib/haptics';
@@ -979,12 +979,12 @@ function AnalyzeContent() {
                   animate={{ opacity: 1, y: 0 }}
                   className="flex flex-col gap-6"
                 >
-                  <div className="flex justify-between items-center bg-surface-container-low p-3.5 rounded-2xl border border-outline-variant/30 print:hidden">
-                    <Button variant="outlined" onClick={resetSingle} className="text-xs">
+                  <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 bg-surface-container-low p-3.5 rounded-2xl border border-outline-variant/30 print:hidden">
+                    <Button variant="outlined" onClick={resetSingle} className="text-xs w-full sm:w-auto justify-center">
                       <span className="material-symbols-outlined text-[16px] mr-1.5">refresh</span>
                       Scan Another
                     </Button>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
                       <button
                         onClick={() => {
                           if (file) {
@@ -1007,7 +1007,7 @@ function AnalyzeContent() {
                             toast.success('Moved scan to Batch Queue');
                           }
                         }}
-                        className="px-3 py-1.5 rounded-xl border border-outline-variant/30 text-xs text-on-surface-variant hover:text-on-surface transition-colors"
+                        className="flex-1 sm:flex-initial px-3 py-2 rounded-xl border border-outline-variant/30 text-xs text-on-surface-variant hover:text-on-surface transition-colors text-center"
                       >
                         + Add to Batch
                       </button>
@@ -1023,7 +1023,7 @@ function AnalyzeContent() {
                             });
                           });
                         }}
-                        className="text-xs"
+                        className="text-xs flex-1 sm:flex-initial justify-center"
                       >
                         <span className="material-symbols-outlined text-[16px] mr-1.5">download</span>
                         Download PDF
