@@ -13,3 +13,5 @@ services:
         value: 3.10.12
       - key: ENV
         value: production
+      - key: LOW_MEM
+        value: "1"

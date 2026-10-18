@@ -167,7 +167,7 @@ class VisionModel:
         custom_model_dir = "./custom_weights"
         if os.path.exists(custom_model_dir) and os.path.exists(os.path.join(custom_model_dir, "config.json")):
             self.model_vit_id = custom_model_dir
-            logger.info("Found Custom Weights! Loading Fine-Tuned ViT model from %s", custom_model_dir)
+            logger.info("Found Custom Weights! Will load Fine-Tuned ViT model from %s", custom_model_dir)
         else:
             self.model_vit_id = "dima806/deepfake_vs_real_image_detection"
             
@@ -181,43 +181,77 @@ class VisionModel:
         self.model_gan = None
         self.processor_gan = None
         
-        try:
-            self.processor_vit = AutoImageProcessor.from_pretrained(self.model_vit_id)
-            self.model_vit = AutoModelForImageClassification.from_pretrained(self.model_vit_id).to(self.device).eval()
-            logger.info("Loaded Ensemble Model A (ViT - Deepfake/Swap)")
-        except Exception as e:
-            logger.warning("Could not load ViT model: %s", e)
-            
-        try:
-            self.processor_cnn = AutoImageProcessor.from_pretrained(self.model_cnn_id)
-            self.model_cnn = AutoModelForImageClassification.from_pretrained(self.model_cnn_id).to(self.device).eval()
-            logger.info("Loaded Ensemble Model B (CNN)")
-        except Exception as e:
-            logger.warning("Could not load CNN model: %s", e)
-            
-        try:
-            self.processor_gan = AutoImageProcessor.from_pretrained(self.model_gan_id)
-            self.model_gan = AutoModelForImageClassification.from_pretrained(self.model_gan_id).to(self.device).eval()
-            logger.info("Loaded Ensemble Model C (ViT - GAN/Synthetic)")
-        except Exception as e:
-            logger.warning("Could not load GAN model: %s", e)
-            
-        self.vit_fake_idx = self._resolve_fake_index(self.model_vit, default_idx=1)
-        self.cnn_fake_idx = self._resolve_fake_index(self.model_cnn, default_idx=0)
-        self.gan_fake_idx = self._resolve_fake_index(self.model_gan, default_idx=0)
+        self.vit_fake_idx = 1
+        self.cnn_fake_idx = 0
+        self.gan_fake_idx = 0
 
-        # Reusable single FaceMesh instance to avoid memory leak on every request
         self.mp_face_mesh = None
-        try:
-            import mediapipe as mp
-            self.mp_face_mesh = mp.solutions.face_mesh.FaceMesh(static_image_mode=True, max_num_faces=1, refine_landmarks=True)
-            logger.info("Loaded MediaPipe FaceMesh for biometric analysis")
-        except ImportError:
-            logger.info("mediapipe not installed. Skipping biometric mesh checks.")
-        except Exception as e:
-            logger.warning("Could not initialize MediaPipe FaceMesh: %s", e)
-
         self.face_extractor = FaceExtractor()
+        self._models_loaded = False
+        import threading
+        self._lock = threading.Lock()
+
+    def _ensure_models(self):
+        """Lazy load deep learning models with strict memory budgeting for cloud containers."""
+        if self._models_loaded:
+            return
+        with self._lock:
+            if self._models_loaded:
+                return
+            
+            # Pin torch to single thread to prevent CPU spike and RAM inflation
+            torch.set_num_threads(1)
+            
+            try:
+                logger.info("Lazy loading Primary Model A (ViT: %s)...", self.model_vit_id)
+                self.processor_vit = AutoImageProcessor.from_pretrained(self.model_vit_id)
+                self.model_vit = AutoModelForImageClassification.from_pretrained(
+                    self.model_vit_id,
+                    low_cpu_mem_usage=True
+                ).to(self.device).eval()
+                self.vit_fake_idx = self._resolve_fake_index(self.model_vit, default_idx=1)
+                logger.info("Loaded Ensemble Model A (ViT - Deepfake/Swap)")
+            except Exception as e:
+                logger.warning("Could not load ViT model: %s", e)
+
+            # In constrained environments (Render free tier with 512MB RAM), skip secondary heavy models to prevent OOM
+            is_low_mem = os.getenv("LOW_MEM", "1") == "1"
+            if not is_low_mem:
+                try:
+                    self.processor_cnn = AutoImageProcessor.from_pretrained(self.model_cnn_id)
+                    self.model_cnn = AutoModelForImageClassification.from_pretrained(
+                        self.model_cnn_id,
+                        low_cpu_mem_usage=True
+                    ).to(self.device).eval()
+                    self.cnn_fake_idx = self._resolve_fake_index(self.model_cnn, default_idx=0)
+                    logger.info("Loaded Ensemble Model B (CNN)")
+                except Exception as e:
+                    logger.warning("Could not load CNN model: %s", e)
+                    
+                try:
+                    self.processor_gan = AutoImageProcessor.from_pretrained(self.model_gan_id)
+                    self.model_gan = AutoModelForImageClassification.from_pretrained(
+                        self.model_gan_id,
+                        low_cpu_mem_usage=True
+                    ).to(self.device).eval()
+                    self.gan_fake_idx = self._resolve_fake_index(self.model_gan, default_idx=0)
+                    logger.info("Loaded Ensemble Model C (ViT - GAN/Synthetic)")
+                except Exception as e:
+                    logger.warning("Could not load GAN model: %s", e)
+            else:
+                logger.info("Operating in LOW_MEM mode (512MB footprint): Primary ViT + Physical Forensics active.")
+
+            # Load MediaPipe FaceMesh for biometric analysis
+            try:
+                import mediapipe as mp
+                self.mp_face_mesh = mp.solutions.face_mesh.FaceMesh(static_image_mode=True, max_num_faces=1, refine_landmarks=True)
+                logger.info("Loaded MediaPipe FaceMesh for biometric analysis")
+            except ImportError:
+                logger.info("mediapipe not installed. Skipping biometric mesh checks.")
+            except Exception as e:
+                logger.warning("Could not initialize MediaPipe FaceMesh: %s", e)
+
+            self._models_loaded = True
 
     def _resolve_fake_index(self, model, default_idx: int = 1) -> int:
         """Dynamically identify the class index corresponding to synthetic/deepfake media."""
@@ -374,6 +408,8 @@ class VisionModel:
         if not faces_list:
             return []
         
+        self._ensure_models()
+        
         num_faces = len(faces_list)
         fake_probs_vit = [0.5] * num_faces
         fake_probs_cnn = [0.5] * num_faces
@@ -494,12 +530,20 @@ class VisionModel:
         # 3. Consensus-Weighted Ensemble Integration with Physical Forensics
         ensemble_probs = []
         for i in range(num_faces):
-            p_vit = fake_probs_vit[i]
-            p_cnn = fake_probs_cnn[i]
-            p_gan = fake_probs_gan[i]
+            active_models = []
+            if self.model_vit:
+                active_models.append(fake_probs_vit[i])
+            if self.model_cnn:
+                active_models.append(fake_probs_cnn[i])
+            if self.model_gan:
+                active_models.append(fake_probs_gan[i])
             
-            nn_mean = (p_vit + p_cnn + p_gan) / 3.0
-            nn_max = max(p_vit, p_cnn, p_gan)
+            if active_models:
+                nn_mean = sum(active_models) / len(active_models)
+                nn_max = max(active_models)
+            else:
+                nn_mean = fake_probs_ela[i]
+                nn_max = fake_probs_ela[i]
             
             # Consensus logic: If 2 or more models agree or strong signal is confirmed
             if nn_max > 0.82 and nn_mean > 0.45:
@@ -519,6 +563,9 @@ class VisionModel:
                 0.04 * fake_probs_corneal[i]
             )
             ensemble_probs.append(float(np.clip(weighted_prob, 0.0, 1.0)))
+            
+        import gc
+        gc.collect()
             
         return {
             "probabilities": ensemble_probs,

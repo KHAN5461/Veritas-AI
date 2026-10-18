@@ -73,35 +73,49 @@ def compute_micro_tremors(waveform: np.ndarray, sr: int):
 class AudioModel:
     def __init__(self, model_id="HyperMoon/wav2vec2-base-960h-finetuned-deepfake", onnx_path="./audio_weights/audio_onnx/model.onnx"):
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.model_id = model_id
+        self.onnx_path = onnx_path
         self.onnx_session = None
         self.model = None
         self.processor = None
-        
-        if os.path.exists(onnx_path) and os.path.getsize(onnx_path) > 1024 * 1024:
-            logger.info("Loading Audio Model from ONNX: %s", onnx_path)
+        self.fake_class_idx = 1
+        self._model_loaded = False
+        import threading
+        self._lock = threading.Lock()
+
+    def _ensure_model(self):
+        """Lazy load wav2vec2 on first audio inference request."""
+        if self._model_loaded:
+            return
+        with self._lock:
+            if self._model_loaded:
+                return
+            torch.set_num_threads(1)
+            
+            if os.path.exists(self.onnx_path) and os.path.getsize(self.onnx_path) > 1024 * 1024:
+                logger.info("Loading Audio Model from ONNX: %s", self.onnx_path)
+                try:
+                    import onnxruntime
+                    available_providers = onnxruntime.get_available_providers()
+                    providers = [p for p in ['CUDAExecutionProvider', 'CPUExecutionProvider'] if p in available_providers]
+                    self.onnx_session = onnxruntime.InferenceSession(self.onnx_path, providers=providers)
+                except Exception as e:
+                    logger.warning("Failed to load ONNX model (%s), falling back to PyTorch", e)
+            elif os.path.exists(self.onnx_path):
+                logger.warning("%s appears to be a Git LFS pointer. Skipping ONNX, falling back to PyTorch.", self.onnx_path)
+
+            logger.info("Loading Audio Model Feature Extractor: %s...", self.model_id)
             try:
-                import onnxruntime
-                available_providers = onnxruntime.get_available_providers()
-                providers = [p for p in ['CUDAExecutionProvider', 'CPUExecutionProvider'] if p in available_providers]
-                self.onnx_session = onnxruntime.InferenceSession(onnx_path, providers=providers)
-            except ImportError:
-                logger.info("onnxruntime not installed, falling back to PyTorch")
+                self.processor = AutoFeatureExtractor.from_pretrained(self.model_id)
+                if self.onnx_session is None:
+                    self.model = AutoModelForAudioClassification.from_pretrained(self.model_id, low_cpu_mem_usage=True)
+                    self.model.to(self.device).eval()
             except Exception as e:
-                logger.warning("Failed to load ONNX model (%s), falling back to PyTorch", e)
-        elif os.path.exists(onnx_path):
-            logger.warning("%s appears to be a Git LFS pointer (too small). Skipping ONNX, falling back to PyTorch.", onnx_path)
+                logger.warning("Could not load audio model due to %s. It will fallback to acoustic biomarkers.", e)
+                self.model = None
 
-        logger.info("Loading Audio Model Feature Extractor: %s...", model_id)
-        try:
-            self.processor = AutoFeatureExtractor.from_pretrained(model_id)
-            if self.onnx_session is None:
-                self.model = AutoModelForAudioClassification.from_pretrained(model_id)
-                self.model.to(self.device)
-        except Exception as e:
-            logger.warning("Could not load audio model due to %s. It will fallback to a default score.", e)
-            self.model = None
-
-        self.fake_class_idx = self._resolve_fake_index(self.model, default_idx=1)
+            self.fake_class_idx = self._resolve_fake_index(self.model, default_idx=1)
+            self._model_loaded = True
 
     def _resolve_fake_index(self, model, default_idx: int = 1) -> int:
         """Dynamically detect class index for spoofed/synthetic audio from model configuration."""
@@ -153,6 +167,7 @@ class AudioModel:
                     "rolloff": 0.0
                 }
                 
+            self._ensure_model()
             if self.processor is None or (self.onnx_session is None and self.model is None):
                 return {
                     "score": 0.5,
@@ -257,5 +272,7 @@ class AudioModel:
                     os.remove(audio_path)
             except:
                 pass
+            import gc
+            gc.collect()
 
 audio_detector = AudioModel()
