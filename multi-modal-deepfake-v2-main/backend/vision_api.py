@@ -47,6 +47,7 @@ import math
 
 class FaceExtractor:
     def __init__(self):
+        self.cascade = None
         self.detector = None
         self.tracker = None
         self._initialized = False
@@ -55,20 +56,33 @@ class FaceExtractor:
         if self._initialized:
             return
         self._initialized = True
+
+        # 1. First try lightweight OpenCV Haar Cascade (<2MB RAM, zero network latency)
         try:
-            from uniface.detection import RetinaFace
-            from uniface.tracking import BYTETracker
-            self.detector = RetinaFace(confidence_threshold=0.6, nms_threshold=0.4)
-            self.tracker = BYTETracker()
-            logger.info("Successfully loaded UniFace for Multi-Face Tracking")
-        except ImportError:
-            self.detector = None
-            self.tracker = None
-            logger.info("uniface not installed. Multi-Face tracking will fall back to center crop.")
+            cascade_path = cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'
+            if os.path.exists(cascade_path):
+                self.cascade = cv2.CascadeClassifier(cascade_path)
+                logger.info("Loaded OpenCV Haar Cascade for ultra-low-memory face detection")
         except Exception as e:
-            self.detector = None
-            self.tracker = None
-            logger.warning("Failed loading RetinaFace: %s", e)
+            logger.debug("Haar cascade load notice: %s", e)
+
+        # 2. Only attempt heavy UniFace/RetinaFace if not running in low memory mode
+        is_low_mem = os.getenv("LOW_MEM", "1") == "1"
+        if not is_low_mem:
+            try:
+                from uniface.detection import RetinaFace
+                from uniface.tracking import BYTETracker
+                self.detector = RetinaFace(confidence_threshold=0.6, nms_threshold=0.4)
+                self.tracker = BYTETracker()
+                logger.info("Successfully loaded UniFace for Multi-Face Tracking")
+            except ImportError:
+                self.detector = None
+                self.tracker = None
+                logger.info("uniface not installed. Multi-Face tracking will fall back to center crop.")
+            except Exception as e:
+                self.detector = None
+                self.tracker = None
+                logger.warning("Failed loading RetinaFace: %s", e)
 
     def extract_image_faces(self, file_path):
         self._ensure_detector()
@@ -97,6 +111,24 @@ class FaceExtractor:
                         cropped = frame[crop_y1:crop_y2, crop_x1:crop_x2]
                         cropped_rgb = cv2.cvtColor(cropped, cv2.COLOR_BGR2RGB)
                         faces.append({"bbox": [crop_x1, crop_y1, crop_x2 - crop_x1, crop_y2 - crop_y1], "img": cropped_rgb})
+        elif self.cascade:
+            try:
+                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                detected = self.cascade.detectMultiScale(gray, scaleFactor=1.15, minNeighbors=4, minSize=(30, 30))
+                h, w, _ = frame.shape
+                for (x, y, bw, bh) in detected:
+                    pad_x = int(bw * 0.25)
+                    pad_y = int(bh * 0.25)
+                    crop_x1 = max(0, x - pad_x)
+                    crop_y1 = max(0, y - pad_y)
+                    crop_x2 = min(w, x + bw + pad_x)
+                    crop_y2 = min(h, y + bh + pad_y)
+                    if (crop_x2 - crop_x1) > 0 and (crop_y2 - crop_y1) > 0:
+                        cropped = frame[crop_y1:crop_y2, crop_x1:crop_x2]
+                        cropped_rgb = cv2.cvtColor(cropped, cv2.COLOR_BGR2RGB)
+                        faces.append({"bbox": [crop_x1, crop_y1, crop_x2 - crop_x1, crop_y2 - crop_y1], "img": cropped_rgb})
+            except Exception as e:
+                logger.debug("Haar detection notice: %s", e)
             
         if not faces:
             # Fallback Center Crop
@@ -134,6 +166,16 @@ class FaceExtractor:
                     detected_faces = None
                     if self.detector:
                         detected_faces = self.detector.detect(frame)
+                    elif self.cascade:
+                        try:
+                            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                            detected = self.cascade.detectMultiScale(gray, scaleFactor=1.2, minNeighbors=4, minSize=(30, 30))
+                            class SimpleFace:
+                                def __init__(self, bbox):
+                                    self.bbox = bbox
+                            detected_faces = [SimpleFace([x, y, x + w, y + h]) for (x, y, w, h) in detected]
+                        except Exception:
+                            detected_faces = None
                     
                     frame_crops = []
                     if detected_faces and len(detected_faces) > 0:
@@ -213,24 +255,26 @@ class VisionModel:
             if self._models_loaded:
                 return
             
-            # Pin torch to single thread to prevent CPU spike and RAM inflation
+            torch.set_grad_enabled(False)
             torch.set_num_threads(1)
-            
-            try:
-                logger.info("Lazy loading Primary Model A (ViT: %s)...", self.model_vit_id)
-                self.processor_vit = AutoImageProcessor.from_pretrained(self.model_vit_id)
-                self.model_vit = AutoModelForImageClassification.from_pretrained(
-                    self.model_vit_id,
-                    low_cpu_mem_usage=True
-                ).to(self.device).eval()
-                self.vit_fake_idx = self._resolve_fake_index(self.model_vit, default_idx=1)
-                logger.info("Loaded Ensemble Model A (ViT - Deepfake/Swap)")
-            except Exception as e:
-                logger.warning("Could not load ViT model: %s", e)
+            import gc
+            gc.collect()
 
-            # In constrained environments (Render free tier with 512MB RAM), skip secondary heavy models to prevent OOM
+            # In constrained environments (Render free tier with 512MB RAM), skip heavy neural models to prevent OOM
             is_low_mem = os.getenv("LOW_MEM", "1") == "1"
             if not is_low_mem:
+                try:
+                    logger.info("Lazy loading Primary Model A (ViT: %s)...", self.model_vit_id)
+                    self.processor_vit = AutoImageProcessor.from_pretrained(self.model_vit_id)
+                    self.model_vit = AutoModelForImageClassification.from_pretrained(
+                        self.model_vit_id,
+                        low_cpu_mem_usage=True
+                    ).to(self.device).eval()
+                    self.vit_fake_idx = self._resolve_fake_index(self.model_vit, default_idx=1)
+                    logger.info("Loaded Ensemble Model A (ViT - Deepfake/Swap)")
+                except Exception as e:
+                    logger.warning("Could not load ViT model: %s", e)
+
                 try:
                     self.processor_cnn = AutoImageProcessor.from_pretrained(self.model_cnn_id)
                     self.model_cnn = AutoModelForImageClassification.from_pretrained(
@@ -253,7 +297,7 @@ class VisionModel:
                 except Exception as e:
                     logger.warning("Could not load GAN model: %s", e)
             else:
-                logger.info("Operating in LOW_MEM mode (512MB footprint): Primary ViT + Physical Forensics active.")
+                logger.info("Operating in LOW_MEM / Cloud Free Tier mode (512MB budget): Active forensic suite uses ELA, 2D FFT Spectral, Chrominance Noise Residuals, and C2PA Provenance.")
 
             # Load MediaPipe FaceMesh for biometric analysis
             try:

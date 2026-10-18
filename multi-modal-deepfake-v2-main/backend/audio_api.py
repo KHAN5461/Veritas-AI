@@ -91,32 +91,42 @@ class AudioModel:
         with self._lock:
             if self._model_loaded:
                 return
+            torch.set_grad_enabled(False)
             torch.set_num_threads(1)
-            
-            if os.path.exists(self.onnx_path) and os.path.getsize(self.onnx_path) > 1024 * 1024:
-                logger.info("Loading Audio Model from ONNX: %s", self.onnx_path)
-                try:
-                    import onnxruntime
-                    available_providers = onnxruntime.get_available_providers()
-                    providers = [p for p in ['CUDAExecutionProvider', 'CPUExecutionProvider'] if p in available_providers]
-                    self.onnx_session = onnxruntime.InferenceSession(self.onnx_path, providers=providers)
-                except Exception as e:
-                    logger.warning("Failed to load ONNX model (%s), falling back to PyTorch", e)
-            elif os.path.exists(self.onnx_path):
-                logger.warning("%s appears to be a Git LFS pointer. Skipping ONNX, falling back to PyTorch.", self.onnx_path)
+            import gc
+            gc.collect()
 
-            logger.info("Loading Audio Model Feature Extractor: %s...", self.model_id)
-            try:
-                self.processor = AutoFeatureExtractor.from_pretrained(self.model_id)
-                if self.onnx_session is None:
-                    self.model = AutoModelForAudioClassification.from_pretrained(self.model_id, low_cpu_mem_usage=True)
-                    self.model.to(self.device).eval()
-            except Exception as e:
-                logger.warning("Could not load audio model due to %s. It will fallback to acoustic biomarkers.", e)
+            is_low_mem = os.getenv("LOW_MEM", "1") == "1"
+            if not is_low_mem:
+                if os.path.exists(self.onnx_path) and os.path.getsize(self.onnx_path) > 1024 * 1024:
+                    logger.info("Loading Audio Model from ONNX: %s", self.onnx_path)
+                    try:
+                        import onnxruntime
+                        available_providers = onnxruntime.get_available_providers()
+                        providers = [p for p in ['CUDAExecutionProvider', 'CPUExecutionProvider'] if p in available_providers]
+                        self.onnx_session = onnxruntime.InferenceSession(self.onnx_path, providers=providers)
+                    except Exception as e:
+                        logger.warning("Failed to load ONNX model (%s), falling back to PyTorch", e)
+                elif os.path.exists(self.onnx_path):
+                    logger.warning("%s appears to be a Git LFS pointer. Skipping ONNX, falling back to PyTorch.", self.onnx_path)
+
+                logger.info("Loading Audio Model Feature Extractor: %s...", self.model_id)
+                try:
+                    self.processor = AutoFeatureExtractor.from_pretrained(self.model_id)
+                    if self.onnx_session is None:
+                        self.model = AutoModelForAudioClassification.from_pretrained(self.model_id, low_cpu_mem_usage=True)
+                        self.model.to(self.device).eval()
+                except Exception as e:
+                    logger.warning("Could not load audio model due to %s. It will fallback to acoustic biomarkers.", e)
+                    self.model = None
+
+                self.fake_class_idx = self._resolve_fake_index(self.model, default_idx=1)
+            else:
+                logger.info("Operating in LOW_MEM mode for audio: Acoustic Biomarkers (Jitter, Shimmer, HNR, Flatness, Phase) active.")
                 self.model = None
 
-            self.fake_class_idx = self._resolve_fake_index(self.model, default_idx=1)
             self._model_loaded = True
+            gc.collect()
 
     def _resolve_fake_index(self, model, default_idx: int = 1) -> int:
         """Dynamically detect class index for spoofed/synthetic audio from model configuration."""

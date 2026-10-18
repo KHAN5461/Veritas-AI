@@ -1,4 +1,5 @@
 import os
+os.environ.setdefault("LOW_MEM", "1")
 import time
 import uuid
 import shutil
