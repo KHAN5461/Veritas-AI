@@ -734,7 +734,10 @@ async def submit_video_legacy(file: UploadFile = File(...)):
         error_msg = res.get("error", "Processing failed") if res else "Unknown error"
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error_msg)
 
+@app.get("/", response_model=HealthResponseModel)
+@app.head("/")
 @app.get("/health", response_model=HealthResponseModel)
+@app.head("/health")
 def health_check():
     """Standard health check probe compatible with container orchestrators."""
     return {"status": "ok"}

@@ -47,6 +47,14 @@ import math
 
 class FaceExtractor:
     def __init__(self):
+        self.detector = None
+        self.tracker = None
+        self._initialized = False
+
+    def _ensure_detector(self):
+        if self._initialized:
+            return
+        self._initialized = True
         try:
             from uniface.detection import RetinaFace
             from uniface.tracking import BYTETracker
@@ -57,8 +65,13 @@ class FaceExtractor:
             self.detector = None
             self.tracker = None
             logger.info("uniface not installed. Multi-Face tracking will fall back to center crop.")
+        except Exception as e:
+            self.detector = None
+            self.tracker = None
+            logger.warning("Failed loading RetinaFace: %s", e)
 
     def extract_image_faces(self, file_path):
+        self._ensure_detector()
         frame = cv2.imread(file_path)
         if frame is None:
             return [], frame
@@ -97,6 +110,7 @@ class FaceExtractor:
         return faces, frame
 
     def extract_video_timeline(self, file_path, max_frames: int = 30):
+        self._ensure_detector()
         cap = cv2.VideoCapture(file_path)
         try:
             total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))

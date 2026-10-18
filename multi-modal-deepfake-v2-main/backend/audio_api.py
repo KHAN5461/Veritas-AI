@@ -14,9 +14,6 @@ except ImportError:
     ffmpeg = None
     _has_ffmpeg = False
 import base64
-import matplotlib
-matplotlib.use('Agg')  # Thread-safe non-interactive backend
-import matplotlib.pyplot as plt
 from transformers import AutoFeatureExtractor, AutoModelForAudioClassification
 
 logger = logging.getLogger("veritas.audio")
@@ -24,6 +21,10 @@ logger = logging.getLogger("veritas.audio")
 def generate_spectrogram_b64(y, sr):
     """Thread-safe spectrogram generation using OO matplotlib API."""
     try:
+        import matplotlib
+        matplotlib.use('Agg')  # Thread-safe non-interactive backend
+        import matplotlib.pyplot as plt
+
         fig, ax = plt.subplots(figsize=(10, 4))
         S = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=128, fmax=8000)
         S_dB = librosa.power_to_db(S, ref=np.max)
