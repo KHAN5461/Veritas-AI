@@ -201,7 +201,7 @@ const TruthGauge = ({ score, isFake }: { score: number; isFake: boolean }) => {
 // Main Veritas AI Extension Component
 // ---------------------------------------------------------
 
-const DEFAULT_API_URL = 'https://khan5461-veritas-ai-backend.hf.space';
+const DEFAULT_API_URL = 'https://veritas-ai-backend-qlgu.onrender.com';
 const DEFAULT_WEB_URL = 'https://veritas-ai-mocha.vercel.app';
 
 function SidepanelApp() {

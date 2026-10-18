@@ -1,4 +1,4 @@
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || 'https://khan5461-veritas-ai-backend.hf.space';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || 'https://veritas-ai-backend-qlgu.onrender.com';
 
 export interface ForensicResult {
   is_fake: boolean;
