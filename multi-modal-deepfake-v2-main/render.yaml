@@ -4,7 +4,7 @@ services:
     runtime: python
     plan: free
     region: oregon
-    rootDir: backend
+    rootDir: multi-modal-deepfake-v2-main/backend
     buildCommand: pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
     startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
@@ -13,5 +13,3 @@ services:
         value: 3.10.12
       - key: ENV
         value: production
-      - key: PORT
-        value: 10000

@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: veritas-ai-backend
+    runtime: python
+    plan: free
+    region: oregon
+    rootDir: multi-modal-deepfake-v2-main/backend
+    buildCommand: pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
+    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.12
+      - key: ENV
+        value: production
