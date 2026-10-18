@@ -333,6 +333,7 @@ def inspect_media_metadata(file_path: str, ext: str) -> Dict[str, Any]:
                     meta["height"], meta["width"] = img.shape[:2]
         except Exception as e:
             logger.debug("Metadata probe exception: %s", e)
+    return meta
 def dispatch_webhook(webhook_url: str, job_id: str, payload: Dict[str, Any]):
     """Deliver asynchronous JSON forensic dossier to external enterprise endpoint."""
     try:
@@ -354,8 +355,8 @@ def process_job(job_id: str, file_path: str, ext: str, file_hash: Optional[str],
         has_audio = ext in AUDIO_VIDEO_EXTS
 
         # 0. Metadata & Provenance Inspection
-        media_meta = inspect_media_metadata(file_path, ext)
-        provenance_info = scan_file_provenance(file_path)
+        media_meta = inspect_media_metadata(file_path, ext) or {}
+        provenance_info = scan_file_provenance(file_path) or {}
 
         # 1. Vision Analysis Step
         jobs_cache.set(job_id, {"status": "processing", "step": "vision_scan", "progress": 25})
