@@ -5,10 +5,10 @@ export function getApiBaseUrl(): string {
       return custom.trim().replace(/\/$/, '');
     }
   }
-  return (process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || 'http://localhost:8000').replace(/\/$/, '');
+  return (process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || 'https://upside-shower-handling.ngrok-free.dev').replace(/\/$/, '');
 }
 
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || 'http://localhost:8000';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || 'https://upside-shower-handling.ngrok-free.dev';
 
 export interface ForensicResult {
   is_fake: boolean;
@@ -109,7 +109,8 @@ async function pollForResults(
 
     const pollRes = await fetch(`${getApiBaseUrl()}/jobs/${jobId}`, {
       headers: {
-        'X-API-Key': process.env.NEXT_PUBLIC_API_KEY || 'dev_key_123'
+        'X-API-Key': process.env.NEXT_PUBLIC_API_KEY || 'dev_key_123',
+        'ngrok-skip-browser-warning': 'true'
       }
     });
 
@@ -152,7 +153,8 @@ export async function detectDeepfake(
       method: 'POST',
       body: formData,
       headers: {
-        'X-API-Key': process.env.NEXT_PUBLIC_API_KEY || 'dev_key_123'
+        'X-API-Key': process.env.NEXT_PUBLIC_API_KEY || 'dev_key_123',
+        'ngrok-skip-browser-warning': 'true'
       },
       signal: controller.signal
     });

@@ -203,7 +203,7 @@ const TruthGauge = ({ score, isFake }: { score: number; isFake: boolean }) => {
 // Main Veritas AI Extension Component
 // ---------------------------------------------------------
 
-const DEFAULT_API_URL = 'http://localhost:8000';
+const DEFAULT_API_URL = 'https://upside-shower-handling.ngrok-free.dev';
 const DEFAULT_WEB_URL = 'https://veritas-ai-mocha.vercel.app';
 
 function SidepanelApp() {
@@ -245,8 +245,8 @@ function SidepanelApp() {
     else document.documentElement.classList.add("dark");
 
     const savedApi = localStorage.getItem("veritas_api_url");
-    if (savedApi && savedApi.includes('onrender.com')) {
-      // Clear legacy dead Render URL
+    if (savedApi && (savedApi.includes('onrender.com') || savedApi.includes('trycloudflare.com') || savedApi === 'http://localhost:8000')) {
+      // Clear legacy dead Render / Cloudflare URLs and upgrade to default ngrok
       setApiUrl(DEFAULT_API_URL);
       localStorage.setItem("veritas_api_url", DEFAULT_API_URL);
     } else if (savedApi) {
@@ -323,6 +323,7 @@ function SidepanelApp() {
       const timeoutId = setTimeout(() => controller.abort(), 6000);
       const res = await fetch(`${apiUrl.replace(/\/$/, '')}/health`, { 
         method: 'GET',
+        headers: { 'ngrok-skip-browser-warning': 'true' },
         signal: controller.signal 
       });
       clearTimeout(timeoutId);
@@ -460,6 +461,7 @@ function SidepanelApp() {
           const response = await fetch(`${apiUrl.replace(/\/$/, '')}/detect`, {
             method: 'POST',
             body: formData,
+            headers: { 'ngrok-skip-browser-warning': 'true' },
             signal: controller.signal
           });
           clearTimeout(timeoutId);

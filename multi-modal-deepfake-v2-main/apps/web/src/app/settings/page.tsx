@@ -118,10 +118,13 @@ export default function SettingsPage() {
   };
 
   const testBackendConnection = async () => {
-    const targetUrl = (backendApiUrl.trim() || 'http://localhost:8000').replace(/\/$/, '');
+    const targetUrl = (backendApiUrl.trim() || 'https://upside-shower-handling.ngrok-free.dev').replace(/\/$/, '');
     setPingStatus('testing');
     try {
-      const res = await fetch(`${targetUrl}/health`, { signal: AbortSignal.timeout(6000) });
+      const res = await fetch(`${targetUrl}/health`, { 
+        signal: AbortSignal.timeout(6000),
+        headers: { 'ngrok-skip-browser-warning': 'true' }
+      });
       if (res.ok) {
         setPingStatus('online');
         toast.success(`Connected successfully to ${targetUrl}`);
@@ -131,7 +134,7 @@ export default function SettingsPage() {
       }
     } catch {
       setPingStatus('offline');
-      toast.error('Unable to reach backend endpoint. Ensure your Colab tunnel or local backend is running.');
+      toast.error('Unable to reach backend endpoint. Ensure your Colab ngrok tunnel or local backend is running.');
     }
   };
 
@@ -408,7 +411,7 @@ export default function SettingsPage() {
                 )}
               </div>
               <p className="text-xs text-on-surface-variant mb-3">
-                Paste your Google Colab tunnel URL (Cloudflare or ngrok) or local server URL. Veritas AI will route all file scans directly to this GPU server.
+                Paste your Google Colab ngrok tunnel URL or local server URL. Veritas AI will route all file scans directly to this GPU server.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-2">
@@ -419,7 +422,7 @@ export default function SettingsPage() {
                     setBackendApiUrl(e.target.value);
                     setPingStatus('idle');
                   }}
-                  placeholder="https://xxxx.trycloudflare.com or http://localhost:8000"
+                  placeholder="https://upside-shower-handling.ngrok-free.dev or http://localhost:8000"
                   className="flex-1 bg-surface-container-highest text-on-surface placeholder:text-on-surface-variant/50 rounded-xl px-3.5 py-2 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-primary border border-outline-variant/20"
                 />
                 <Button 
