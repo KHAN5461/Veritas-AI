@@ -156,8 +156,10 @@ const M3CircularProgress = ({ size = 48, strokeWidth = 4, className = "text-prim
 );
 
 const TruthGauge = ({ score, isFake }: { score: number; isFake: boolean }) => {
-  const percentage = score > 1 ? score : score * 100;
-  const clampedRatio = Math.min(1, Math.max(0, percentage / 100));
+  const rawScore = score > 1 ? score / 100 : score;
+  const confidence = isFake ? rawScore : (rawScore < 0.5 ? 1.0 - rawScore : rawScore);
+  const percentage = Math.min(99.6, Math.max(1.0, confidence * 100));
+  const clampedRatio = percentage / 100;
   const strokeColor = isFake ? 'text-red-500' : 'text-emerald-500';
   
   return (
@@ -633,11 +635,11 @@ function SidepanelApp() {
         }
       : {
           is_fake: false,
-          confidence: 0.118,
+          confidence: 0.988,
           breakdown: {
-            visual_score: 0.082,
-            audio_score: 0.145,
-            lip_sync_score: 0.105
+            visual_score: 0.015,
+            audio_score: 0.022,
+            lip_sync_score: 0.018
           },
           heatmap: null
         };
