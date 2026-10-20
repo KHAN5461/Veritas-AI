@@ -247,10 +247,11 @@ function SidepanelApp() {
 
     let effectiveApi = DEFAULT_API_URL;
     const savedApi = localStorage.getItem("veritas_api_url");
-    if (savedApi && !savedApi.includes('localhost') && !savedApi.includes('127.0.0.1') && !savedApi.includes('onrender') && !savedApi.includes('trycloudflare') && !savedApi.includes('hf.space')) {
-      effectiveApi = savedApi;
-      setApiUrl(savedApi);
+    if (savedApi && savedApi.trim() === DEFAULT_API_URL) {
+      effectiveApi = savedApi.trim();
+      setApiUrl(effectiveApi);
     } else {
+      effectiveApi = DEFAULT_API_URL;
       setApiUrl(DEFAULT_API_URL);
       localStorage.setItem("veritas_api_url", DEFAULT_API_URL);
     }
@@ -317,13 +318,13 @@ function SidepanelApp() {
   };
 
   const testConnection = async (overrideUrl?: string) => {
-    const targetUrl = overrideUrl || apiUrl;
+    const targetUrl = (overrideUrl || apiUrl || DEFAULT_API_URL).trim();
     setApiPingStatus('checking');
     setPingLatency(null);
     const start = performance.now();
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 12000);
+      const timeoutId = setTimeout(() => controller.abort(), 7000);
       const res = await fetch(`${targetUrl.replace(/\/$/, '')}/health`, { 
         method: 'GET',
         headers: { 'ngrok-skip-browser-warning': 'true' },
@@ -334,13 +335,39 @@ function SidepanelApp() {
       if (res.ok) {
         setApiPingStatus('online');
         setPingLatency(duration);
-      } else {
-        setApiPingStatus('offline');
+        setApiUrl(targetUrl);
+        localStorage.setItem("veritas_api_url", targetUrl);
+        return;
       }
     } catch (err) {
       console.warn('[Veritas AI] Ping failed for', targetUrl, err);
-      setApiPingStatus('offline');
     }
+
+    // Auto-fallback: If targetUrl failed and is different from DEFAULT_API_URL, re-test DEFAULT_API_URL
+    if (targetUrl !== DEFAULT_API_URL) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 7000);
+        const res = await fetch(`${DEFAULT_API_URL.replace(/\/$/, '')}/health`, { 
+          method: 'GET',
+          headers: { 'ngrok-skip-browser-warning': 'true' },
+          signal: controller.signal 
+        });
+        clearTimeout(timeoutId);
+        if (res.ok) {
+          const duration = Math.round(performance.now() - start);
+          setApiPingStatus('online');
+          setPingLatency(duration);
+          setApiUrl(DEFAULT_API_URL);
+          localStorage.setItem("veritas_api_url", DEFAULT_API_URL);
+          return;
+        }
+      } catch (err2) {
+        console.warn('[Veritas AI] Fallback ping to DEFAULT_API_URL failed:', err2);
+      }
+    }
+
+    setApiPingStatus('offline');
   };
 
   const pipelineStages = [

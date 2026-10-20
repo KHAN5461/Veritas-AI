@@ -74,7 +74,7 @@ def compute_micro_tremors(waveform: np.ndarray, sr: int):
 class AudioModel:
     def __init__(
         self, 
-        model_id="koyelog/deepfake-voice-detector-sota", 
+        model_id="HyperMoon/wav2vec2-base-960h-finetuned-deepfake", 
         fallback_model_id="HyperMoon/wav2vec2-base-960h-finetuned-deepfake",
         onnx_path="./audio_weights/audio_onnx/model.onnx"
     ):
@@ -116,8 +116,6 @@ class AudioModel:
                 elif os.path.exists(self.onnx_path):
                     logger.warning("%s appears to be a Git LFS pointer. Skipping ONNX, falling back to PyTorch.", self.onnx_path)
 
-                # Try loading SOTA audio model first
-                loaded = False
                 try:
                     logger.info("Loading SOTA Audio Model: %s...", self.model_id)
                     self.processor = AutoFeatureExtractor.from_pretrained(self.model_id)
@@ -125,23 +123,10 @@ class AudioModel:
                         self.model = AutoModelForAudioClassification.from_pretrained(self.model_id, low_cpu_mem_usage=True)
                         self.model.to(self.device).eval()
                     self.fake_class_idx = self._resolve_fake_index(self.model, default_idx=1)
-                    logger.info("Loaded SOTA Audio Detector (%s - 800k trained)", self.model_id)
-                    loaded = True
+                    logger.info("Loaded SOTA Audio Detector (%s)", self.model_id)
                 except Exception as e:
-                    logger.warning("Primary SOTA audio model %s notice: %s. Trying fallback %s...", self.model_id, e, self.fallback_model_id)
-
-                if not loaded:
-                    try:
-                        logger.info("Loading Fallback Audio Model: %s...", self.fallback_model_id)
-                        self.processor = AutoFeatureExtractor.from_pretrained(self.fallback_model_id)
-                        if self.onnx_session is None:
-                            self.model = AutoModelForAudioClassification.from_pretrained(self.fallback_model_id, low_cpu_mem_usage=True)
-                            self.model.to(self.device).eval()
-                        self.fake_class_idx = self._resolve_fake_index(self.model, default_idx=1)
-                        logger.info("Loaded Fallback Audio Detector (%s)", self.fallback_model_id)
-                    except Exception as e2:
-                        logger.warning("Could not load audio model due to %s. Falling back to acoustic biomarkers.", e2)
-                        self.model = None
+                    logger.warning("Primary audio model notice: %s. Falling back to acoustic biomarkers.", e)
+                    self.model = None
             else:
                 logger.info("Operating in LOW_MEM mode for audio: Acoustic Biomarkers (Jitter, Shimmer, HNR, Flatness, Phase) active.")
                 self.model = None
