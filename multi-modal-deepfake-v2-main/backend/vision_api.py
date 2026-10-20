@@ -15,20 +15,48 @@ def generate_heatmap_b64(frame):
         return None
     try:
         h, w = frame.shape[:2]
-        if max(h, w) > 512:
-            scale = 512.0 / max(h, w)
-            frame = cv2.resize(frame, (int(w * scale), int(h * scale)))
+        if max(h, w) > 640:
+            scale = 640.0 / max(h, w)
+            frame = cv2.resize(frame, (int(w * scale), int(h * scale)), interpolation=cv2.INTER_AREA)
+        
+        # 1. Error Level Analysis (ELA) Compression Residual
         encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 90]
         _, encoded = cv2.imencode('.jpg', frame, encode_param)
         decoded = cv2.imdecode(encoded, cv2.IMREAD_COLOR)
-        diff = cv2.absdiff(frame, decoded)
-        diff = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY)
-        diff = cv2.normalize(diff, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX)
-        heatmap = cv2.applyColorMap(diff, cv2.COLORMAP_JET)
-        _, buffer = cv2.imencode('.png', heatmap)
+        ela_diff = cv2.absdiff(frame, decoded)
+        ela_gray = cv2.cvtColor(ela_diff, cv2.COLOR_BGR2GRAY).astype(np.float32)
+        ela_norm = cv2.normalize(ela_gray, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX)
+
+        # 2. High-Frequency Boundary & Gradient Discrepancy (Laplacian Spatial Derivative)
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        laplacian = cv2.Laplacian(gray, cv2.CV_32F, ksize=3)
+        laplacian = np.abs(laplacian)
+        lap_norm = cv2.normalize(laplacian, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX)
+
+        # 3. High-Pass Spatial Frequency Residual
+        blur = cv2.GaussianBlur(gray, (15, 15), 3)
+        high_pass = cv2.absdiff(gray, blur).astype(np.float32)
+        hp_norm = cv2.normalize(high_pass, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX)
+
+        # 4. Multi-Scale Forensic Fusion
+        fused = (0.45 * ela_norm) + (0.35 * lap_norm) + (0.20 * hp_norm)
+        
+        # 5. Smooth thermal diffusion (Gaussian filter with bilateral edge preservation)
+        fused_smoothed = cv2.GaussianBlur(fused, (9, 9), 2.0)
+        fused_u8 = (np.clip(fused_smoothed, 0, 1) * 255.0).astype(np.uint8)
+        
+        # Equalize / stretch contrast for vivid forensic visualization
+        clahe = cv2.createCLAHE(clipLimit=2.5, tileGridSize=(8, 8))
+        enhanced = clahe.apply(fused_u8)
+
+        # 6. Perceptual TURBO / JET Colormap
+        colormap = getattr(cv2, 'COLORMAP_TURBO', cv2.COLORMAP_JET)
+        heatmap = cv2.applyColorMap(enhanced, colormap)
+
+        _, buffer = cv2.imencode('.png', heatmap, [int(cv2.IMWRITE_PNG_COMPRESSION), 6])
         return base64.b64encode(buffer).decode('utf-8')
     except Exception as e:
-        logger.warning(f"Failed to generate heatmap: {e}")
+        logger.warning(f"Failed to generate refined heatmap: {e}")
         return None
 
 def generate_fft_b64(frame):

@@ -24,6 +24,9 @@ export function SpyglassViewer({
   const [blendAlpha, setBlendAlpha] = useState(0.7);
   const [isZoomed, setIsZoomed] = useState(false);
   const [splitOrientation, setSplitOrientation] = useState<'horizontal' | 'vertical'>('horizontal');
+  const [filterPreset, setFilterPreset] = useState<'turbo' | 'infrared' | 'spectral'>('turbo');
+  const [hoverCoords, setHoverCoords] = useState<{ x: number; y: number } | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const downloadHeatmap = () => {
@@ -34,6 +37,12 @@ export function SpyglassViewer({
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
+  };
+
+  const FILTER_CLASSES = {
+    turbo: '',
+    infrared: 'contrast-125 saturate-150 brightness-95',
+    spectral: 'hue-rotate-60 contrast-140 saturate-125'
   };
 
   const LENS_MODES: { id: LensMode; label: string; icon: string; description: string }[] = [
@@ -127,6 +136,26 @@ export function SpyglassViewer({
             </div>
           )}
 
+          {/* Colormap Preset Selector */}
+          {(lensMode === 'heatmap' || lensMode === 'blend') && (
+            <div className="flex items-center gap-1 bg-surface-container p-0.5 rounded-xl border border-outline-variant/30 text-[10.5px] font-mono">
+              {(['turbo', 'infrared', 'spectral'] as const).map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => setFilterPreset(preset)}
+                  className={`px-2 py-0.5 rounded-lg capitalize transition-all cursor-pointer ${
+                    filterPreset === preset
+                      ? 'bg-primary text-on-primary font-bold shadow-xs'
+                      : 'text-on-surface-variant hover:text-on-surface'
+                  }`}
+                >
+                  {preset}
+                </button>
+              ))}
+            </div>
+          )}
+
           {/* 2x Magnify Inspection Toggle */}
           <button
             type="button"
@@ -146,6 +175,17 @@ export function SpyglassViewer({
             </span>
           </button>
 
+          {/* Fullscreen Workbench Toggle */}
+          <button
+            type="button"
+            onClick={() => setIsFullscreen(true)}
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-surface-container hover:bg-surface-container-high border border-outline-variant/30 text-on-surface-variant hover:text-primary text-xs font-mono transition-all cursor-pointer"
+            title="Open Fullscreen Forensic Workbench"
+          >
+            <span className="material-symbols-outlined text-[16px]">fullscreen</span>
+            <span className="text-[10.5px] hidden sm:inline">Expand</span>
+          </button>
+
           {/* Download Clean Heatmap Image */}
           {heatmapSrc && (
             <button
@@ -162,13 +202,26 @@ export function SpyglassViewer({
       </div>
 
       {/* 2. Main High-Precision Viewport Stage (Clean, Uncluttered, No Draggable Slider Line) */}
-      <div className="relative w-full rounded-2xl overflow-hidden bg-surface-container-lowest border border-outline-variant/30 shadow-inner group print:break-inside-avoid">
+      <div 
+        className="relative w-full rounded-2xl overflow-hidden bg-surface-container-lowest border border-outline-variant/30 shadow-inner group print:break-inside-avoid"
+        onMouseMove={(e) => {
+          const rect = e.currentTarget.getBoundingClientRect();
+          const x = Math.round(((e.clientX - rect.left) / rect.width) * 100);
+          const y = Math.round(((e.clientY - rect.top) / rect.height) * 100);
+          setHoverCoords({ x, y });
+        }}
+        onMouseLeave={() => setHoverCoords(null)}
+      >
         
         {/* Reticle Watermark Header Overlay */}
         <div className="absolute top-3 left-3 z-20 flex items-center gap-2 pointer-events-none">
           <div className="bg-black/75 backdrop-blur-md px-2.5 py-1 rounded-lg border border-white/10 text-[10px] font-mono text-cyan-400 flex items-center gap-1.5 shadow-sm">
             <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-            <span>[+] SPATIAL RESIDUAL LENS</span>
+            {hoverCoords ? (
+              <span className="text-cyan-300 font-bold">[+] POINT INSPECT: X:{hoverCoords.x}% Y:{hoverCoords.y}%</span>
+            ) : (
+              <span>[+] SPATIAL RESIDUAL LENS</span>
+            )}
           </div>
           {confidence !== undefined && (
             <div className={`hidden sm:flex bg-black/75 backdrop-blur-md px-2.5 py-1 rounded-lg border text-[10px] font-mono items-center gap-1.5 ${
@@ -223,7 +276,7 @@ export function SpyglassViewer({
                   <img
                     src={heatmapSrc}
                     alt="Neural Grad-CAM attention heatmap"
-                    className="max-h-[520px] w-full object-contain rounded-xl drop-shadow-md"
+                    className={`max-h-[520px] w-full object-contain rounded-xl drop-shadow-md transition-all duration-200 ${FILTER_CLASSES[filterPreset]}`}
                   />
                 ) : (
                   <div className="flex flex-col items-center justify-center text-on-surface-variant gap-2 py-16">
@@ -233,7 +286,7 @@ export function SpyglassViewer({
                 )}
                 <div className="absolute bottom-3 left-3 z-10 bg-black/70 backdrop-blur-md px-3 py-1 rounded-lg border border-white/10 text-white font-mono text-[11px] flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                  <span>GRAD-CAM THERMAL ANOMALY ACTIVATION</span>
+                  <span>GRAD-CAM THERMAL ANOMALY ({filterPreset.toUpperCase()})</span>
                 </div>
               </motion.div>
             )}
@@ -269,7 +322,7 @@ export function SpyglassViewer({
                     <img
                       src={heatmapSrc}
                       alt="Heatmap activation comparison"
-                      className="max-h-[460px] w-full object-contain rounded-lg"
+                      className={`max-h-[460px] w-full object-contain rounded-lg transition-all duration-200 ${FILTER_CLASSES[filterPreset]}`}
                     />
                   ) : (
                     <div className="text-xs font-mono text-on-surface-variant flex items-center justify-center">
@@ -306,10 +359,17 @@ export function SpyglassViewer({
                   <img
                     src={heatmapSrc}
                     alt="Thermal blend composite"
-                    className="absolute inset-0 max-h-[520px] w-full h-full object-contain mix-blend-screen transition-opacity duration-150 pointer-events-none rounded-xl"
+                    className={`absolute inset-0 max-h-[520px] w-full h-full object-contain mix-blend-screen transition-opacity duration-150 pointer-events-none rounded-xl ${FILTER_CLASSES[filterPreset]}`}
                     style={{ opacity: blendAlpha }}
                   />
                 )}
+
+                <div className="absolute bottom-3 left-3 z-10 bg-black/70 backdrop-blur-md px-3 py-1 rounded-lg border border-cyan-500/40 text-cyan-300 font-mono text-[11px] flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[14px]">layers</span>
+                  <span>COMPOSITE BLEND ({Math.round(blendAlpha * 100)}% ALPHA)</span>
+                </div>
+              </motion.div>
+            )}
 
                 <div className="absolute bottom-3 left-3 z-10 bg-black/70 backdrop-blur-md px-3 py-1 rounded-lg border border-cyan-500/40 text-cyan-300 font-mono text-[11px] flex items-center gap-1.5">
                   <span className="material-symbols-outlined text-[14px]">layers</span>
@@ -359,6 +419,58 @@ export function SpyglassViewer({
           </span>
         </div>
       </div>
+
+      {/* 4. Fullscreen Modal Forensic Workbench */}
+      <AnimatePresence>
+        {isFullscreen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-xl flex flex-col p-4 sm:p-6"
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-white/10">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary text-xl">fullscreen</span>
+                <span className="font-mono text-sm font-bold text-white tracking-wide">
+                  FORENSIC MICROSCOPIC WORKBENCH • {fileName || 'INSPECTION'}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsFullscreen(false)}
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-all cursor-pointer"
+                title="Exit Fullscreen (Esc)"
+              >
+                <span className="material-symbols-outlined text-lg">close</span>
+              </button>
+            </div>
+
+            {/* Modal Canvas */}
+            <div className="flex-1 w-full h-full flex items-center justify-center p-4 overflow-hidden relative">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full h-full max-h-[85vh]">
+                <div className="relative rounded-2xl overflow-hidden bg-black/60 border border-white/10 flex items-center justify-center p-2">
+                  <img src={originalSrc} alt="Original asset" className="max-h-full max-w-full object-contain" />
+                  <span className="absolute bottom-3 left-3 px-3 py-1 rounded-lg bg-black/80 font-mono text-xs text-emerald-400 border border-emerald-500/30">
+                    ORIGINAL NATIVE STREAM
+                  </span>
+                </div>
+                <div className="relative rounded-2xl overflow-hidden bg-black/60 border border-white/10 flex items-center justify-center p-2">
+                  {heatmapSrc ? (
+                    <img src={heatmapSrc} alt="Heatmap asset" className={`max-h-full max-w-full object-contain ${FILTER_CLASSES[filterPreset]}`} />
+                  ) : (
+                    <span className="font-mono text-xs text-white/50">Heatmap unavailable</span>
+                  )}
+                  <span className="absolute bottom-3 right-3 px-3 py-1 rounded-lg bg-black/80 font-mono text-xs text-red-400 border border-red-500/30">
+                    GRAD-CAM RESIDUAL MAP ({filterPreset.toUpperCase()})
+                  </span>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

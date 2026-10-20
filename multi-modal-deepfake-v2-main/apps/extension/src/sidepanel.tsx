@@ -227,6 +227,7 @@ function SidepanelApp() {
   const [resultTab, setResultTab] = useState<'summary' | 'vectors' | 'standards'>('summary');
   const [lensMode, setLensMode] = useState<'original' | 'heatmap' | 'split' | 'blend'>('split');
   const [blendAlpha, setBlendAlpha] = useState<number>(0.65);
+  const [isLensZoomed, setIsLensZoomed] = useState<boolean>(false);
   const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
   const [synthesizedHeatmap, setSynthesizedHeatmap] = useState<string | null>(null);
 
@@ -1092,8 +1093,8 @@ Forensic Engine: Veritas Multi-Modal Sentinel v2.5`;
             </div>
 
             {/* 2. Interactive Spyglass Visual Evidence Lens */}
-            <div className="rounded-2xl border border-outline-variant/30 bg-surface-container-low p-2.5 flex flex-col gap-2 shadow-xs">
-              <div className="flex items-center justify-between">
+            <div className="rounded-2xl border border-outline-variant/30 bg-surface-container-low p-2.5 flex flex-col gap-2.5 shadow-xs">
+              <div className="flex items-center justify-between flex-wrap gap-1.5">
                 <div className="flex items-center gap-1.5">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary shrink-0">
                     <circle cx="12" cy="12" r="10" />
@@ -1105,97 +1106,138 @@ Forensic Engine: Veritas Multi-Modal Sentinel v2.5`;
                   <span className="text-xs font-bold text-on-surface">Spatial Evidence Lens</span>
                 </div>
 
-                {/* Spyglass Mode Switcher */}
-                <div className="inline-flex rounded-full p-0.5 bg-surface-container border border-outline-variant/30 text-[9px] font-mono overflow-x-auto whitespace-nowrap scrollbar-none no-scrollbar">
+                {/* Right controls: Magnify & Export */}
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setIsLensZoomed(prev => !prev)}
+                    className={`px-1.5 py-0.5 rounded-lg text-[9px] font-mono flex items-center gap-1 border transition-all cursor-pointer ${
+                      isLensZoomed ? 'bg-primary/20 text-primary border-primary/40 font-bold' : 'bg-surface-container text-on-surface-variant border-outline-variant/30 hover:text-on-surface'
+                    }`}
+                    title="Toggle 2x magnification"
+                  >
+                    <span className="material-symbols-outlined text-[12px]">{isLensZoomed ? 'zoom_out' : 'zoom_in'}</span>
+                    <span>{isLensZoomed ? '2x' : '1x'}</span>
+                  </button>
+
+                  {activeHeatmap && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const a = document.createElement('a');
+                        a.href = activeHeatmap.startsWith('data:') ? activeHeatmap : `data:image/png;base64,${activeHeatmap}`;
+                        a.download = `veritas_heatmap_${Date.now()}.png`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                      }}
+                      className="px-1.5 py-0.5 rounded-lg text-[9px] font-mono flex items-center gap-1 bg-surface-container text-on-surface-variant hover:text-primary border border-outline-variant/30 transition-all cursor-pointer"
+                      title="Download raw heatmap PNG"
+                    >
+                      <span className="material-symbols-outlined text-[12px]">download</span>
+                    </button>
+                  )}
+                </div>
+
+                {/* Spyglass Pill Mode Switcher */}
+                <div className="w-full inline-flex rounded-full p-0.5 bg-surface-container border border-outline-variant/30 text-[9px] font-mono overflow-x-auto whitespace-nowrap scrollbar-none no-scrollbar justify-between">
                   {(['original', 'heatmap', 'split', 'blend'] as const).map((mode) => (
                     <button
                       key={mode}
                       onClick={() => setLensMode(mode)}
-                      className={`px-1.5 py-0.5 rounded-full capitalize transition-colors cursor-pointer shrink-0 ${
+                      className={`flex-1 text-center px-1.5 py-1 rounded-full capitalize transition-all cursor-pointer ${
                         lensMode === mode 
                           ? 'bg-primary text-on-primary font-bold shadow-xs' 
                           : 'text-on-surface-variant hover:text-on-surface'
                       }`}
                     >
-                      {mode}
+                      {mode === 'split' ? 'side-by-side' : mode}
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* Viewport Box */}
-              <div className="h-36 rounded-xl bg-surface-container-lowest overflow-hidden flex items-center justify-center relative border border-outline-variant/20">
-                {lensMode === 'original' && (
-                  currentScan?.url ? (
-                    <img src={currentScan.url} className="h-full w-full object-contain" alt="Original capture" />
-                  ) : (
-                    <div className="flex flex-col items-center justify-center text-on-surface-variant text-[10px]">
-                      <span className="material-symbols-outlined text-2xl mb-1">image</span>
-                      <span>Native asset preview</span>
-                    </div>
-                  )
-                )}
+              {/* Viewport Box (Expansive & High Precision) */}
+              <div className="h-48 sm:h-52 rounded-xl bg-surface-container-lowest overflow-hidden flex items-center justify-center relative border border-outline-variant/20 group">
+                <div className={`w-full h-full flex items-center justify-center transition-transform duration-200 ${isLensZoomed ? 'scale-125 cursor-grab' : ''}`}>
+                  {lensMode === 'original' && (
+                    currentScan?.url ? (
+                      <img src={currentScan.url} className="max-h-full w-full object-contain p-1" alt="Original capture" />
+                    ) : (
+                      <div className="flex flex-col items-center justify-center text-on-surface-variant text-[10px]">
+                        <span className="material-symbols-outlined text-2xl mb-1 text-on-surface-variant/40">image</span>
+                        <span>Native asset preview</span>
+                      </div>
+                    )
+                  )}
 
-                {lensMode === 'heatmap' && (
-                  activeHeatmap ? (
-                    <img 
-                      src={activeHeatmap.startsWith('data:') ? activeHeatmap : `data:image/png;base64,${activeHeatmap}`} 
-                      className="h-full w-full object-contain" 
-                      alt="Grad-CAM Thermal Heatmap" 
-                    />
-                  ) : (
-                    <div className="text-[10px] text-on-surface-variant">Synthesizing thermal map...</div>
-                  )
-                )}
-
-                {lensMode === 'split' && (
-                  <div className="w-full h-full flex">
-                    <div className="w-1/2 h-full overflow-hidden border-r border-primary/50 relative bg-black/40">
-                      {currentScan?.url ? (
-                        <img src={currentScan.url} className="h-full w-full object-cover" alt="Original asset" />
-                      ) : (
-                        <div className="h-full w-full flex items-center justify-center text-[9px] text-on-surface-variant">Original</div>
-                      )}
-                      <span className="absolute bottom-1 left-1 px-1 py-0.2 rounded bg-black/70 text-[7.5px] font-mono text-white">NATIVE</span>
-                    </div>
-                    <div className="w-1/2 h-full overflow-hidden relative bg-black/40">
-                      {activeHeatmap ? (
-                        <img 
-                          src={activeHeatmap.startsWith('data:') ? activeHeatmap : `data:image/png;base64,${activeHeatmap}`} 
-                          className="h-full w-full object-cover" 
-                          alt="Heatmap" 
-                        />
-                      ) : null}
-                      <span className="absolute bottom-1 right-1 px-1 py-0.2 rounded bg-red-950/80 text-[7.5px] font-mono text-red-300">GRAD-CAM</span>
-                    </div>
-                  </div>
-                )}
-
-                {lensMode === 'blend' && (
-                  <div className="w-full h-full relative">
-                    {currentScan?.url && (
-                      <img src={currentScan.url} className="absolute inset-0 h-full w-full object-contain" alt="Base asset" />
-                    )}
-                    {activeHeatmap && (
+                  {lensMode === 'heatmap' && (
+                    activeHeatmap ? (
                       <img 
                         src={activeHeatmap.startsWith('data:') ? activeHeatmap : `data:image/png;base64,${activeHeatmap}`} 
-                        className="absolute inset-0 h-full w-full object-contain mix-blend-screen" 
-                        style={{ opacity: blendAlpha }}
-                        alt="Blended thermal overlay" 
+                        className="max-h-full w-full object-contain p-1 drop-shadow-md" 
+                        alt="Grad-CAM Thermal Heatmap" 
                       />
-                    )}
-                  </div>
-                )}
+                    ) : (
+                      <div className="flex flex-col items-center justify-center text-on-surface-variant text-[10px] gap-1">
+                        <span className="material-symbols-outlined text-xl animate-spin text-primary">progress_activity</span>
+                        <span>Synthesizing thermal map...</span>
+                      </div>
+                    )
+                  )}
+
+                  {lensMode === 'split' && (
+                    <div className="w-full h-full grid grid-cols-2 gap-1 p-1">
+                      <div className="relative rounded-lg overflow-hidden bg-black/40 border border-outline-variant/20 flex items-center justify-center p-0.5">
+                        {currentScan?.url ? (
+                          <img src={currentScan.url} className="max-h-full w-full object-contain" alt="Original asset" />
+                        ) : (
+                          <div className="text-[9px] text-on-surface-variant">Original</div>
+                        )}
+                        <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded bg-black/80 backdrop-blur-xs text-[7px] font-mono text-emerald-400 border border-emerald-500/30">NATIVE</span>
+                      </div>
+                      <div className="relative rounded-lg overflow-hidden bg-black/40 border border-outline-variant/20 flex items-center justify-center p-0.5">
+                        {activeHeatmap ? (
+                          <img 
+                            src={activeHeatmap.startsWith('data:') ? activeHeatmap : `data:image/png;base64,${activeHeatmap}`} 
+                            className="max-h-full w-full object-contain" 
+                            alt="Heatmap" 
+                          />
+                        ) : (
+                          <div className="text-[9px] text-on-surface-variant">Processing...</div>
+                        )}
+                        <span className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-black/80 backdrop-blur-xs text-[7px] font-mono text-red-400 border border-red-500/30">THERMAL</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {lensMode === 'blend' && (
+                    <div className="w-full h-full relative flex items-center justify-center p-1">
+                      {currentScan?.url && (
+                        <img src={currentScan.url} className="max-h-full w-full object-contain" alt="Base asset" />
+                      )}
+                      {activeHeatmap && (
+                        <img 
+                          src={activeHeatmap.startsWith('data:') ? activeHeatmap : `data:image/png;base64,${activeHeatmap}`} 
+                          className="absolute inset-0 max-h-full w-full h-full object-contain mix-blend-screen pointer-events-none p-1" 
+                          style={{ opacity: blendAlpha }}
+                          alt="Blended thermal overlay" 
+                        />
+                      )}
+                    </div>
+                  )}
+                </div>
 
                 {/* Reticle grid watermark */}
-                <div className="absolute top-1 left-1 text-[8px] font-mono text-primary/60 pointer-events-none">
-                  [+] SCANNER 0,0
+                <div className="absolute top-1.5 left-2 text-[8px] font-mono text-primary/70 pointer-events-none flex items-center gap-1 bg-black/60 backdrop-blur-xs px-1.5 py-0.5 rounded">
+                  <span className="w-1 h-1 rounded-full bg-cyan-400 animate-pulse" />
+                  <span>ViT-L/14 • RESIDUAL LENS</span>
                 </div>
               </div>
 
               {/* Blend slider if in blend mode */}
               {lensMode === 'blend' && (
-                <div className="flex items-center gap-2 pt-0.5 px-1">
+                <div className="flex items-center gap-2 px-1">
                   <span className="text-[9.5px] text-on-surface-variant font-mono">Heatmap Alpha:</span>
                   <input
                     type="range"
@@ -1209,6 +1251,25 @@ Forensic Engine: Veritas Multi-Modal Sentinel v2.5`;
                   <span className="text-[9.5px] font-mono text-primary font-bold">{(blendAlpha * 100).toFixed(0)}%</span>
                 </div>
               )}
+
+              {/* Thermal Colormap Calibration Bar */}
+              <div className="flex flex-col gap-1 bg-surface-container/40 p-2 rounded-xl border border-outline-variant/20">
+                <div className="flex items-center justify-between text-[8.5px] font-mono text-on-surface-variant">
+                  <span className="font-semibold text-on-surface flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[11px] text-primary">palette</span>
+                    Thermal Calibration Scale
+                  </span>
+                  <span>0.0 → 1.0</span>
+                </div>
+                <div className="h-2 w-full rounded-full overflow-hidden bg-surface-container-highest shadow-inner">
+                  <div className="h-full w-full bg-gradient-to-r from-blue-700 via-cyan-400 via-emerald-400 via-amber-400 to-red-600" />
+                </div>
+                <div className="flex items-center justify-between text-[7.5px] font-mono text-on-surface-variant px-0.5">
+                  <span className="text-blue-400">0.0 Pristine</span>
+                  <span className="text-amber-400">0.5 Boundary Ambiguity</span>
+                  <span className="text-red-400 font-bold">1.0 High-Risk Synthetic</span>
+                </div>
+              </div>
             </div>
 
             {/* 3. AI Forensic Executive Brief Card */}
