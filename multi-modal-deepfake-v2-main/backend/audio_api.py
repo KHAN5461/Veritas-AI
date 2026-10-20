@@ -72,9 +72,15 @@ def compute_micro_tremors(waveform: np.ndarray, sr: int):
         return 0.008, 0.025, 18.0
 
 class AudioModel:
-    def __init__(self, model_id="HyperMoon/wav2vec2-base-960h-finetuned-deepfake", onnx_path="./audio_weights/audio_onnx/model.onnx"):
+    def __init__(
+        self, 
+        model_id="koyelog/deepfake-voice-detector-sota", 
+        fallback_model_id="HyperMoon/wav2vec2-base-960h-finetuned-deepfake",
+        onnx_path="./audio_weights/audio_onnx/model.onnx"
+    ):
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.model_id = model_id
+        self.fallback_model_id = fallback_model_id
         self.onnx_path = onnx_path
         self.onnx_session = None
         self.model = None
@@ -85,7 +91,7 @@ class AudioModel:
         self._lock = threading.Lock()
 
     def _ensure_model(self):
-        """Lazy load wav2vec2 on first audio inference request."""
+        """Lazy load SOTA audio deepfake model on first audio inference request."""
         if self._model_loaded:
             return
         with self._lock:
@@ -110,17 +116,32 @@ class AudioModel:
                 elif os.path.exists(self.onnx_path):
                     logger.warning("%s appears to be a Git LFS pointer. Skipping ONNX, falling back to PyTorch.", self.onnx_path)
 
-                logger.info("Loading Audio Model Feature Extractor: %s...", self.model_id)
+                # Try loading SOTA audio model first
+                loaded = False
                 try:
+                    logger.info("Loading SOTA Audio Model: %s...", self.model_id)
                     self.processor = AutoFeatureExtractor.from_pretrained(self.model_id)
                     if self.onnx_session is None:
                         self.model = AutoModelForAudioClassification.from_pretrained(self.model_id, low_cpu_mem_usage=True)
                         self.model.to(self.device).eval()
+                    self.fake_class_idx = self._resolve_fake_index(self.model, default_idx=1)
+                    logger.info("Loaded SOTA Audio Detector (%s - 800k trained)", self.model_id)
+                    loaded = True
                 except Exception as e:
-                    logger.warning("Could not load audio model due to %s. It will fallback to acoustic biomarkers.", e)
-                    self.model = None
+                    logger.warning("Primary SOTA audio model %s notice: %s. Trying fallback %s...", self.model_id, e, self.fallback_model_id)
 
-                self.fake_class_idx = self._resolve_fake_index(self.model, default_idx=1)
+                if not loaded:
+                    try:
+                        logger.info("Loading Fallback Audio Model: %s...", self.fallback_model_id)
+                        self.processor = AutoFeatureExtractor.from_pretrained(self.fallback_model_id)
+                        if self.onnx_session is None:
+                            self.model = AutoModelForAudioClassification.from_pretrained(self.fallback_model_id, low_cpu_mem_usage=True)
+                            self.model.to(self.device).eval()
+                        self.fake_class_idx = self._resolve_fake_index(self.model, default_idx=1)
+                        logger.info("Loaded Fallback Audio Detector (%s)", self.fallback_model_id)
+                    except Exception as e2:
+                        logger.warning("Could not load audio model due to %s. Falling back to acoustic biomarkers.", e2)
+                        self.model = None
             else:
                 logger.info("Operating in LOW_MEM mode for audio: Acoustic Biomarkers (Jitter, Shimmer, HNR, Flatness, Phase) active.")
                 self.model = None
