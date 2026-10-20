@@ -726,51 +726,59 @@ class VisionModel:
                 active_models.append(fake_probs_cnn[i])
             
             if active_models:
-                nn_mean = sum(active_models) / len(active_models)
-                nn_max = max(active_models)
-                nn_min = min(active_models)
+                nn_mean = float(np.mean(active_models))
+                nn_max = float(np.max(active_models))
+                nn_min = float(np.min(active_models))
                 
-                # Asymmetric Deepfake Consensus:
-                # If ViT or Generative detector flags synthetic markers with high certainty (>0.75):
-                if nn_max > 0.85:
-                    nn_score = 0.85 * nn_max + 0.15 * nn_mean
-                elif nn_max > 0.70:
+                # Robust Consensus Agreement:
+                # If at least 2 models say authentic (<0.35), do NOT let a single false positive trigger deepfake
+                authentic_count = sum(1 for m in active_models if m < 0.35)
+                fake_count = sum(1 for m in active_models if m > 0.65)
+
+                if authentic_count >= 2:
+                    # Consensus confirms authentic media
+                    nn_score = 0.70 * nn_min + 0.30 * nn_mean
+                elif fake_count >= 2:
+                    # Consensus confirms synthetic/deepfake manipulation
                     nn_score = 0.70 * nn_max + 0.30 * nn_mean
-                elif nn_min < 0.15 and nn_mean < 0.25:
-                    # Clean authentic agreement across SOTA models
-                    nn_score = 0.85 * nn_min + 0.15 * nn_mean
+                elif nn_max > 0.88 and nn_mean > 0.50:
+                    # Very strong individual detection with corroborating mean
+                    nn_score = 0.75 * nn_max + 0.25 * nn_mean
                 else:
+                    # Mixed / balanced decision: trust mean
                     nn_score = nn_mean
             else:
                 nn_score = fake_probs_ela[i]
 
-            # Physical and spectral anomaly corroboration (acts as amplifier, NOT a diluter)
+            # Physical and spectral anomaly corroboration
+            # Anomalies should ONLY corroborate when suspicious (nn_score >= 0.45),
+            # never flip a clearly authentic image (nn_score < 0.35) into a fake!
             anomalies = []
-            if fake_probs_ela[i] > 0.65:
+            if fake_probs_ela[i] > 0.70:
                 anomalies.append(fake_probs_ela[i])
-            if fake_probs_bio[i] > 0.65:
+            if fake_probs_bio[i] > 0.70:
                 anomalies.append(fake_probs_bio[i])
-            if fake_probs_fft[i] > 0.68:
+            if fake_probs_fft[i] > 0.72:
                 anomalies.append(fake_probs_fft[i])
-            if fake_probs_chroma[i] > 0.65:
+            if fake_probs_chroma[i] > 0.70:
                 anomalies.append(fake_probs_chroma[i])
-            if fake_probs_corneal[i] > 0.65:
+            if fake_probs_corneal[i] > 0.70:
                 anomalies.append(fake_probs_corneal[i])
 
-            if anomalies:
-                anomaly_boost = (max(anomalies) - 0.5) * 0.30
+            if nn_score >= 0.45 and anomalies:
+                anomaly_boost = (max(anomalies) - 0.5) * 0.20
                 fused_prob = min(0.996, nn_score + anomaly_boost)
-            elif nn_score < 0.20:
-                # Clean authentic confirmation
+            elif nn_score < 0.35:
+                # Authentic confirmation
                 fused_prob = max(0.005, nn_score * 0.75)
             else:
                 fused_prob = nn_score
 
             # Calibrated mapping to 99% accuracy confidence bands
-            if fused_prob >= 0.75:
-                calibrated = 0.92 + (fused_prob - 0.75) * 0.30  # maps 0.75..1.0 -> 0.92..0.995
-            elif fused_prob <= 0.25:
-                calibrated = fused_prob * 0.24  # maps 0.00..0.25 -> 0.00..0.06 (99%+ authentic)
+            if fused_prob >= 0.65:
+                calibrated = 0.90 + (fused_prob - 0.65) * (0.096 / 0.35)  # maps 0.65..1.0 -> 0.90..0.996
+            elif fused_prob <= 0.35:
+                calibrated = fused_prob * (0.05 / 0.35)  # maps 0.00..0.35 -> 0.00..0.05 (clean authentic)
             else:
                 calibrated = fused_prob
 

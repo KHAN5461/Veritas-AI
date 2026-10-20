@@ -72,68 +72,94 @@ chrome.action.onClicked.addListener((tab: any) => {
   }
 });
 
+const DEFAULT_API_URL = 'https://upside-shower-handling.ngrok-free.dev';
+
 chrome.runtime.onMessage.addListener((message: any, sender: any, sendResponse: any) => {
+  if (message.action === "fetch_media_data" && message.url) {
+    (async () => {
+      try {
+        const res = await fetch(message.url);
+        const blob = await res.blob();
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          sendResponse({ success: true, dataUrl: reader.result, mimeType: blob.type });
+        };
+        reader.onerror = () => {
+          sendResponse({ success: false, error: "FileReader failed" });
+        };
+        reader.readAsDataURL(blob);
+      } catch (e: any) {
+        sendResponse({ success: false, error: e?.message || "Fetch failed" });
+      }
+    })();
+    return true;
+  }
+
   if (message.action === "scan_media" && message.url) {
     (async () => {
       let finalData: any = null;
       try {
         const stored = await chrome.storage?.local.get(['veritas_api_url']);
-        const baseUrl = (stored?.veritas_api_url || 'http://localhost:8000').replace(/\/$/, '');
+        const baseUrl = (stored?.veritas_api_url || DEFAULT_API_URL).replace(/\/$/, '');
 
         const res = await fetch(message.url);
         const blob = await res.blob();
-        const ext = message.url.split('.').pop()?.split('?')[0] || 'mp4';
+        const ext = message.url.split('.').pop()?.split('?')[0] || 'jpg';
         const name = message.url.split('/').pop()?.split('?')[0] || `media.${ext}`;
         const formData = new FormData();
         formData.append('file', blob, name);
         formData.append('file_hash', '');
 
-        // Try primary /detect or /jobs endpoint
+        // Try primary /detect with 30s timeout
         const detectController = new AbortController();
-        const timeoutId = setTimeout(() => detectController.abort(), 12000);
+        const timeoutId = setTimeout(() => detectController.abort(), 30000);
 
         try {
           const apiRes = await fetch(`${baseUrl}/detect`, {
             method: 'POST',
             body: formData,
+            headers: { 'ngrok-skip-browser-warning': 'true' },
             signal: detectController.signal,
           });
           clearTimeout(timeoutId);
           if (apiRes.ok) {
             finalData = await apiRes.json();
           }
-        } catch {
-          // Detect failed or timed out, will fall back below
+        } catch (fetchErr) {
+          console.warn('Background detect error on baseUrl:', baseUrl, fetchErr);
+          // Auto-fallback to DEFAULT_API_URL if different
+          if (baseUrl !== DEFAULT_API_URL) {
+            try {
+              const fbRes = await fetch(`${DEFAULT_API_URL}/detect`, {
+                method: 'POST',
+                body: formData,
+                headers: { 'ngrok-skip-browser-warning': 'true' },
+              });
+              if (fbRes.ok) {
+                finalData = await fbRes.json();
+              }
+            } catch (fbErr) {
+              console.warn('Background fallback detect error:', fbErr);
+            }
+          }
         }
       } catch (e) {
         console.warn('Background scan fetch error:', e);
       }
 
-      // If backend was unreachable or timed out, provide client-side heuristic safeguard
-      if (!finalData) {
-        const hashSeed = (message.url.length + 42) % 3;
-        const isSuspect = hashSeed === 0;
-        finalData = {
-          is_fake: isSuspect,
-          confidence: isSuspect ? 0.89 : 0.94,
-          verdict: isSuspect ? 'Likely fake' : 'Likely real',
-          quality_flags: ['Local Heuristic Guard'],
-          breakdown: {
-            visual_score: isSuspect ? 0.88 : 0.08,
-            audio_score: isSuspect ? 0.82 : 0.12,
-            lip_sync_score: isSuspect ? 0.85 : 0.10,
-          },
-          heatmap: null,
-          mode: 'heuristic_fallback'
-        };
+      if (finalData) {
+        sendResponse({
+          success: true,
+          is_fake: finalData.is_fake,
+          confidence: finalData.confidence,
+          data: finalData
+        });
+      } else {
+        sendResponse({
+          success: false,
+          error: "Backend service unreachable"
+        });
       }
-
-      sendResponse({
-        success: true,
-        is_fake: finalData.is_fake,
-        confidence: finalData.confidence,
-        data: finalData
-      });
     })();
     return true; // Keep message channel open for async response
   }

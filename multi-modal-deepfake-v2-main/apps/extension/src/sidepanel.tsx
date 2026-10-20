@@ -474,7 +474,22 @@ function SidepanelApp() {
           const ext = scan.url.split('.').pop()?.split('?')[0] || 'jpg';
           fileToUpload = new File([blob], scan.name || `media.${ext}`, { type: blob.type || 'image/jpeg' });
         } catch {
-          // If direct fetch is blocked by CORS, proceed with metadata URL
+          // If direct fetch is blocked by CORS in sidepanel, ask background script (which has <all_urls> permission)
+          if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
+            try {
+              const bgRes: any = await new Promise((resolve) => {
+                chrome.runtime.sendMessage({ action: "fetch_media_data", url: scan.url }, resolve);
+              });
+              if (bgRes?.success && bgRes?.dataUrl) {
+                const fetchRes = await fetch(bgRes.dataUrl);
+                const blob = await fetchRes.blob();
+                const ext = scan.url.split('.').pop()?.split('?')[0] || 'jpg';
+                fileToUpload = new File([blob], scan.name || `media.${ext}`, { type: blob.type || bgRes.mimeType || 'image/jpeg' });
+              }
+            } catch (bgErr) {
+              console.warn('Background media fetch failed:', bgErr);
+            }
+          }
         }
       }
 
@@ -486,10 +501,11 @@ function SidepanelApp() {
         formData.append('file', fileToUpload);
         
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 12000);
+        const timeoutId = setTimeout(() => controller.abort(), 35000);
 
         try {
-          const response = await fetch(`${apiUrl.replace(/\/$/, '')}/detect`, {
+          const activeUrl = apiUrl.trim() || DEFAULT_API_URL;
+          const response = await fetch(`${activeUrl.replace(/\/$/, '')}/detect`, {
             method: 'POST',
             body: formData,
             headers: { 'ngrok-skip-browser-warning': 'true' },
@@ -498,29 +514,36 @@ function SidepanelApp() {
           clearTimeout(timeoutId);
           if (response.ok) {
             data = await response.json();
+            setApiPingStatus('online');
           }
         } catch (e) {
-          console.warn('Backend inference unavailable, engaging neural heuristic safeguard:', e);
+          console.warn('Backend inference unavailable on apiUrl:', apiUrl, e);
+          // Try fallback to DEFAULT_API_URL if different
+          if (apiUrl !== DEFAULT_API_URL) {
+            try {
+              const fbRes = await fetch(`${DEFAULT_API_URL}/detect`, {
+                method: 'POST',
+                body: formData,
+                headers: { 'ngrok-skip-browser-warning': 'true' },
+              });
+              if (fbRes.ok) {
+                data = await fbRes.json();
+                setApiUrl(DEFAULT_API_URL);
+                localStorage.setItem("veritas_api_url", DEFAULT_API_URL);
+                setApiPingStatus('online');
+              }
+            } catch (fbErr) {
+              console.warn('Fallback inference also failed:', fbErr);
+            }
+          }
         }
       }
 
-      // Autonomous Heuristic Safeguard Fallback if cloud was unreachable
       if (!data) {
-        detectedMode = 'local_heuristic';
-        const seedStr = (scan.name || scan.url || 'veritas').toLowerCase();
-        const isDeepfake = seedStr.includes('fake') || seedStr.includes('synthetic') || seedStr.includes('avatar') || (seedStr.length % 3 === 0);
-        data = {
-          is_fake: isDeepfake,
-          confidence: isDeepfake ? 0.942 : 0.925,
-          verdict: isDeepfake ? 'Manipulated' : 'Authentic',
-          breakdown: {
-            visual_score: isDeepfake ? 0.93 : 0.08,
-            audio_score: isDeepfake ? 0.88 : 0.12,
-            lip_sync_score: isDeepfake ? 0.91 : 0.09
-          },
-          heatmap: null,
-          mode: 'heuristic_safeguard'
-        };
+        clearInterval(interval);
+        setApiPingStatus('offline');
+        setStatus('error');
+        return;
       }
 
       clearInterval(interval);
