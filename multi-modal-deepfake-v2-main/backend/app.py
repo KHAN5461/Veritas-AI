@@ -290,11 +290,130 @@ AUDIO_VIDEO_EXTS = {'.mp4', '.avi', '.mov', '.mkv', '.webm', '.flv', '.mp3', '.w
 VALID_MEDIA_EXTS = AUDIO_VIDEO_EXTS.union({'.jpg', '.jpeg', '.png', '.webp'})
 MAX_UPLOAD_SIZE = 50 * 1024 * 1024  # 50 MB
 
+try:
+    from fusion_model import CrossModalFusionTransformer
+    _has_fusion_transformer = True
+except ImportError:
+    CrossModalFusionTransformer = None
+    _has_fusion_transformer = False
+
 # =====================================================================
 # Analysis Pipeline Functions
 # =====================================================================
+def compute_local_av_desync(file_path: str) -> Optional[float]:
+    """Offline audio-visual lip synchronization & temporal coherence analysis."""
+    temp_wav = None
+    cap = None
+    try:
+        ext = os.path.splitext(file_path)[1].lower()
+        if ext not in {'.mp4', '.avi', '.mov', '.mkv', '.webm', '.flv'}:
+            return None
+        
+        # 1. Extract audio track
+        temp_wav = os.path.join(TEMP_DIR, f"desync_audio_{uuid.uuid4().hex[:8]}.wav")
+        has_audio = audio_detector.extract_audio(file_path, temp_wav, max_duration_sec=15)
+        if not has_audio or not os.path.exists(temp_wav) or os.path.getsize(temp_wav) < 1000:
+            return None
+
+        import librosa
+        y, sr = librosa.load(temp_wav, sr=16000, duration=15.0)
+        if len(y) == 0 or np.max(np.abs(y)) < 1e-4:
+            return None
+
+        # 2. Extract facial mouth opening dynamics across video frames
+        cap = cv2.VideoCapture(file_path)
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        if not fps or fps <= 0 or fps != fps:
+            fps = 30.0
+
+        # Sample at ~5 fps up to 10 seconds (50 frames max for speed)
+        sample_step = max(1, int(fps / 5.0))
+        mouth_apertures = []
+        frame_timestamps = []
+
+        vision_detector._ensure_models()
+        mp_mesh = vision_detector.mp_face_mesh
+
+        frame_idx = 0
+        while cap.isOpened() and len(mouth_apertures) < 50:
+            ret, frame = cap.read()
+            if not ret:
+                break
+            if frame_idx % sample_step == 0:
+                t_sec = frame_idx / fps
+                aperture = 0.0
+                if mp_mesh is not None:
+                    rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                    res = mp_mesh.process(rgb)
+                    if res and res.multi_face_landmarks:
+                        lm = res.multi_face_landmarks[0].landmark
+                        # Upper lip bottom: 13, Lower lip top: 14
+                        # IPD for scale normalization
+                        ipd = abs(lm[33].x - lm[263].x) + 1e-6
+                        raw_aperture = abs(lm[13].y - lm[14].y) / ipd
+                        aperture = float(raw_aperture)
+                mouth_apertures.append(aperture)
+                frame_timestamps.append(t_sec)
+            frame_idx += 1
+
+        if len(mouth_apertures) < 8 or max(mouth_apertures) < 1e-4:
+            return None
+
+        # 3. Compute audio RMS energy corresponding to the frame intervals
+        audio_energies = []
+        hop = int(sr / 5.0)  # match 5 Hz frame rate
+        for t in frame_timestamps:
+            center_sample = int(t * sr)
+            start_s = max(0, center_sample - hop // 2)
+            end_s = min(len(y), center_sample + hop // 2)
+            if end_s > start_s:
+                rms = float(np.sqrt(np.mean(y[start_s:end_s] ** 2)))
+            else:
+                rms = 0.0
+            audio_energies.append(rms)
+
+        # 4. Pearson correlation between normalized lip motion and audio energy
+        aperture_arr = np.array(mouth_apertures)
+        energy_arr = np.array(audio_energies)
+
+        std_a = np.std(aperture_arr)
+        std_e = np.std(energy_arr)
+        if std_a < 1e-5 or std_e < 1e-5:
+            return 0.5  # Neutral if stationary
+
+        cov = np.mean((aperture_arr - np.mean(aperture_arr)) * (energy_arr - np.mean(energy_arr)))
+        corr = float(cov / (std_a * std_e + 1e-6))
+
+        # Real speech exhibits positive correlation (0.35 to 0.80)
+        # Deepfake lip-sync or desynchronized dubbing exhibits near-zero or negative correlation
+        if corr > 0.45:
+            desync_risk = max(0.01, 0.20 - (corr - 0.45) * 0.3)
+        elif corr < 0.10:
+            desync_risk = min(0.98, 0.70 + (0.10 - corr) * 0.5)
+        else:
+            desync_risk = 0.45 + (0.45 - corr) * 0.5
+
+        return float(np.clip(desync_risk, 0.01, 0.99))
+    except Exception as e:
+        logger.debug("Local AV desync calculation notice: %s", e)
+        return None
+    finally:
+        if cap is not None:
+            cap.release()
+        if temp_wav and os.path.exists(temp_wav):
+            try:
+                os.remove(temp_wav)
+            except Exception:
+                pass
+
 def check_desync(file_path: str) -> Optional[float]:
-    """Safe external call for audio-visual desync analysis with strict timeout."""
+    """Multi-stage Audio-Visual desynchronization analysis:
+    1. Local biometric lip-aperture to audio RMS temporal coherence.
+    2. Fallback to external microservice if configured."""
+    local_score = compute_local_av_desync(file_path)
+    if local_score is not None:
+        return local_score
+
     if not os.path.exists(file_path):
         return None
     try:
