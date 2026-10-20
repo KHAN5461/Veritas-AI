@@ -10,7 +10,7 @@ const nextConfig: NextConfig = {
     ];
   },
   env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || 'https://khan5461-veritas-ai-backend.hf.space',
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || 'https://upside-shower-handling.ngrok-free.dev',
   },
   typescript: {
     ignoreBuildErrors: true

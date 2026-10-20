@@ -1,14 +1,14 @@
 export function getApiBaseUrl(): string {
   if (typeof window !== 'undefined') {
     const custom = localStorage.getItem('veritas_custom_api_url');
-    if (custom && custom.trim()) {
+    if (custom && custom.trim() && !custom.includes('localhost') && !custom.includes('127.0.0.1') && !custom.includes('onrender') && !custom.includes('trycloudflare') && !custom.includes('hf.space')) {
       return custom.trim().replace(/\/$/, '');
     }
   }
-  return (process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || 'https://upside-shower-handling.ngrok-free.dev').replace(/\/$/, '');
+  return 'https://upside-shower-handling.ngrok-free.dev';
 }
 
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || 'https://upside-shower-handling.ngrok-free.dev';
+export const API_BASE_URL = 'https://upside-shower-handling.ngrok-free.dev';
 
 export interface ForensicResult {
   is_fake: boolean;

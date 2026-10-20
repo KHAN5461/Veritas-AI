@@ -246,7 +246,7 @@ function SidepanelApp() {
 
     let effectiveApi = DEFAULT_API_URL;
     const savedApi = localStorage.getItem("veritas_api_url");
-    if (savedApi && !savedApi.includes('onrender.com') && !savedApi.includes('trycloudflare.com') && savedApi !== 'http://localhost:8000') {
+    if (savedApi && !savedApi.includes('localhost') && !savedApi.includes('127.0.0.1') && !savedApi.includes('onrender') && !savedApi.includes('trycloudflare') && !savedApi.includes('hf.space')) {
       effectiveApi = savedApi;
       setApiUrl(savedApi);
     } else {
