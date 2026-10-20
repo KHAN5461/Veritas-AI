@@ -371,13 +371,6 @@ export function SpyglassViewer({
               </motion.div>
             )}
 
-                <div className="absolute bottom-3 left-3 z-10 bg-black/70 backdrop-blur-md px-3 py-1 rounded-lg border border-cyan-500/40 text-cyan-300 font-mono text-[11px] flex items-center gap-1.5">
-                  <span className="material-symbols-outlined text-[14px]">layers</span>
-                  <span>COMPOSITE BLEND ({Math.round(blendAlpha * 100)}% ALPHA)</span>
-                </div>
-              </motion.div>
-            )}
-
           </AnimatePresence>
         </div>
 
