@@ -322,7 +322,7 @@ function SidepanelApp() {
     const start = performance.now();
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 6000);
+      const timeoutId = setTimeout(() => controller.abort(), 12000);
       const res = await fetch(`${targetUrl.replace(/\/$/, '')}/health`, { 
         method: 'GET',
         headers: { 'ngrok-skip-browser-warning': 'true' },
@@ -336,7 +336,8 @@ function SidepanelApp() {
       } else {
         setApiPingStatus('offline');
       }
-    } catch {
+    } catch (err) {
+      console.warn('[Veritas AI] Ping failed for', targetUrl, err);
       setApiPingStatus('offline');
     }
   };

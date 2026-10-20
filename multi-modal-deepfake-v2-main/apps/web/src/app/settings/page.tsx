@@ -53,10 +53,12 @@ export default function SettingsPage() {
 
     // Check saved backend URL
     const savedApi = localStorage.getItem('veritas_custom_api_url');
-    if (savedApi && !savedApi.includes('onrender.com') && !savedApi.includes('trycloudflare.com') && savedApi !== 'http://localhost:8000') {
+    const isStaleUrl = (url: string | null) => !url || url.includes('localhost') || url.includes('127.0.0.1') || url.includes('onrender') || url.includes('trycloudflare') || url.includes('hf.space');
+    
+    const defaultUrl = 'https://upside-shower-handling.ngrok-free.dev';
+    if (savedApi && !isStaleUrl(savedApi)) {
       setBackendApiUrl(savedApi);
     } else {
-      const defaultUrl = 'https://upside-shower-handling.ngrok-free.dev';
       setBackendApiUrl(defaultUrl);
       localStorage.setItem('veritas_custom_api_url', defaultUrl);
     }
@@ -80,12 +82,12 @@ export default function SettingsPage() {
     setIsPwaInstalled(isPwa);
 
     // Initial silent health check
-    const activeUrl = (savedApi && !savedApi.includes('onrender.com') && !savedApi.includes('trycloudflare.com') && savedApi !== 'http://localhost:8000')
-      ? savedApi
-      : 'https://upside-shower-handling.ngrok-free.dev';
+    const activeUrl = (!savedApi || isStaleUrl(savedApi))
+      ? 'https://upside-shower-handling.ngrok-free.dev'
+      : savedApi;
     
     fetch(`${activeUrl.replace(/\/$/, '')}/health`, {
-      signal: AbortSignal.timeout(5000),
+      signal: AbortSignal.timeout(12000),
       headers: { 'ngrok-skip-browser-warning': 'true' }
     })
       .then(res => { if (res.ok) setPingStatus('online'); else setPingStatus('offline'); })
@@ -138,7 +140,7 @@ export default function SettingsPage() {
     setPingStatus('testing');
     try {
       const res = await fetch(`${targetUrl}/health`, { 
-        signal: AbortSignal.timeout(6000),
+        signal: AbortSignal.timeout(12000),
         headers: { 'ngrok-skip-browser-warning': 'true' }
       });
       if (res.ok) {
@@ -148,9 +150,10 @@ export default function SettingsPage() {
         setPingStatus('offline');
         toast.error(`Backend returned HTTP ${res.status}`);
       }
-    } catch {
+    } catch (err: any) {
+      console.warn('[Veritas Backend Connection Check]', err);
       setPingStatus('offline');
-      toast.error('Unable to reach backend endpoint. Ensure your Colab ngrok tunnel or local backend is running.');
+      toast.error(`Unable to reach backend: ${err?.message || 'Network Timeout'}`);
     }
   };
 
