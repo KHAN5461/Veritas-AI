@@ -244,20 +244,21 @@ function SidepanelApp() {
     if (saved === "light") document.documentElement.classList.replace("dark", "light");
     else document.documentElement.classList.add("dark");
 
+    let effectiveApi = DEFAULT_API_URL;
     const savedApi = localStorage.getItem("veritas_api_url");
-    if (savedApi && (savedApi.includes('onrender.com') || savedApi.includes('trycloudflare.com') || savedApi === 'http://localhost:8000')) {
-      // Clear legacy dead Render / Cloudflare URLs and upgrade to default ngrok
+    if (savedApi && !savedApi.includes('onrender.com') && !savedApi.includes('trycloudflare.com') && savedApi !== 'http://localhost:8000') {
+      effectiveApi = savedApi;
+      setApiUrl(savedApi);
+    } else {
       setApiUrl(DEFAULT_API_URL);
       localStorage.setItem("veritas_api_url", DEFAULT_API_URL);
-    } else if (savedApi) {
-      setApiUrl(savedApi);
     }
 
     const savedWeb = localStorage.getItem("veritas_web_url");
     if (savedWeb) setWebAppUrl(savedWeb);
 
-    // Initial silent ping to verify backend
-    testConnection();
+    // Initial silent ping to verify backend with effective URL
+    testConnection(effectiveApi);
 
     // Load scan history from storage
     if (typeof chrome !== 'undefined' && chrome.storage) {
@@ -314,14 +315,15 @@ function SidepanelApp() {
     }
   };
 
-  const testConnection = async () => {
+  const testConnection = async (overrideUrl?: string) => {
+    const targetUrl = overrideUrl || apiUrl;
     setApiPingStatus('checking');
     setPingLatency(null);
     const start = performance.now();
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 6000);
-      const res = await fetch(`${apiUrl.replace(/\/$/, '')}/health`, { 
+      const res = await fetch(`${targetUrl.replace(/\/$/, '')}/health`, { 
         method: 'GET',
         headers: { 'ngrok-skip-browser-warning': 'true' },
         signal: controller.signal 

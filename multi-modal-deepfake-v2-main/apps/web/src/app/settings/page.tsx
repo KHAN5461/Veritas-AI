@@ -53,8 +53,12 @@ export default function SettingsPage() {
 
     // Check saved backend URL
     const savedApi = localStorage.getItem('veritas_custom_api_url');
-    if (savedApi) {
+    if (savedApi && !savedApi.includes('onrender.com') && !savedApi.includes('trycloudflare.com') && savedApi !== 'http://localhost:8000') {
       setBackendApiUrl(savedApi);
+    } else {
+      const defaultUrl = 'https://upside-shower-handling.ngrok-free.dev';
+      setBackendApiUrl(defaultUrl);
+      localStorage.setItem('veritas_custom_api_url', defaultUrl);
     }
 
     // Check system or saved theme
@@ -74,6 +78,18 @@ export default function SettingsPage() {
     const isPwa = window.matchMedia('(display-mode: standalone)').matches ||
       (window.navigator as any).standalone === true;
     setIsPwaInstalled(isPwa);
+
+    // Initial silent health check
+    const activeUrl = (savedApi && !savedApi.includes('onrender.com') && !savedApi.includes('trycloudflare.com') && savedApi !== 'http://localhost:8000')
+      ? savedApi
+      : 'https://upside-shower-handling.ngrok-free.dev';
+    
+    fetch(`${activeUrl.replace(/\/$/, '')}/health`, {
+      signal: AbortSignal.timeout(5000),
+      headers: { 'ngrok-skip-browser-warning': 'true' }
+    })
+      .then(res => { if (res.ok) setPingStatus('online'); else setPingStatus('offline'); })
+      .catch(() => setPingStatus('offline'));
   }, []);
 
   const handleStartEditProfile = () => {
