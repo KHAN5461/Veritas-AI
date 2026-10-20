@@ -453,22 +453,16 @@ Forensic Engine: Veritas Multi-Modal Sentinel v2.4`;
                 ) : isImage && (fileData.url || heatmapSrc) ? (
                   <div className="w-full flex flex-col gap-3">
                     <p className="text-xs text-on-surface-variant leading-relaxed">
-                      Slide horizontally or use the mode buttons to inspect neural attention zones. Elevated thermal areas expose synthesized boundaries and diffusion artifacts:
+                      Use the Evidence Lens pill tabs to inspect neural attention zones across Original, Heatmap, Side-by-Side Dual View, and Thermal Blend modes:
                     </p>
 
-                    <SpyglassViewer originalSrc={fileData.url || heatmapSrc || ''} heatmapSrc={heatmapSrc || fileData.url || ''} />
-
-                    {/* Heatmap Legend */}
-                    <div className="flex items-center justify-between flex-wrap gap-2 text-[11px] font-mono text-on-surface-variant px-1 pt-1">
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-xs shrink-0" />
-                        <span>Baseline Organic Texture (Low Weight)</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-xs animate-pulse shrink-0" />
-                        <span>Synthesized Anomaly (High Weight)</span>
-                      </div>
-                    </div>
+                    <SpyglassViewer 
+                      originalSrc={fileData.url || heatmapSrc || ''} 
+                      heatmapSrc={heatmapSrc || fileData.url || ''} 
+                      isFake={isManipulated}
+                      confidence={confidenceScore}
+                      fileName={fileData.name}
+                    />
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
