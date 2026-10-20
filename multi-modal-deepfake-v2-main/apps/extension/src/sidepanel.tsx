@@ -201,7 +201,7 @@ const TruthGauge = ({ score, isFake }: { score: number; isFake: boolean }) => {
 // Main Veritas AI Extension Component
 // ---------------------------------------------------------
 
-const DEFAULT_API_URL = 'https://veritas-ai-backend-qlgu.onrender.com';
+const DEFAULT_API_URL = 'http://localhost:8000';
 const DEFAULT_WEB_URL = 'https://veritas-ai-mocha.vercel.app';
 
 function SidepanelApp() {
@@ -234,7 +234,6 @@ function SidepanelApp() {
   const [isScanningPage, setIsScanningPage] = useState(false);
 
   // Settings feature toggles
-  const [inPageBadgeEnabled, setInPageBadgeEnabled] = useState(true);
   const [voiceDebriefEnabled, setVoiceDebriefEnabled] = useState(true);
 
   useEffect(() => {
@@ -244,8 +243,8 @@ function SidepanelApp() {
     else document.documentElement.classList.add("dark");
 
     const savedApi = localStorage.getItem("veritas_api_url");
-    if (savedApi && savedApi.includes('ngrok')) {
-      // Clear legacy dead ngrok URL
+    if (savedApi && savedApi.includes('onrender.com')) {
+      // Clear legacy dead Render URL
       setApiUrl(DEFAULT_API_URL);
       localStorage.setItem("veritas_api_url", DEFAULT_API_URL);
     } else if (savedApi) {
@@ -1677,13 +1676,7 @@ Forensic Engine: Veritas Multi-Modal Sentinel v2.5`;
               </div>
 
               {/* Feature Toggles */}
-              <div className="bg-surface-container-low p-2.5 rounded-2xl border border-outline-variant/30 flex flex-col divide-y divide-outline-variant/20">
-                <Switch 
-                  label="In-Page Media Badges" 
-                  description="Overlay verification pills on web images and videos" 
-                  checked={inPageBadgeEnabled} 
-                  onChange={setInPageBadgeEnabled} 
-                />
+              <div className="bg-surface-container-low p-2.5 rounded-2xl border border-outline-variant/30 flex flex-col">
                 <Switch 
                   label="Voice Audio Debrief" 
                   description="Enable speech synthesis narrative for report findings" 

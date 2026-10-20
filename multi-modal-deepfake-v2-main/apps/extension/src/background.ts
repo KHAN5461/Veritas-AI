@@ -78,7 +78,7 @@ chrome.runtime.onMessage.addListener((message: any, sender: any, sendResponse: a
       let finalData: any = null;
       try {
         const stored = await chrome.storage?.local.get(['veritas_api_url']);
-        const baseUrl = (stored?.veritas_api_url || 'https://veritas-ai-backend-qlgu.onrender.com').replace(/\/$/, '');
+        const baseUrl = (stored?.veritas_api_url || 'http://localhost:8000').replace(/\/$/, '');
 
         const res = await fetch(message.url);
         const blob = await res.blob();

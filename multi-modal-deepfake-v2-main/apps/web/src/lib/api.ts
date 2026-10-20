@@ -1,4 +1,14 @@
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || 'https://veritas-ai-backend-qlgu.onrender.com';
+export function getApiBaseUrl(): string {
+  if (typeof window !== 'undefined') {
+    const custom = localStorage.getItem('veritas_custom_api_url');
+    if (custom && custom.trim()) {
+      return custom.trim().replace(/\/$/, '');
+    }
+  }
+  return (process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || 'http://localhost:8000').replace(/\/$/, '');
+}
+
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || 'http://localhost:8000';
 
 export interface ForensicResult {
   is_fake: boolean;
@@ -97,7 +107,7 @@ async function pollForResults(
     await new Promise(r => setTimeout(r, 1500));
     attempts++;
 
-    const pollRes = await fetch(`${API_BASE_URL}/jobs/${jobId}`, {
+    const pollRes = await fetch(`${getApiBaseUrl()}/jobs/${jobId}`, {
       headers: {
         'X-API-Key': process.env.NEXT_PUBLIC_API_KEY || 'dev_key_123'
       }
@@ -135,8 +145,10 @@ export async function detectDeepfake(
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout for initial POST
 
+    const baseUrl = getApiBaseUrl();
+
     // 1. Submit job
-    const response = await fetch(`${API_BASE_URL}/jobs`, {
+    const response = await fetch(`${baseUrl}/jobs`, {
       method: 'POST',
       body: formData,
       headers: {
@@ -166,7 +178,7 @@ export async function detectDeepfake(
     if (typeof window !== 'undefined' && typeof window.EventSource !== 'undefined') {
       try {
         return await new Promise<ForensicResult>((resolve, reject) => {
-          const streamUrl = `${API_BASE_URL}/jobs/${jobId}/stream`;
+          const streamUrl = `${baseUrl}/jobs/${jobId}/stream`;
           const es = new EventSource(streamUrl);
           let settled = false;
 

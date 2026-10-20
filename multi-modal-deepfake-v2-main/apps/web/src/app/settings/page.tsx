@@ -32,6 +32,8 @@ export default function SettingsPage() {
   const [threshold, setThreshold] = useState(85);
   const [truthscanKey, setTruthscanKey] = useState('');
   const [hfToken, setHfToken] = useState('');
+  const [backendApiUrl, setBackendApiUrl] = useState('');
+  const [pingStatus, setPingStatus] = useState<'idle' | 'testing' | 'online' | 'offline'>('idle');
   const [extensionInstalled, setExtensionInstalled] = useState(false);
   const [isPwaInstalled, setIsPwaInstalled] = useState(false);
 
@@ -47,6 +49,12 @@ export default function SettingsPage() {
         setTruthscanKey(parsed.truthscanKey ?? '');
         setHfToken(parsed.hfToken ?? '');
       } catch {}
+    }
+
+    // Check saved backend URL
+    const savedApi = localStorage.getItem('veritas_custom_api_url');
+    if (savedApi) {
+      setBackendApiUrl(savedApi);
     }
 
     // Check system or saved theme
@@ -109,9 +117,32 @@ export default function SettingsPage() {
     }
   };
 
+  const testBackendConnection = async () => {
+    const targetUrl = (backendApiUrl.trim() || 'http://localhost:8000').replace(/\/$/, '');
+    setPingStatus('testing');
+    try {
+      const res = await fetch(`${targetUrl}/health`, { signal: AbortSignal.timeout(6000) });
+      if (res.ok) {
+        setPingStatus('online');
+        toast.success(`Connected successfully to ${targetUrl}`);
+      } else {
+        setPingStatus('offline');
+        toast.error(`Backend returned HTTP ${res.status}`);
+      }
+    } catch {
+      setPingStatus('offline');
+      toast.error('Unable to reach backend endpoint. Ensure your Colab tunnel or local backend is running.');
+    }
+  };
+
   const saveSettings = () => {
     const settings = { autoQuarantine, emailAlerts, darkTheme, threshold, truthscanKey, hfToken };
     localStorage.setItem('veritas-settings', JSON.stringify(settings));
+    if (backendApiUrl.trim()) {
+      localStorage.setItem('veritas_custom_api_url', backendApiUrl.trim());
+    } else {
+      localStorage.removeItem('veritas_custom_api_url');
+    }
     toast.success('Preferences saved successfully!');
   };
 
@@ -358,6 +389,51 @@ export default function SettingsPage() {
                   <span>50% (Permissive)</span>
                   <span>99% (Strict)</span>
                 </div>
+              </div>
+            </Card>
+
+            {/* Custom Backend URL (Google Colab / Localhost) */}
+            <Card className="bg-surface-container-low border border-outline-variant/30">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-semibold text-on-surface">Detection Backend (Google Colab / Localhost)</h3>
+                {pingStatus === 'online' && (
+                  <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Online
+                  </span>
+                )}
+                {pingStatus === 'offline' && (
+                  <span className="flex items-center gap-1 text-[11px] font-bold text-error bg-error/10 px-2 py-0.5 rounded-full border border-error/30">
+                    <span className="w-1.5 h-1.5 rounded-full bg-error" /> Unreachable
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-on-surface-variant mb-3">
+                Paste your Google Colab tunnel URL (Cloudflare or ngrok) or local server URL. Veritas AI will route all file scans directly to this GPU server.
+              </p>
+
+              <div className="flex flex-col sm:flex-row gap-2">
+                <input
+                  type="url"
+                  value={backendApiUrl}
+                  onChange={(e) => {
+                    setBackendApiUrl(e.target.value);
+                    setPingStatus('idle');
+                  }}
+                  placeholder="https://xxxx.trycloudflare.com or http://localhost:8000"
+                  className="flex-1 bg-surface-container-highest text-on-surface placeholder:text-on-surface-variant/50 rounded-xl px-3.5 py-2 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-primary border border-outline-variant/20"
+                />
+                <Button 
+                  type="button"
+                  variant="outlined" 
+                  onClick={testBackendConnection}
+                  disabled={pingStatus === 'testing'}
+                  className="text-xs shrink-0 h-9"
+                >
+                  <span className="material-symbols-outlined text-[16px] mr-1">
+                    {pingStatus === 'testing' ? 'sync' : 'network_check'}
+                  </span>
+                  {pingStatus === 'testing' ? 'Testing...' : 'Test Ping'}
+                </Button>
               </div>
             </Card>
 
